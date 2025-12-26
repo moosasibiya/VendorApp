@@ -1,0 +1,10 @@
+{
+  "name": "@vendorapp/mobile",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Mobile dev (Expo) will be added in Phase 4\"",
+    "build": "echo \"Mobile build later\"",
+    "lint": "echo \"Mobile lint later\"",
+    "typecheck": "echo \"Mobile typecheck later\""
+  }
+}

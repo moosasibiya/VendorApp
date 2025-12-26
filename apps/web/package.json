@@ -1,0 +1,10 @@
+{
+  "name": "@vendorapp/web",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Web dev (Next.js) will be added in Phase 2\"",
+    "build": "echo \"Web build will be added in Phase 2\"",
+    "lint": "echo \"Web lint later\"",
+    "typecheck": "echo \"Web typecheck later\""
+  }
+}

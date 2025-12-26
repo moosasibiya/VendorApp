@@ -1,0 +1,10 @@
+{
+  "name": "@vendorapp/api",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"API dev (NestJS) will be added in Phase 2\"",
+    "build": "echo \"API build will be added in Phase 2\"",
+    "lint": "echo \"API lint later\"",
+    "typecheck": "echo \"API typecheck later\""
+  }
+}
