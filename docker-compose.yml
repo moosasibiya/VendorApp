@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: vendorapp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vendorapp
+      POSTGRES_PASSWORD: vendorapp_password
+      POSTGRES_DB: vendorapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - vendorapp_db_data:/var/lib/postgresql/data
+
+volumes:
+  vendorapp_db_data:
