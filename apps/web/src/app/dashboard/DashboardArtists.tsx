@@ -11,27 +11,40 @@ import {
   Heart,
   SlidersHorizontal,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import styles from "./DashboardArtists.module.css";
 
 type Service = "Photography" | "Videography" | "Web Design";
 type Availability = "Available Now" | "Booking Soon" | "Waitlist";
-type PriceBand = "R" | "RR" | "RRR" | "RRRR";
-type Category = "popular" | "verified" | "favourite" | "recent" | "all";
-type FilterKey = "service" | "location" | "priceRange" | "availability";
+type PriceRange = "R" | "RR" | "RRR" | "RRRR";
+type Location =
+  | "Johannesburg"
+  | "Cape Town"
+  | "Durban"
+  | "Pretoria"
+  | "Gqeberha";
+
+type Category = "all" | "popular" | "verified" | "favourite" | "recent";
 
 type Artist = {
   id: number;
   name: string;
   service: Service;
-  location: string;
-  price: PriceBand;
+  location: Location;
+  price: PriceRange;
+  availability: Availability;
   rating: number;
   verified: boolean;
   category: Exclude<Category, "all">;
-  availability: Availability;
 };
+
+type FilterKey = "service" | "location" | "priceRange" | "availability";
+
+type FiltersState = Record<FilterKey, Set<string>>;
+type FilterOptions = Record<FilterKey, string[]>;
 
 const BASE_ARTISTS: Artist[] = [
   {
@@ -40,10 +53,10 @@ const BASE_ARTISTS: Artist[] = [
     service: "Photography",
     location: "Johannesburg",
     price: "RRR",
+    availability: "Available Now",
     rating: 4.9,
     verified: true,
     category: "popular",
-    availability: "Available Now",
   },
   {
     id: 2,
@@ -51,10 +64,10 @@ const BASE_ARTISTS: Artist[] = [
     service: "Videography",
     location: "Cape Town",
     price: "RRRR",
+    availability: "Booking Soon",
     rating: 5.0,
     verified: true,
-    category: "verified",
-    availability: "Booking Soon",
+    category: "popular",
   },
   {
     id: 3,
@@ -62,10 +75,10 @@ const BASE_ARTISTS: Artist[] = [
     service: "Web Design",
     location: "Durban",
     price: "RR",
+    availability: "Available Now",
     rating: 4.7,
     verified: false,
-    category: "popular",
-    availability: "Available Now",
+    category: "recent",
   },
   {
     id: 4,
@@ -73,10 +86,10 @@ const BASE_ARTISTS: Artist[] = [
     service: "Photography",
     location: "Pretoria",
     price: "RRR",
+    availability: "Waitlist",
     rating: 4.8,
     verified: true,
     category: "verified",
-    availability: "Waitlist",
   },
   {
     id: 5,
@@ -84,10 +97,10 @@ const BASE_ARTISTS: Artist[] = [
     service: "Videography",
     location: "Johannesburg",
     price: "RR",
+    availability: "Booking Soon",
     rating: 4.6,
     verified: false,
-    category: "favourite",
-    availability: "Booking Soon",
+    category: "recent",
   },
   {
     id: 6,
@@ -95,66 +108,49 @@ const BASE_ARTISTS: Artist[] = [
     service: "Web Design",
     location: "Cape Town",
     price: "RRR",
-    rating: 4.9,
-    verified: true,
-    category: "recent",
     availability: "Available Now",
-  },
-  {
-    id: 7,
-    name: "Zinhle Mbatha",
-    service: "Videography",
-    location: "Durban",
-    price: "RRR",
-    rating: 4.8,
-    verified: true,
-    category: "popular",
-    availability: "Available Now",
-  },
-  {
-    id: 8,
-    name: "Tamia Botha",
-    service: "Web Design",
-    location: "Gqeberha",
-    price: "RRRR",
     rating: 4.9,
     verified: true,
     category: "verified",
-    availability: "Booking Soon",
+  },
+  {
+    id: 7,
+    name: "Zinhle Dlamini",
+    service: "Photography",
+    location: "Gqeberha",
+    price: "R",
+    availability: "Available Now",
+    rating: 4.5,
+    verified: false,
+    category: "recent",
+  },
+  {
+    id: 8,
+    name: "Musa van Wyk",
+    service: "Videography",
+    location: "Durban",
+    price: "RRRR",
+    availability: "Waitlist",
+    rating: 4.4,
+    verified: true,
+    category: "popular",
   },
 ];
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  const a = parts[0]?.[0] ?? "";
-  const b = parts[1]?.[0] ?? "";
-  return (a + b).toUpperCase();
-}
-
-function availabilityPill(a: Availability) {
-  if (a === "Available Now")
-    return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
-  if (a === "Booking Soon")
-    return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
-  return "bg-slate-50 text-slate-700 ring-1 ring-slate-200";
-}
-
-type FiltersState = Record<FilterKey, Set<string>>;
-type FilterOptions = Record<FilterKey, string[]>;
-
 type FiltersPanelProps = {
-  compact?: boolean;
+  compact?: boolean; // compact mode for mobile drawer
   filters: FiltersState;
   filterOptions: FilterOptions;
   selectedFiltersCount: number;
   onToggleFilter: (key: FilterKey, value: string) => void;
   onClearFilters: () => void;
-  onApply?: () => void;
+  onApply?: () => void; // used for mobile drawer to close
+  onCollapse?: () => void; // desktop collapse
 };
 
 /**
  * FiltersPanel (pure)
- * - outside render => no "static-components" ESLint warning
+ * - defined outside render to avoid eslint react-hooks/static-components warning
  */
 function FiltersPanel({
   compact,
@@ -164,9 +160,10 @@ function FiltersPanel({
   onToggleFilter,
   onClearFilters,
   onApply,
+  onCollapse,
 }: FiltersPanelProps) {
   return (
-    <div className={`${styles.card} p-5`}>
+    <div className={`${styles.card} ${compact ? "p-4" : "p-5"}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
@@ -174,13 +171,27 @@ function FiltersPanel({
           <h2 className="font-bold text-lg text-gray-900">Filters</h2>
         </div>
 
-        <button
-          onClick={onClearFilters}
-          className="text-sm font-semibold text-gray-600 hover:text-gray-900"
-          type="button"
-        >
-          Clear all
-        </button>
+        <div className="flex items-center gap-3">
+          {!compact && onCollapse && (
+            <button
+              onClick={onCollapse}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-gray-50"
+              type="button"
+              aria-label="Collapse filters"
+              title="Collapse filters"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-700" />
+            </button>
+          )}
+
+          <button
+            onClick={onClearFilters}
+            className="text-sm font-semibold text-gray-600 hover:text-gray-900"
+            type="button"
+          >
+            Clear all
+          </button>
+        </div>
       </div>
 
       {/* Selected count */}
@@ -224,13 +235,68 @@ function FiltersPanel({
         ),
       )}
 
+      {compact && (
+        <button
+          className={`w-full mt-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold ${styles.primaryBtn}`}
+          type="button"
+          onClick={onApply}
+        >
+          Apply Filters
+        </button>
+      )}
+    </div>
+  );
+}
+
+type CollapsedRailProps = {
+  selectedFiltersCount: number;
+  onExpand: () => void;
+  onClear: () => void;
+};
+
+function CollapsedFiltersRail({
+  selectedFiltersCount,
+  onExpand,
+  onClear,
+}: CollapsedRailProps) {
+  return (
+    <div className={`${styles.card} ${styles.filtersRail} p-3`}>
       <button
-        className={`w-full mt-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold ${styles.primaryBtn}`}
+        onClick={onExpand}
+        className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 transition-colors"
         type="button"
-        onClick={onApply}
+        aria-label="Expand filters"
+        title="Expand filters"
       >
-        Apply Filters
+        <SlidersHorizontal className="w-5 h-5" />
       </button>
+
+      {selectedFiltersCount > 0 && (
+        <div className="mt-2 text-center">
+          <div className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-blue-600 text-white text-xs font-bold">
+            {selectedFiltersCount}
+          </div>
+          <button
+            onClick={onClear}
+            type="button"
+            className="mt-2 text-xs font-semibold text-gray-600 hover:text-gray-900"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      <div className="mt-auto">
+        <button
+          onClick={onExpand}
+          className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
+          type="button"
+          aria-label="Expand filters panel"
+          title="Expand"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-700" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -239,6 +305,7 @@ export default function DashboardArtists() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category>("all");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [desktopFiltersCollapsed, setDesktopFiltersCollapsed] = useState(false);
   const [favourites, setFavourites] = useState<Set<number>>(() => new Set([5]));
 
   const [filters, setFilters] = useState<FiltersState>(() => ({
@@ -349,23 +416,38 @@ export default function DashboardArtists() {
 
   return (
     <div className={styles.page}>
-      {/* Header */}
-      <header className={`${styles.header} px-4 sm:px-6 py-5`}>
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900">
-            Artists
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Browse top creatives across South Africa — book the right vibe for
-            your project.
-          </p>
+      {/* Header (scrolls away normally) */}
+      <header className={`${styles.header} px-4 sm:px-6 py-6`}>
+        <div className="max-w-7xl mx-auto flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                Artists
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                Browse top creatives across South Africa — book the right vibe
+                for your project.
+              </p>
+            </div>
+
+            {/* Desktop quick action */}
+            <button
+              type="button"
+              className="hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+              onClick={() => {
+                // Placeholder CTA — hook to your flow later
+                alert("Coming soon: Promote your profile 🚀");
+              }}
+            >
+              <Star className="w-4 h-4" />
+              Promote
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Search */}
-      <div
-        className={`${styles.searchBar} sticky top-0 z-40 px-4 sm:px-6 py-4 shadow-sm`}
-      >
+      {/* Search + chips (scrolls away normally) */}
+      <div className={`${styles.searchBar} px-4 sm:px-6 py-5`}>
         <div className="max-w-7xl mx-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -374,11 +456,12 @@ export default function DashboardArtists() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search artists by name, style, or expertise..."
-              className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+              className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
             />
           </div>
 
           <div className="flex gap-2 mt-3 flex-wrap items-center">
+            {/* Mobile filters button */}
             <button
               onClick={() => setMobileFiltersOpen(true)}
               className="lg:hidden px-3 sm:px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-xs sm:text-sm flex items-center gap-2"
@@ -393,6 +476,7 @@ export default function DashboardArtists() {
               )}
             </button>
 
+            {/* Desktop: quick chips (cosmetic for now) */}
             <button
               className="hidden sm:flex px-3 sm:px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-xs sm:text-sm items-center gap-2"
               type="button"
@@ -408,12 +492,22 @@ export default function DashboardArtists() {
               <DollarSign className="w-4 h-4" />
               Price Range (R)
             </button>
+
+            {selectedFiltersCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="px-3 sm:px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-black text-xs sm:text-sm font-semibold"
+                type="button"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Ads */}
-      <div className="px-4 sm:px-6 py-5">
+      <div className="px-4 sm:px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {adCards.map((ad) => (
@@ -432,66 +526,103 @@ export default function DashboardArtists() {
       </div>
 
       {/* Main */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10">
         <div className="flex gap-6 items-start">
-          {/* Desktop sidebar */}
-          <aside className="w-72 flex-shrink-0 hidden lg:block sticky top-28">
-            <FiltersPanel
-              filters={filters}
-              filterOptions={filterOptions}
-              selectedFiltersCount={selectedFiltersCount}
-              onToggleFilter={toggleFilter}
-              onClearFilters={clearFilters}
-              onApply={() => {}}
-            />
+          {/* Desktop sidebar (collapsible) */}
+          <aside
+            className={[
+              "hidden lg:block flex-shrink-0 transition-all duration-300",
+              desktopFiltersCollapsed ? "w-16" : "w-80",
+            ].join(" ")}
+          >
+            {desktopFiltersCollapsed ? (
+              <CollapsedFiltersRail
+                selectedFiltersCount={selectedFiltersCount}
+                onClear={clearFilters}
+                onExpand={() => setDesktopFiltersCollapsed(false)}
+              />
+            ) : (
+              <FiltersPanel
+                filters={filters}
+                filterOptions={filterOptions}
+                selectedFiltersCount={selectedFiltersCount}
+                onToggleFilter={toggleFilter}
+                onClearFilters={clearFilters}
+                onCollapse={() => setDesktopFiltersCollapsed(true)}
+              />
+            )}
           </aside>
 
           {/* Right content */}
           <main className="flex-1 min-w-0">
-            {/* Tabs */}
-            <div className="flex gap-2 mb-5 border-b border-gray-200 pb-2 overflow-x-auto">
-              {(["Popular", "Verified", "Favourite", "Recent"] as const).map(
-                (cat) => {
-                  const active = selectedCategory === cat.toLowerCase();
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() =>
-                        setSelectedCategory(cat.toLowerCase() as Category)
-                      }
-                      className={`px-3 sm:px-4 py-2 rounded-t-xl font-semibold transition-colors whitespace-nowrap text-sm sm:text-base ${
-                        active
-                          ? `bg-blue-600 text-white ${styles.tabActive}`
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                      type="button"
-                    >
-                      {cat}
-                    </button>
-                  );
-                },
-              )}
+            {/* Top row */}
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="text-sm text-gray-700">
+                Showing{" "}
+                <span className="font-semibold text-gray-900">
+                  {visibleArtists.length}
+                </span>{" "}
+                artists
+              </div>
 
-              <button
-                onClick={() => setSelectedCategory("all")}
-                className={`px-3 sm:px-4 py-2 rounded-t-xl font-semibold transition-colors whitespace-nowrap text-sm sm:text-base ${
-                  selectedCategory === "all"
-                    ? `bg-blue-600 text-white ${styles.tabActive}`
-                    : "bg-white text-gray-700 hover:bg-gray-100"
-                }`}
-                type="button"
-              >
-                All
-              </button>
+              <div className="hidden lg:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDesktopFiltersCollapsed((v) => !v)}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-800"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {desktopFiltersCollapsed ? "Show filters" : "Hide filters"}
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-800"
+                  onClick={() => alert("Coming soon: sort + ranking 🎚️")}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Sort
+                </button>
+              </div>
             </div>
 
-            {/* Results */}
-            <div className="text-sm text-gray-700 mb-4">
-              Showing{" "}
-              <span className="font-semibold text-gray-900">
-                {visibleArtists.length}
-              </span>{" "}
-              artists
+            {/* Tabs rail */}
+            <div className={`${styles.card} p-2 mb-5 overflow-x-auto`}>
+              <div className="flex gap-2">
+                {(["Popular", "Verified", "Favourite", "Recent"] as const).map(
+                  (cat) => {
+                    const active = selectedCategory === cat.toLowerCase();
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() =>
+                          setSelectedCategory(cat.toLowerCase() as Category)
+                        }
+                        className={`px-3 sm:px-4 py-2 rounded-xl font-semibold transition-colors whitespace-nowrap text-sm sm:text-base ${
+                          active
+                            ? `bg-blue-600 text-white ${styles.tabActive}`
+                            : "bg-white text-gray-700 hover:bg-gray-100"
+                        }`}
+                        type="button"
+                      >
+                        {cat}
+                      </button>
+                    );
+                  },
+                )}
+
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-3 sm:px-4 py-2 rounded-xl font-semibold transition-colors whitespace-nowrap text-sm sm:text-base ${
+                    selectedCategory === "all"
+                      ? `bg-blue-600 text-white ${styles.tabActive}`
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+                  }`}
+                  type="button"
+                >
+                  All
+                </button>
+              </div>
             </div>
 
             {/* Cards */}
@@ -503,6 +634,12 @@ export default function DashboardArtists() {
                   <div
                     key={artist.id}
                     className={`${styles.card} ${styles.cardHover} overflow-hidden cursor-pointer`}
+                    onClick={() => alert(`Open profile: ${artist.name}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") alert(`Open profile: ${artist.name}`);
+                    }}
                   >
                     {/* Top block */}
                     <div
@@ -549,104 +686,122 @@ export default function DashboardArtists() {
                       </div>
 
                       {/* Avatar */}
-                      <div className="absolute -bottom-5 left-4">
+                      <div className="absolute -bottom-5 left-5">
                         <div
-                          className={`${styles.avatar} w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center font-extrabold text-gray-900`}
+                          className={`${styles.avatar} w-12 h-12 rounded-full bg-white flex items-center justify-center font-extrabold text-gray-700`}
                         >
-                          {initials(artist.name)}
+                          {artist.name
+                            .split(" ")
+                            .slice(0, 2)
+                            .map((w) => w[0])
+                            .join("")}
                         </div>
                       </div>
                     </div>
 
-                    {/* Info */}
-                    <div className="p-4 pt-7">
+                    {/* Body */}
+                    <div className="pt-7 px-5 pb-5">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-extrabold text-base sm:text-lg text-gray-900 truncate">
+                        <div>
+                          <h3 className="text-lg font-extrabold text-gray-900 leading-tight">
                             {artist.name}
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 mt-1">
                             {artist.service}
-                          </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-700 mt-2">
+                            <MapPin className="w-4 h-4 text-gray-500" />
+                            {artist.location}
+                          </div>
                         </div>
 
-                        <div className="text-sm font-extrabold text-gray-900">
-                          {artist.price}
+                        <div className="text-right">
+                          <div className="text-sm font-extrabold text-gray-900">
+                            {artist.price}
+                          </div>
+                          <div className="text-xs text-gray-600">per session</div>
                         </div>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{artist.location}</span>
+                      <div className="flex items-center justify-between mt-4 gap-3">
+                        <div>
+                          <span
+                            className={[
+                              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold",
+                              artist.availability === "Available Now"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : artist.availability === "Booking Soon"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-gray-100 text-gray-700",
+                            ].join(" ")}
+                          >
+                            {artist.availability}
+                          </span>
                         </div>
 
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${availabilityPill(
-                            artist.availability,
-                          )}`}
+                        <button
+                          className={`px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black font-bold text-sm ${styles.primaryBtn}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alert(`View profile: ${artist.name}`);
+                          }}
                         >
-                          {artist.availability}
-                        </span>
+                          View Profile
+                        </button>
                       </div>
-
-                      <button
-                        className={`w-full mt-4 px-4 py-2.5 rounded-xl font-semibold transition-colors bg-gray-900 text-white hover:bg-gray-800 ${styles.primaryBtn}`}
-                        type="button"
-                      >
-                        View Profile
-                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {visibleArtists.length === 0 && (
-              <div
-                className={`${styles.card} p-8 text-center text-gray-700 mt-6`}
-              >
-                No artists match your filters. Try clearing filters or changing
-                the search.
-              </div>
-            )}
           </main>
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile filters drawer */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            className="absolute inset-0 bg-black/30"
+          <div
+            className="absolute inset-0 bg-black/40"
             onClick={() => setMobileFiltersOpen(false)}
-            aria-label="Close filters"
-            type="button"
           />
-
-          <div className="absolute right-0 top-0 h-full w-[92vw] max-w-md bg-white shadow-2xl p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="font-extrabold text-lg text-gray-900">
-                Filters
+          <div className="absolute right-0 top-0 h-full w-full max-w-sm p-4">
+            <div className={`${styles.card} h-full flex flex-col overflow-hidden`}>
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-5 h-5 text-gray-700" />
+                  <div className="font-extrabold text-gray-900">Filters</div>
+                  {selectedFiltersCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-blue-600 text-white text-xs font-bold">
+                      {selectedFiltersCount}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  type="button"
+                  className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
+                  aria-label="Close filters"
+                >
+                  <X className="w-5 h-5 text-gray-700" />
+                </button>
               </div>
-              <button
-                onClick={() => setMobileFiltersOpen(false)}
-                className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50"
-                type="button"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <FiltersPanel
-              compact
-              filters={filters}
-              filterOptions={filterOptions}
-              selectedFiltersCount={selectedFiltersCount}
-              onToggleFilter={toggleFilter}
-              onClearFilters={clearFilters}
-              onApply={() => setMobileFiltersOpen(false)}
-            />
+              <div className="p-4 overflow-auto">
+                <FiltersPanel
+                  compact
+                  filters={filters}
+                  filterOptions={filterOptions}
+                  selectedFiltersCount={selectedFiltersCount}
+                  onToggleFilter={toggleFilter}
+                  onClearFilters={clearFilters}
+                  onApply={() => setMobileFiltersOpen(false)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

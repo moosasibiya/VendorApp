@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 
-// ✅ Global CSS (Tailwind directives + your custom CSS)
 import "./globals.css";
-
-// ✅ Font Awesome local CSS
-import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -25,15 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={outfit.variable}>
-      <head>
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,200..700,0..1,-50..200&display=optional"
-        />
-      </head>
-      <body>{children}</body>
+    <html lang="en" className={outfit.variable} suppressHydrationWarning>
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }
