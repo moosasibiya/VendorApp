@@ -1,0 +1,180 @@
+.page {
+  display: grid;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ghostBtn,
+.primaryBtn {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ghostBtn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ghostBtn:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.primaryBtn {
+  border: none;
+  color: white;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+
+.primaryBtn:hover {
+  filter: brightness(1.05);
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar,
+.avatarAlt {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.avatar {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+
+.avatarAlt {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 900;
+}
+
+.meta {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+}
+
+.pillGood,
+.pillWarn {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pillGood {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.pillWarn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.cardBottom {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+}
+
+.statLabel {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.statValue {
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.smallBtn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+}
+
+.smallBtn:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

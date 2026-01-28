@@ -1,0 +1,55 @@
+.page {
+  display: grid;
+  gap: 10px;
+}
+.title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.sub {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.box {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.label {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.value {
+  margin-top: 8px;
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+}
+
+.muted {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
