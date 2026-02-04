@@ -1,0 +1,276 @@
+.page {
+  min-height: 100vh;
+  color: var(--text);
+  padding: 56px 20px 80px;
+}
+
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 260px;
+  gap: 24px;
+}
+
+.sideNav {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 18px;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.welcome {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.welcome span {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sideNav nav {
+  display: grid;
+  gap: 8px;
+}
+
+.sideNav a {
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  border-radius: 12px;
+  padding: 8px 10px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profileCard {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.kicker {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.title {
+  font-size: clamp(24px, 3vw, 36px);
+  margin: 6px 0;
+}
+
+.username {
+  color: var(--muted);
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.badge,
+.badgeAlt {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.badge {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  border: none;
+}
+
+.badgeAlt {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stats {
+  display: flex;
+  gap: 26px;
+  margin-bottom: 18px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bio {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tags span {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryBtn,
+.ghostBtn {
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.primaryBtn {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  border: none;
+}
+
+.ghostBtn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.section {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filters button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.filterActive {
+  color: var(--text) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.portfolioCard {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  min-height: 160px;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
+.portfolioBadge {
+  align-self: flex-end;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.rightCol {
+  display: grid;
+  gap: 18px;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.infoCard {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .rightCol,
+  .sideNav {
+    position: static;
+  }
+}

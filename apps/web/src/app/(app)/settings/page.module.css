@@ -1,58 +1,159 @@
 .page {
-  display: grid;
-  gap: 10px;
-}
-.title {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-.sub {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 14px;
-  margin-top: 4px;
+  min-height: 100vh;
+  color: var(--text);
+  padding: 32px;
 }
 
-.panel {
-  margin-top: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+}
+
+.sidebar {
+  border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 14px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.sidebar h1 {
+  margin-bottom: 14px;
+}
+
+.navBtn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.navBtn:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.section h2 {
+  margin-bottom: 16px;
+}
+
+.formGrid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.formGrid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.formGrid input {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.toggleList {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.14);
-  border-radius: 14px;
+.toggle {
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 12px;
+  display: flex;
+  gap: 10px;
 }
 
-.rowTitle {
-  font-weight: 900;
+.notice {
+  border: 1px solid var(--border);
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
-.rowSub {
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
+
+.linkGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.linkGrid button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.saveBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 12px;
+  background: rgba(11, 15, 26, 0.8);
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.primaryBtn,
+.ghostBtn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.primaryBtn {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  border: none;
 }
 
 .ghostBtn {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  padding: 10px 12px;
-  cursor: pointer;
-  font-weight: 900;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
 }
 
-.ghostBtn:hover {
-  background: rgba(255, 255, 255, 0.07);
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
 }

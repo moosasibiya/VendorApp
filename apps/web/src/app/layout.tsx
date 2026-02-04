@@ -21,6 +21,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={outfit.variable} suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,450,0,0"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var stored = localStorage.getItem("vendrman_theme");
+                  var prefers = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  var theme = stored || (prefers ? "dark" : "light");
+                  document.documentElement.setAttribute("data-theme", theme);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

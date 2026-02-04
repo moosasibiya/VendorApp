@@ -1,0 +1,232 @@
+.page {
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 20px;
+  padding: 24px;
+}
+
+.sidebar,
+.details {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 16px;
+  height: fit-content;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  width: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tabBtn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+.conversations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.conversation {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.preview {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.time {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.thread {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.threadHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.threadHeader p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.threadActions {
+  display: flex;
+  gap: 8px;
+}
+
+.threadActions button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 6px;
+}
+
+.messages {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.msgIncoming,
+.msgOutgoing {
+  max-width: 60%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.msgIncoming {
+  background: rgba(255, 255, 255, 0.08);
+  align-self: flex-start;
+}
+
+.msgOutgoing {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  align-self: flex-end;
+}
+
+.msgIncoming span,
+.msgOutgoing span {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.compose {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.compose textarea {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  color: var(--text);
+  min-height: 60px;
+}
+
+.composeActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composeActions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.sendBtn {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2)) !important;
+  border: none !important;
+}
+
+.details h3 {
+  margin-bottom: 12px;
+}
+
+.detailCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailLabel {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.detailCard button {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .details {
+    order: 3;
+  }
+}

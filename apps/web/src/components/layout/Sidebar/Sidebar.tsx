@@ -37,21 +37,30 @@ export default function Sidebar() {
       <div className={styles.sectionTitle}>Workspace</div>
       <nav className={styles.nav}>
         <NavItem href="/dashboard" icon="dashboard" label="Dashboard" />
-        <NavItem href="/creatives" icon="groups" label="Creatives" />
         <NavItem href="/bookings" icon="event" label="Bookings" />
+        <NavItem href="/messages" icon="chat" label="Messages" />
+        <NavItem href="/calendar" icon="calendar_month" label="Calendar" />
+        <NavItem href="/reviews" icon="star" label="Reviews" />
+        <NavItem href="/creatives" icon="groups" label="Creatives" />
         <NavItem href="/payments" icon="payments" label="Payments" />
         <NavItem href="/settings" icon="settings" label="Settings" />
+        <NavItem href="/onboarding" icon="checklist" label="Onboarding" />
       </nav>
 
       <div className={styles.spacer} />
 
       <div className={styles.footer}>
+        <div className={styles.footerLinks}>
+          <Link href="/login">Login</Link>
+          <Link href="/signup">Sign up</Link>
+          <Link href="/">Public home</Link>
+        </div>
         <button
           className={styles.footerBtn}
           type="button"
           onClick={() => {
             localStorage.removeItem("vendrman_token");
-            window.location.href = "/auth/login";
+            window.location.href = "/login";
           }}
         >
           <span className="material-symbols-outlined">logout</span>

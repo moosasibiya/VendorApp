@@ -87,6 +87,22 @@
   padding: 0 8px;
 }
 
+.footerLinks {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.footerLinks a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.footerLinks a:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
 .footerBtn {
   display: inline-flex;
   width: 100%;

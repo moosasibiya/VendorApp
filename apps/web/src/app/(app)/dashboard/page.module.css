@@ -181,3 +181,101 @@
 @media (max-width: 520px) {
   .actions { grid-template-columns: 1fr; }
 }
+
+
+.tierSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.tierCard {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
+}
+
+.progressBar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.progressFill {
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+
+.tierMeta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 26, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 80;
+  padding: 20px;
+}
+
+.modalCard {
+  width: min(520px, 92vw);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.modalCard label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.modalCard input,
+.modalCard textarea {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.modalCard textarea {
+  min-height: 110px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.primaryBtn,
+.ghostBtn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.primaryBtn {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  border: none;
+}

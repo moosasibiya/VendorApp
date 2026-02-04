@@ -16,6 +16,18 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
     title: "Bookings",
     subtitle: "Track new, active, and completed bookings.",
   },
+  "/messages": {
+    title: "Messages",
+    subtitle: "Conversations, delivery updates, and client notes.",
+  },
+  "/calendar": {
+    title: "Calendar",
+    subtitle: "Availability, upcoming shoots, and blocked time.",
+  },
+  "/reviews": {
+    title: "Reviews",
+    subtitle: "Ratings, testimonials, and feedback responses.",
+  },
   "/payments": {
     title: "Payments",
     subtitle: "Payouts, invoices, and revenue insights.",
@@ -23,6 +35,10 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
   "/settings": {
     title: "Settings",
     subtitle: "Manage your profile and platform preferences.",
+  },
+  "/onboarding": {
+    title: "Onboarding",
+    subtitle: "Complete your artist setup and verification.",
   },
 };
 
@@ -37,6 +53,14 @@ export default function Topbar() {
 
   const { title, subtitle } = ROUTE_META[route];
 
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    const next =
+      root.getAttribute("data-theme") === "light" ? "dark" : "light";
+    root.setAttribute("data-theme", next);
+    localStorage.setItem("vendrman_theme", next);
+  };
+
   return (
     <header className={styles.topbar}>
       <div className={styles.left}>
@@ -49,6 +73,10 @@ export default function Topbar() {
           <span className="material-symbols-outlined">search</span>
           <input placeholder="Search creatives, bookings..." />
         </div>
+
+        <button className={styles.iconBtn} type="button" onClick={toggleTheme}>
+          <span className="material-symbols-outlined">contrast</span>
+        </button>
 
         <button className={styles.iconBtn} type="button" title="Notifications">
           <span className="material-symbols-outlined">notifications</span>

@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!authed) {
       const next = encodeURIComponent(pathname || "/dashboard");
-      router.replace(`/auth/login?next=${next}`);
+      router.replace(`/login?next=${next}`);
     }
   }, [authed, router, pathname]);
 

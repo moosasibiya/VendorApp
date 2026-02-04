@@ -1,55 +1,90 @@
 .page {
-  display: grid;
-  gap: 10px;
-}
-.title {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-.sub {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 14px;
-  margin-top: 4px;
+  min-height: 100vh;
+  color: var(--text);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.grid {
-  margin-top: 10px;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, 1fr);
+.header p {
+  color: var(--muted);
 }
 
-.box {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 18px;
-  padding: 14px;
+.wallet {
+  border-radius: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.label {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
+.wallet p {
+  opacity: 0.8;
+}
+
+.balance {
+  font-size: 36px;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
-.value {
-  margin-top: 8px;
-  font-weight: 900;
-  font-size: 26px;
-  letter-spacing: -0.03em;
-}
-
-.muted {
-  margin-top: 6px;
-  color: rgba(255, 255, 255, 0.62);
+.walletStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
   font-size: 13px;
 }
 
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+.walletStats span {
+  opacity: 0.7;
+}
+
+.walletStats strong {
+  display: block;
+  font-size: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardRow span {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.cardRow button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.ghostBtn {
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
 }

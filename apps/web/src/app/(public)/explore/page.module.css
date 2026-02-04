@@ -1,0 +1,229 @@
+.page {
+  min-height: 100vh;
+  color: var(--text);
+  padding: 56px 20px 80px;
+}
+
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.header h1 {
+  font-size: clamp(28px, 3vw, 42px);
+  margin-bottom: 10px;
+}
+
+.header p {
+  color: var(--muted);
+  max-width: 640px;
+}
+
+.searchPill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: var(--panel);
+}
+
+.searchPill input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  flex: 1;
+}
+
+.searchPill button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+.featuredAd {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  border: none;
+  color: white;
+  margin-top: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.adImage {
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.4));
+}
+
+.carouselSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.carouselHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.carouselControls {
+  display: flex;
+  gap: 8px;
+}
+
+.carouselControls button {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+}
+
+.carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.carouselCard {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 16px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cardBadge {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cardRating {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot,
+.dotActive {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dotActive {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.jobs {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.jobsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jobCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.jobCard h4 {
+  margin-bottom: 6px;
+}
+
+.jobCard p {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.jobMeta {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.jobCard button {
+  align-self: center;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+
+@media (max-width: 900px) {
+  .featuredAd {
+    grid-template-columns: 1fr;
+  }
+}

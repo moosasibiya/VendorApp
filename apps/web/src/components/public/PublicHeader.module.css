@@ -1,0 +1,129 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(20px);
+  background: rgba(11, 15, 26, 0.7);
+  border-bottom: 1px solid var(--border);
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.brand span {
+  color: var(--brand2);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.themeBtn {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}
+
+.cta {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  color: white !important;
+  font-weight: 700;
+}
+
+.menuBtn {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: none;
+  place-items: center;
+}
+
+.drawer {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 26, 0.6);
+  z-index: 60;
+  display: grid;
+  place-items: start end;
+  padding: 20px;
+}
+
+.drawerPanel {
+  width: min(360px, 90vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawerHeader button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.drawerLinks {
+  display: grid;
+  gap: 10px;
+}
+
+.drawerLinks a {
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--panel2);
+}
+
+@media (max-width: 720px) {
+  .nav {
+    display: none;
+  }
+
+  .menuBtn {
+    display: grid;
+  }
+}
