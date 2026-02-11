@@ -25,6 +25,13 @@ export default function CreativesPage() {
 
       <section className={styles.grid}>
         <div className={styles.card}>
+          <div
+            className={styles.preview}
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80)",
+            }}
+          />
           <div className={styles.cardTop}>
             <div className={styles.avatar}>PJ</div>
             <div className={styles.cardInfo}>
@@ -51,6 +58,13 @@ export default function CreativesPage() {
         </div>
 
         <div className={styles.card}>
+          <div
+            className={styles.preview}
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80)",
+            }}
+          />
           <div className={styles.cardTop}>
             <div className={styles.avatarAlt}>KM</div>
             <div className={styles.cardInfo}>

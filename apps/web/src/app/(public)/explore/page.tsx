@@ -11,6 +11,19 @@ const carousels = [
   "Content Creators",
 ];
 
+const previewGradients = [
+  "linear-gradient(135deg, rgba(15, 111, 255, 0.82), rgba(18, 182, 196, 0.7))",
+  "linear-gradient(135deg, rgba(12, 74, 110, 0.8), rgba(14, 165, 233, 0.7))",
+  "linear-gradient(135deg, rgba(37, 99, 235, 0.78), rgba(6, 182, 212, 0.74))",
+  "linear-gradient(135deg, rgba(30, 64, 175, 0.8), rgba(13, 148, 136, 0.72))",
+  "linear-gradient(135deg, rgba(14, 165, 233, 0.78), rgba(8, 145, 178, 0.72))",
+];
+
+function getPreviewGradient(title: string, index: number) {
+  const seed = title.length + index;
+  return previewGradients[seed % previewGradients.length];
+}
+
 function Carousel({ title }: { title: string }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(0);
@@ -18,8 +31,9 @@ function Carousel({ title }: { title: string }) {
     () =>
       Array.from({ length: 9 }).map((_, i) => ({
         name: `${title} ${i + 1}`,
-        bio: "Luxury brand visuals & campaign direction.",
+        bio: "Luxury brand visuals and campaign direction.",
         rating: (4.6 + (i % 3) * 0.1).toFixed(1),
+        preview: getPreviewGradient(title, i),
       })),
     [title],
   );
@@ -63,9 +77,15 @@ function Carousel({ title }: { title: string }) {
       <div className={styles.carousel} ref={trackRef}>
         {artists.map((artist) => (
           <article key={artist.name} className={styles.carouselCard}>
+            <div
+              className={styles.preview}
+              style={{ backgroundImage: artist.preview }}
+            >
+              <span className={styles.previewLabel}>Project Preview</span>
+            </div>
             <div className={styles.cardTop}>
               <div className={styles.cardBadge}>{title}</div>
-              <div className={styles.cardRating}>? {artist.rating}</div>
+              <div className={styles.cardRating}>{artist.rating}/5</div>
             </div>
             <h4>{artist.name}</h4>
             <p>{artist.bio}</p>
@@ -102,7 +122,7 @@ export default function ExplorePage() {
         <section className={styles.featuredAd}>
           <div>
             <p className={styles.kicker}>Featured</p>
-            <h2>Studio Kuhle ? Johannesburg</h2>
+            <h2>Studio Kuhle - Johannesburg</h2>
             <p>
               Bold fashion and editorial storytelling with a boutique team of
               stylists.
@@ -129,7 +149,7 @@ export default function ExplorePage() {
             {Array.from({ length: 3 }).map((_, i) => (
               <article key={i} className={styles.jobCard}>
                 <div>
-                  <h4>Brand shoot ? Cape Town</h4>
+                  <h4>Brand shoot - Cape Town</h4>
                   <p>
                     Lifestyle shoot for a luxury villa brand, 2-day production.
                   </p>

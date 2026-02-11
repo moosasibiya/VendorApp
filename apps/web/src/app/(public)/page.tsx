@@ -61,6 +61,13 @@ function FeaturedRow({ title }: { title: string }) {
       <div className={styles.featureTrack} ref={trackRef}>
         {items.map((artist) => (
           <article key={artist.name} className={styles.featureCard}>
+            <div
+              className={styles.featurePreview}
+              style={{
+                backgroundImage:
+                  "url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80)",
+              }}
+            />
             <div className={styles.featureBadge}>{artist.role}</div>
             <h3>{artist.name}</h3>
             <p>{artist.location}</p>

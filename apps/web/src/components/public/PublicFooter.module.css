@@ -1,13 +1,13 @@
 .footer {
   border-top: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  margin-top: 40px;
+  background: var(--panel2);
+  margin-top: 56px;
 }
 
 .inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 46px 20px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
@@ -15,15 +15,22 @@
 
 .col h4 {
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .col a {
   display: block;
-  color: var(--muted);
+  color: var(--muted-strong);
   text-decoration: none;
   padding: 6px 0;
   font-size: 13px;
+}
+
+.col a:hover {
+  color: var(--text);
 }
 
 .legal {
@@ -46,6 +53,10 @@
 .legalLinks a {
   color: var(--muted);
   text-decoration: none;
+}
+
+.legalLinks a:hover {
+  color: var(--text);
 }
 
 @media (max-width: 900px) {

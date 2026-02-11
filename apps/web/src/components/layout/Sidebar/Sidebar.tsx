@@ -30,9 +30,9 @@ const NavItem = ({
 export default function Sidebar() {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.brand}>
+      <Link href="/" className={styles.brand}>
         Vendr<span>Man</span>
-      </div>
+      </Link>
 
       <div className={styles.sectionTitle}>Workspace</div>
       <nav className={styles.nav}>
@@ -60,6 +60,7 @@ export default function Sidebar() {
           type="button"
           onClick={() => {
             localStorage.removeItem("vendrman_token");
+            sessionStorage.removeItem("vendrman_token");
             window.location.href = "/login";
           }}
         >

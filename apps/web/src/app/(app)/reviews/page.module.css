@@ -41,7 +41,7 @@
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -59,7 +59,7 @@
 .bar {
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--panel3);
   overflow: hidden;
 }
 
@@ -77,7 +77,7 @@
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -93,7 +93,7 @@
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--panel3);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -106,7 +106,7 @@
 
 .rating {
   margin-left: auto;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel3);
   padding: 6px 10px;
   border-radius: 999px;
 }

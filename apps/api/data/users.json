@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": "146b7feb2e93a19e2c7bc7a3",
+      "fullName": "Moosa Sibiya",
+      "username": "Moosa",
+      "email": "testing@gmail.com",
+      "emailNormalized": "testing@gmail.com",
+      "accountType": "CREATIVE",
+      "createdAt": "2026-02-11T07:54:28.338Z",
+      "passwordSalt": "167c0a1d98f8984183f4833fc07525f0",
+      "passwordHash": "f312bd2b997ccce6a81582d2f5236cc192af2f5653c00a7ea14c2a53417bc0922f6efbc69a3aff343a0d7da1ee06a69d2ccb49c5c9144563638496df2da09e6e"
+    }
+  ]
+}

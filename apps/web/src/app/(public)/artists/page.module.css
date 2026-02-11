@@ -101,6 +101,8 @@
   height: fit-content;
   position: sticky;
   top: 96px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
 }
 
 .filterHeader {
@@ -163,10 +165,12 @@
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel2);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 20px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
 }
 
 .adKicker {
@@ -192,7 +196,7 @@
 
 .adImage {
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.35));
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(20, 184, 166, 0.24));
 }
 
 .grid {
@@ -203,17 +207,38 @@
 
 .card {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--panel2);
   border-radius: 18px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   transition: transform 0.2s ease;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+}
+
+.preview {
+  width: 100%;
+  height: 160px;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, var(--overlay-media));
 }
 
 .card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
 }
 
 .cardTop {
@@ -223,7 +248,7 @@
 }
 
 .cardBadge {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel3);
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
@@ -296,18 +321,38 @@
 
 .rowCard {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--panel2);
   border-radius: 18px;
   padding: 16px;
   display: grid;
   gap: 8px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+}
+
+.previewSmall {
+  width: 100%;
+  height: 120px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.previewSmall::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, var(--overlay-media));
 }
 
 .rowBadge {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel3);
   font-size: 12px;
 }
 
@@ -327,11 +372,11 @@
   width: 10px;
   height: 10px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--chip);
 }
 
 .dotActive {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--chip-strong);
 }
 
 @media (max-width: 900px) {

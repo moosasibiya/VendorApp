@@ -9,21 +9,25 @@
   width: 100%;
   max-width: 560px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--panel);
   border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
 }
 
 .header {
   padding: 26px 26px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--panel3);
 }
 
 .logo {
+  display: inline-block;
   font-size: 24px;
   font-weight: 900;
   letter-spacing: -0.03em;
+  text-decoration: none;
+  color: var(--text);
 }
 
 .logo span {

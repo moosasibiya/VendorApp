@@ -61,6 +61,12 @@ export default function Topbar() {
     localStorage.setItem("vendrman_theme", next);
   };
 
+  const logout = () => {
+    localStorage.removeItem("vendrman_token");
+    sessionStorage.removeItem("vendrman_token");
+    window.location.href = "/";
+  };
+
   return (
     <header className={styles.topbar}>
       <div className={styles.left}>
@@ -80,6 +86,11 @@ export default function Topbar() {
 
         <button className={styles.iconBtn} type="button" title="Notifications">
           <span className="material-symbols-outlined">notifications</span>
+        </button>
+
+        <button className={styles.logoutBtn} type="button" onClick={logout}>
+          <span className="material-symbols-outlined">logout</span>
+          Logout
         </button>
 
         <div className={styles.avatar} title="Profile">

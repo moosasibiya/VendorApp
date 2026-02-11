@@ -2,20 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Artist, fetchArtists } from "@/lib/api";
 import styles from "./page.module.css";
 
 const locations = ["Cape Town", "Johannesburg", "Pretoria", "Durban", "All"];
 const services = ["Photography", "Videography", "Design", "Content", "Events"];
 
-const artists = Array.from({ length: 12 }).map((_, i) => ({
-  name: `Artist ${i + 1}`,
-  role: i % 2 === 0 ? "Photographer" : "Videographer",
-  location: locations[i % locations.length],
-  rating: (4.7 + (i % 3) * 0.1).toFixed(1),
-  slug: `artist-${i + 1}`,
-}));
-
-function Row({ title }: { title: string }) {
+function Row({ title, artists }: { title: string; artists: Artist[] }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(0);
 
@@ -32,6 +25,7 @@ function Row({ title }: { title: string }) {
     node.addEventListener("scroll", handler, { passive: true });
     return () => node.removeEventListener("scroll", handler);
   }, []);
+
   const scrollBy = (direction: number) => {
     const node = trackRef.current;
     if (!node) return;
@@ -57,10 +51,17 @@ function Row({ title }: { title: string }) {
       <div className={styles.rowTrack} ref={trackRef}>
         {artists.slice(0, 12).map((artist) => (
           <article key={`${title}-${artist.slug}`} className={styles.rowCard}>
+            <div
+              className={styles.previewSmall}
+              style={{
+                backgroundImage:
+                  "url(https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80)",
+              }}
+            />
             <div className={styles.rowBadge}>{artist.role}</div>
             <h4>{artist.name}</h4>
             <p>{artist.location}</p>
-            <div className={styles.rowMeta}>? {artist.rating}</div>
+            <div className={styles.rowMeta}>Rating {artist.rating}</div>
           </article>
         ))}
       </div>
@@ -81,6 +82,32 @@ export default function ArtistsPage() {
     () => ["Popular", "Verified", "Favourites", "New Talent"],
     [],
   );
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [artistsError, setArtistsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadArtists = async () => {
+      try {
+        const data = await fetchArtists();
+        if (!cancelled) {
+          setArtists(data);
+          setArtistsError(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistsError("Unable to load artists right now.");
+        }
+      }
+    };
+
+    void loadArtists();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className={styles.page}>
@@ -165,12 +192,21 @@ export default function ArtistsPage() {
               <div className={styles.adImage} />
             </section>
 
+            {artistsError ? <p>{artistsError}</p> : null}
+
             <div className={styles.grid}>
               {artists.slice(0, 9).map((artist) => (
                 <article key={artist.slug} className={styles.card}>
+                  <div
+                    className={styles.preview}
+                    style={{
+                      backgroundImage:
+                        "url(https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=80)",
+                    }}
+                  />
                   <div className={styles.cardTop}>
                     <div className={styles.cardBadge}>{artist.role}</div>
-                    <div className={styles.cardRating}>? {artist.rating}</div>
+                    <div className={styles.cardRating}>Rating {artist.rating}</div>
                   </div>
                   <div className={styles.cardBody}>
                     <h3>{artist.name}</h3>
@@ -189,7 +225,7 @@ export default function ArtistsPage() {
             </div>
 
             {categories.map((category) => (
-              <Row key={category} title={category} />
+              <Row key={category} title={category} artists={artists} />
             ))}
           </div>
         </div>

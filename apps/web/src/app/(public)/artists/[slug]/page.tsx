@@ -1,5 +1,7 @@
 import styles from "./page.module.css";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ApiError, fetchArtistBySlug } from "@/lib/api";
 
 const navItems = [
   { label: "Messages", href: "/messages" },
@@ -9,13 +11,40 @@ const navItems = [
   { label: "Settings", href: "/settings" },
 ];
 
-export default function ArtistProfilePage() {
+type ArtistProfilePageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export default async function ArtistProfilePage({ params }: ArtistProfilePageProps) {
+  const { slug } = await params;
+
+  let artist;
+  try {
+    artist = await fetchArtistBySlug(slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
+
+  const initials = getInitials(artist.name);
+
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
         <aside className={styles.sideNav}>
           <div className={styles.welcome}>
-            Welcome <span>Ayanda</span>
+            Welcome <span>{artist.name.split(" ")[0]}</span>
           </div>
           <nav>
             {navItems.map((item) => (
@@ -31,15 +60,15 @@ export default function ArtistProfilePage() {
             <div className={styles.header}>
               <div>
                 <p className={styles.kicker}>Creative Profile</p>
-                <h1 className={styles.title}>Ayanda Khumalo</h1>
-                <p className={styles.username}>@ayanda</p>
+                <h1 className={styles.title}>{artist.name}</h1>
+                <p className={styles.username}>@{artist.slug}</p>
               </div>
-              <div className={styles.avatar}>AK</div>
+              <div className={styles.avatar}>{initials}</div>
             </div>
 
             <div className={styles.metaRow}>
-              <span className={styles.badge}>Photographer</span>
-              <span className={styles.badgeAlt}>Cape Town</span>
+              <span className={styles.badge}>{artist.role}</span>
+              <span className={styles.badgeAlt}>{artist.location}</span>
               <span className={styles.badgeAlt}>Available this week</span>
             </div>
 
@@ -49,7 +78,7 @@ export default function ArtistProfilePage() {
                 <div className={styles.statLabel}>Followers</div>
               </div>
               <div>
-                <div className={styles.statValue}>4.9</div>
+                <div className={styles.statValue}>{artist.rating}</div>
                 <div className={styles.statLabel}>Rating</div>
               </div>
               <div>
@@ -93,7 +122,7 @@ export default function ArtistProfilePage() {
                   <div className={styles.portfolioBadge}>24 Photos</div>
                   <div>
                     <h3>Project {i + 1}</h3>
-                    <p>June 2025 ? Cape Town</p>
+                    <p>June 2025 ? {artist.location}</p>
                   </div>
                 </div>
               ))}

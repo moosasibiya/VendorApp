@@ -14,7 +14,7 @@
 .details {
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel);
   padding: 16px;
   height: fit-content;
 }
@@ -73,7 +73,7 @@
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--panel3);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -96,7 +96,7 @@
 .thread {
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -144,7 +144,7 @@
 }
 
 .msgIncoming {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel3);
   align-self: flex-start;
 }
 

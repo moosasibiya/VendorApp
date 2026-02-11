@@ -1,22 +1,39 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ApiError, createBooking } from "@/lib/api";
 import styles from "./page.module.css";
 
-const steps = ["Event Details", "Pricing & Add-ons", "Review", "Confirmation"];
+const steps = ["Event Details", "Pricing & Add-ons", "Review"];
+
+function initialsFromName(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 3);
+}
 
 export default function NewBookingPage() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [eventType, setEventType] = useState("Wedding");
+  const [location, setLocation] = useState("Cape Town");
+  const [date, setDate] = useState("12 Aug 2025");
+  const [time, setTime] = useState("09:00 - 17:00");
+  const [description, setDescription] = useState("");
+  const [serviceType, setServiceType] = useState("Full-day wedding coverage");
+  const [duration, setDuration] = useState("Full day");
+
   const summary = useMemo(
     () => ({
       artist: "Ayanda Khumalo",
-      location: "Cape Town",
-      date: "12 Aug 2025",
-      time: "09:00 - 17:00",
-      service: "Full-day wedding coverage",
       subtotal: "R12,000",
       addOns: "R1,800",
       fee: "R420",
@@ -35,7 +52,7 @@ export default function NewBookingPage() {
           <div>
             <h1>Create Booking</h1>
             <p>
-              Step {step + 1} of {steps.length} · {steps[step]}
+              Step {step + 1} of {steps.length} - {steps[step]}
             </p>
           </div>
           <div className={styles.progress}>
@@ -52,23 +69,43 @@ export default function NewBookingPage() {
           <div className={styles.form}>
             <label>
               Event Type
-              <input placeholder="Wedding, Corporate, Portrait" />
+              <input
+                placeholder="Wedding, Corporate, Portrait"
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+              />
             </label>
             <label>
               Location
-              <input placeholder="Cape Town" />
+              <input
+                placeholder="Cape Town"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
             </label>
             <label>
               Date
-              <input placeholder="Select date" />
+              <input
+                placeholder="Select date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </label>
             <label>
               Time Range
-              <input placeholder="09:00 - 17:00" />
+              <input
+                placeholder="09:00 - 17:00"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
             </label>
             <label className={styles.fullRow}>
               Description
-              <textarea placeholder="Tell us about the project" />
+              <textarea
+                placeholder="Tell us about the project"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </label>
           </div>
         )}
@@ -77,11 +114,19 @@ export default function NewBookingPage() {
           <div className={styles.form}>
             <label>
               Service Type
-              <input placeholder="Full-day wedding coverage" />
+              <input
+                placeholder="Full-day wedding coverage"
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+              />
             </label>
             <label>
               Duration
-              <input placeholder="Full day" />
+              <input
+                placeholder="Full day"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+              />
             </label>
             <label className={styles.fullRow}>
               Add-ons
@@ -128,19 +173,19 @@ export default function NewBookingPage() {
               </div>
               <div className={styles.reviewRow}>
                 <span>Location</span>
-                <strong>{summary.location}</strong>
+                <strong>{location}</strong>
               </div>
               <div className={styles.reviewRow}>
                 <span>Date</span>
-                <strong>{summary.date}</strong>
+                <strong>{date}</strong>
               </div>
               <div className={styles.reviewRow}>
                 <span>Time</span>
-                <strong>{summary.time}</strong>
+                <strong>{time}</strong>
               </div>
               <div className={styles.reviewRow}>
                 <span>Service</span>
-                <strong>{summary.service}</strong>
+                <strong>{serviceType}</strong>
               </div>
               <div className={styles.reviewRow}>
                 <span>Total</span>
@@ -154,54 +199,68 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {step === 3 && (
-          <div className={styles.confirmation}>
-            <div className={styles.successIcon}>✓</div>
-            <h2>Booking Submitted</h2>
-            <p>Your request has been sent to the creative.</p>
-            <div className={styles.confirmCard}>
-              <p>Confirmation #: VM-2045</p>
-              <p>We will notify you once it is accepted.</p>
-            </div>
-            <div className={styles.confirmActions}>
-              <button className={styles.primaryBtn}>View booking</button>
-              <button className={styles.ghostBtn}>Message artist</button>
-            </div>
-          </div>
-        )}
-
         <div className={styles.actions}>
           <button
             className={styles.ghostBtn}
             onClick={prev}
-            disabled={step === 0}
+            disabled={step === 0 || isSubmitting}
           >
             Previous
           </button>
           {step < steps.length - 1 ? (
             <button
               className={styles.primaryBtn}
-              onClick={async () => {
+              onClick={() => {
                 setError(null);
                 if (step === 0) {
-                  setError("Please complete the event details.");
-                  return;
+                  if (!eventType.trim() || !location.trim() || !date.trim()) {
+                    setError("Please complete event type, location, and date.");
+                    return;
+                  }
                 }
                 if (step === 1) {
-                  setError("Please confirm pricing and add-ons.");
-                  return;
-                }
-                if (step === 2) {
-                  setIsSubmitting(true);
-                  await new Promise((resolve) => setTimeout(resolve, 800));
-                  setIsSubmitting(false);
+                  if (!serviceType.trim() || !duration.trim()) {
+                    setError("Please complete service type and duration.");
+                    return;
+                  }
                 }
                 next();
               }}
+              disabled={isSubmitting}
             >
-              {step === 2 ? (isSubmitting ? "Submitting..." : "Send Request") : "Next"}
+              Next
             </button>
-          ) : null}
+          ) : (
+            <button
+              className={styles.primaryBtn}
+              onClick={async () => {
+                setError(null);
+                setIsSubmitting(true);
+                try {
+                  await createBooking({
+                    artistName: summary.artist,
+                    artistInitials: initialsFromName(summary.artist),
+                    title: `${eventType} - ${serviceType}`,
+                    location,
+                    date,
+                    amount: summary.total,
+                  });
+                  router.push("/bookings");
+                } catch (err) {
+                  if (err instanceof ApiError) {
+                    setError(err.message);
+                  } else {
+                    setError("Unable to submit booking right now.");
+                  }
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Send Request"}
+            </button>
+          )}
         </div>
       </section>
     </main>

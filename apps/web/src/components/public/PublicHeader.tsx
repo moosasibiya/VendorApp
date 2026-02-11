@@ -11,13 +11,22 @@ export default function PublicHeader() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setAuthed(!!localStorage.getItem("vendrman_token"));
+    setAuthed(
+      !!localStorage.getItem("vendrman_token") ||
+        !!sessionStorage.getItem("vendrman_token"),
+    );
   }, []);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
 
     const focusable = () =>
       Array.from(
@@ -51,6 +60,7 @@ export default function PublicHeader() {
     document.addEventListener("keydown", handleKeydown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
       document.removeEventListener("keydown", handleKeydown);
     };
   }, [open]);

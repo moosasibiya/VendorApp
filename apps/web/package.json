@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@vendorapp/shared": "workspace:*",
     "lucide-react": "^0.562.0",
     "material-symbols": "^0.40.2",
     "next": "16.1.1",

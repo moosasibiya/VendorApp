@@ -32,8 +32,7 @@ export default function RootLayout({
               (function () {
                 try {
                   var stored = localStorage.getItem("vendrman_theme");
-                  var prefers = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                  var theme = stored || (prefers ? "dark" : "light");
+                  var theme = stored || "light";
                   document.documentElement.setAttribute("data-theme", theme);
                 } catch (e) {}
               })();

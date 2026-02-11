@@ -45,7 +45,7 @@
 .tabActive {
   color: var(--text);
   border-color: transparent;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel3);
 }
 
 .list {
@@ -56,7 +56,7 @@
 .card {
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--panel);
   display: grid;
   grid-template-columns: 60px 1fr auto;
   gap: 16px;
@@ -67,7 +67,7 @@
   width: 54px;
   height: 54px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--panel3);
   display: grid;
   place-items: center;
   font-weight: 700;

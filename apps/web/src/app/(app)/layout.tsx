@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppShell from "../../components/layout/AppShell/AppShell";
 
@@ -10,12 +10,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const authed = useMemo(() => {
-    // Runs during render on client — safe because this file is "use client"
-    return (
-      typeof window !== "undefined" && !!localStorage.getItem(AUTH_TOKEN_KEY)
-    );
-  }, []);
+  const authed =
+    typeof window !== "undefined" &&
+    (!!localStorage.getItem(AUTH_TOKEN_KEY) ||
+      !!sessionStorage.getItem(AUTH_TOKEN_KEY));
 
   useEffect(() => {
     if (!authed) {
@@ -24,7 +22,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [authed, router, pathname]);
 
-  // If not authed, don't render the app shell (prevents flash)
   if (!authed) return null;
 
   return <AppShell>{children}</AppShell>;
