@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   min-height: 100vh;
   color: var(--text);
   padding: 32px;
@@ -14,7 +14,7 @@
 .wallet {
   border-radius: 20px;
   padding: 24px;
-  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  background: var(--brand-gradient);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -88,3 +88,4 @@
   padding: 10px 12px;
   border-radius: 12px;
 }
+

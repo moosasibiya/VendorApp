@@ -77,6 +77,14 @@ function Carousel({ title }: { title: string }) {
       <div className={styles.carousel} ref={trackRef}>
         {artists.map((artist) => (
           <article key={artist.name} className={styles.carouselCard}>
+            <button
+              type="button"
+              className={styles.carouselFavBtn}
+              aria-label="Add to favourites"
+              title="Favourites"
+            >
+              <span className="material-symbols-outlined">favorite</span>
+            </button>
             <div
               className={styles.preview}
               style={{ backgroundImage: artist.preview }}

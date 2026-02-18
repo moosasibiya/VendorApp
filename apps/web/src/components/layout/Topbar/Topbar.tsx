@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import styles from "./Topbar.module.css";
 
@@ -44,6 +45,8 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
 
 export default function Topbar() {
   const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [compactSearch, setCompactSearch] = useState(false);
 
   // Match exact route or sub-routes (e.g. /creatives/123)
   const route =
@@ -52,6 +55,33 @@ export default function Topbar() {
     ) ?? "/dashboard";
 
   const { title, subtitle } = ROUTE_META[route];
+
+  useEffect(() => {
+    let frame = 0;
+
+    const updateCompact = () => {
+      const shouldCompact = window.scrollY > 16;
+      setCompactSearch((current) =>
+        current === shouldCompact ? current : shouldCompact,
+      );
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateCompact();
+      });
+    };
+
+    updateCompact();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -68,7 +98,7 @@ export default function Topbar() {
   };
 
   return (
-    <header className={styles.topbar}>
+    <header className={styles.topbar} data-compact={compactSearch}>
       <div className={styles.left}>
         <div className={styles.title}>{title}</div>
         <div className={styles.subtitle}>{subtitle}</div>
@@ -77,7 +107,14 @@ export default function Topbar() {
       <div className={styles.right}>
         <div className={styles.search}>
           <span className="material-symbols-outlined">search</span>
-          <input placeholder="Search creatives, bookings..." />
+          <span className={styles.searchSummary}>
+            {searchQuery.trim() || "Search"}
+          </span>
+          <input
+            placeholder="Search creatives, bookings..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </div>
 
         <button className={styles.iconBtn} type="button" onClick={toggleTheme}>

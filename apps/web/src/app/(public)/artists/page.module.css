@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   min-height: 100vh;
   color: var(--text);
   padding: 56px 20px 80px;
@@ -102,7 +102,6 @@
   position: sticky;
   top: 96px;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px);
 }
 
 .filterHeader {
@@ -170,7 +169,6 @@
   border-radius: 20px;
   padding: 20px;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px);
 }
 
 .adKicker {
@@ -186,7 +184,7 @@
   justify-content: center;
   padding: 10px 16px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  background: var(--brand-gradient);
   border: none;
   color: white;
   margin-top: 16px;
@@ -215,7 +213,6 @@
   gap: 16px;
   transition: transform 0.2s ease;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(12px);
 }
 
 .preview {
@@ -327,7 +324,6 @@
   display: grid;
   gap: 8px;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(12px);
 }
 
 .previewSmall {
@@ -393,3 +389,4 @@
     grid-template-columns: 1fr;
   }
 }
+

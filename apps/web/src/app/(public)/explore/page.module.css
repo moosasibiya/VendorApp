@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   min-height: 100vh;
   color: var(--text);
   padding: 56px 20px 80px;
@@ -53,12 +53,11 @@
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 24px;
-  background: linear-gradient(135deg, rgba(15, 111, 255, 0.08), rgba(18, 182, 196, 0.08));
+  background: var(--panel2);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 24px;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px);
 }
 
 .kicker {
@@ -75,7 +74,7 @@
   justify-content: center;
   padding: 12px 18px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  background: var(--brand-gradient);
   border: none;
   color: white;
   margin-top: 16px;
@@ -127,7 +126,7 @@
 
 .carouselCard {
   border: 1px solid var(--border);
-  background: linear-gradient(165deg, rgba(15, 111, 255, 0.08), rgba(18, 182, 196, 0.08) 48%, rgba(255, 255, 255, 0.9));
+  background: var(--panel2);
   border-radius: 18px;
   padding: 16px;
   min-height: 280px;
@@ -136,7 +135,7 @@
   gap: 10px;
   box-shadow: var(--shadow-card);
   transition: transform 0.35s ease, box-shadow 0.35s ease;
-  backdrop-filter: blur(12px);
+  position: relative;
 }
 
 .carouselCard:hover {
@@ -174,8 +173,32 @@
   color: white;
   padding: 6px 9px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.36);
+  background: #1f2937;
+  border: 1px solid var(--border-strong);
+}
+
+.carouselFavBtn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #1f2937;
+  color: #f8fbff;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.carouselFavBtn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.carouselFavBtn:hover {
+  background: #111827;
 }
 
 .cardTop {
@@ -217,9 +240,8 @@
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 24px;
-  background: linear-gradient(165deg, rgba(15, 111, 255, 0.08), rgba(18, 182, 196, 0.08) 54%, rgba(255, 255, 255, 0.92));
+  background: var(--panel2);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px);
 }
 
 .jobsHeader {
@@ -242,9 +264,8 @@
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, rgba(15, 111, 255, 0.08), rgba(18, 182, 196, 0.08));
+  background: var(--panel2);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(12px);
 }
 
 .jobCard h4 {
@@ -277,3 +298,4 @@
     grid-template-columns: 1fr;
   }
 }
+

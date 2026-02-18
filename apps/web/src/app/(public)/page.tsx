@@ -6,6 +6,22 @@ import styles from "./page.module.css";
 
 const locations = ["Cape Town", "Johannesburg", "Pretoria", "Durban", "All"];
 const services = ["Photography", "Videography", "Design", "Content", "Events"];
+const STAR_COLORS = [
+  "#2563eb",
+  "#3b82f6",
+  "#1d4ed8",
+  "#60a5fa",
+  "#93c5fd",
+  "#5f6ef0",
+];
+
+type Star = {
+  color: string;
+  pz: number;
+  x: number;
+  y: number;
+  z: number;
+};
 
 const buildArtists = () =>
   Array.from({ length: 12 }).map((_, i) => ({
@@ -61,6 +77,14 @@ function FeaturedRow({ title }: { title: string }) {
       <div className={styles.featureTrack} ref={trackRef}>
         {items.map((artist) => (
           <article key={artist.name} className={styles.featureCard}>
+            <button
+              type="button"
+              className={styles.featureFavBtn}
+              aria-label="Add to favourites"
+              title="Favourites"
+            >
+              <span className="material-symbols-outlined">favorite</span>
+            </button>
             <div
               className={styles.featurePreview}
               style={{
@@ -71,8 +95,10 @@ function FeaturedRow({ title }: { title: string }) {
             <div className={styles.featureBadge}>{artist.role}</div>
             <h3>{artist.name}</h3>
             <p>{artist.location}</p>
-            <div className={styles.featureMeta}>? {artist.rating}</div>
-            <button type="button">View profile</button>
+            <div className={styles.featureMeta}>{"\u2605"} {artist.rating}</div>
+            <button type="button" className={styles.profileBtn}>
+              View profile
+            </button>
           </article>
         ))}
       </div>
@@ -89,35 +115,178 @@ function FeaturedRow({ title }: { title: string }) {
 }
 
 export default function PublicHomePage() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [compact, setCompact] = useState(false);
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState(locations[0]);
+  const [service, setService] = useState(services[0]);
 
   useEffect(() => {
-    let lastY = window.scrollY;
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      const isScrollingDown = currentY > lastY;
-      lastY = currentY;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      if (!isScrollingDown) {
-        setCompact(false);
-        return;
-      }
+    let width = 0;
+    let height = 0;
+    let centerX = 0;
+    let centerY = 0;
+    let rafId = 0;
+    let stars: Star[] = [];
+    const motionReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
-      setCompact(currentY > 140);
+    const depthMax = () => Math.max(width, height);
+    const starCount = () =>
+      Math.max(90, Math.min(220, Math.round((width * height) / 11000)));
+
+    const resetStar = (star: Star, initial: boolean) => {
+      star.x = (Math.random() - 0.5) * width;
+      star.y = (Math.random() - 0.5) * height;
+      star.z = initial ? Math.random() * depthMax() : depthMax();
+      star.pz = star.z;
+      star.color = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
     };
-    handleScroll();
+
+    const rebuildStars = () => {
+      stars = Array.from({ length: starCount() }, () => {
+        const star: Star = {
+          color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
+          pz: 0,
+          x: 0,
+          y: 0,
+          z: 0,
+        };
+        resetStar(star, true);
+        return star;
+      });
+    };
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+      canvas.width = Math.max(1, Math.floor(width * dpr));
+      canvas.height = Math.max(1, Math.floor(height * dpr));
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      rebuildStars();
+    };
+
+    const drawStatic = () => {
+      ctx.clearRect(0, 0, width, height);
+      for (const star of stars) {
+        const sx = (star.x / star.z) * width + centerX;
+        const sy = (star.y / star.z) * height + centerY;
+        const radius = Math.max(0.4, (1 - star.z / depthMax()) * 1.8);
+        const alpha = Math.max(0.1, (1 - star.z / depthMax()) * 0.32);
+
+        if (!Number.isFinite(sx) || !Number.isFinite(sy)) continue;
+
+        ctx.beginPath();
+        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = star.color;
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    const drawAnimated = () => {
+      ctx.clearRect(0, 0, width, height);
+      const speed = 18;
+
+      for (const star of stars) {
+        star.pz = star.z;
+        star.z -= speed;
+        if (star.z <= 1) resetStar(star, false);
+
+        const sx = (star.x / star.z) * width + centerX;
+        const sy = (star.y / star.z) * height + centerY;
+        const px = (star.x / star.pz) * width + centerX;
+        const py = (star.y / star.pz) * height + centerY;
+        const size = Math.max(0.1, (1 - star.z / depthMax()) * 2.4);
+        const alpha = Math.max(0.04, (1 - star.z / depthMax()) * 0.48);
+
+        if (
+          !Number.isFinite(sx) ||
+          !Number.isFinite(sy) ||
+          !Number.isFinite(px) ||
+          !Number.isFinite(py)
+        ) {
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = star.color;
+        ctx.lineWidth = size;
+        ctx.globalAlpha = alpha;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      rafId = window.requestAnimationFrame(drawAnimated);
+    };
+
+    const handleResize = () => {
+      resize();
+      if (motionReduced) drawStatic();
+    };
+
+    resize();
+    if (motionReduced) {
+      drawStatic();
+    } else {
+      drawAnimated();
+    }
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  useEffect(() => {
+    let frame = 0;
+    const compactTrigger = 40;
+
+    const updateCompact = () => {
+      const shouldCompact = window.scrollY > compactTrigger;
+      setCompact((current) =>
+        current === shouldCompact ? current : shouldCompact,
+      );
+    };
+
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateCompact();
+      });
+    };
+
+    updateCompact();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", updateCompact);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateCompact);
+    };
   }, []);
 
   return (
     <main className={styles.page}>
+      <canvas ref={canvasRef} className={styles.warpCanvas} aria-hidden="true" />
       <section className={styles.hero}>
-        <div className={styles.badge}>
-          <span className="material-symbols-outlined">auto_awesome</span>
-          VendrMan ? Marketplace for creatives
-        </div>
-
         <h1 className={styles.title}>
           Find your perfect <span className={styles.grad}>Photographer</span>,
           <span className={styles.grad}> Videographer</span> & more.
@@ -127,31 +296,56 @@ export default function PublicHomePage() {
           Discover trusted creatives across South Africa with curated profiles,
           real reviews, and fast booking.
         </p>
-
-        <div className={styles.searchWrap} data-compact={compact}>
-          <div className={styles.searchItem}>
-            <span className="material-symbols-outlined">search</span>
-            <input placeholder="Search by artist or service" />
+        <div className={styles.searchSlot} data-compact={compact}>
+          <div className={styles.searchWrap} data-compact={compact}>
+            {compact ? (
+              <div className={styles.compactSummary}>
+                <span className="material-symbols-outlined">search</span>
+                <div className={styles.compactText}>
+                  <strong>{query.trim() || "Search creatives"}</strong>
+                  <span>
+                    {location} . {service}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.searchItem}>
+                  <span className="material-symbols-outlined">search</span>
+                  <input
+                    placeholder="Search by artist or service"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </div>
+                <div className={styles.searchItem}>
+                  <span className="material-symbols-outlined">location_on</span>
+                  <select
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                  >
+                    {locations.map((loc) => (
+                      <option key={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.searchItem}>
+                  <span className="material-symbols-outlined">category</span>
+                  <select
+                    value={service}
+                    onChange={(event) => setService(event.target.value)}
+                  >
+                    {services.map((serviceOption) => (
+                      <option key={serviceOption}>{serviceOption}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            <button className={styles.searchBtn} type="button">
+              <span className="material-symbols-outlined">search</span>
+            </button>
           </div>
-          <div className={styles.searchItem}>
-            <span className="material-symbols-outlined">location_on</span>
-            <select>
-              {locations.map((loc) => (
-                <option key={loc}>{loc}</option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.searchItem}>
-            <span className="material-symbols-outlined">category</span>
-            <select>
-              {services.map((service) => (
-                <option key={service}>{service}</option>
-              ))}
-            </select>
-          </div>
-          <button className={styles.searchBtn} type="button">
-            <span className="material-symbols-outlined">search</span>
-          </button>
         </div>
 
         <div className={styles.actions} data-compact={compact}>

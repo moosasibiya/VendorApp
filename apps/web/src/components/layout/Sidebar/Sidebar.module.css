@@ -1,12 +1,10 @@
-.sidebar {
+﻿.sidebar {
   position: sticky;
   top: 0;
   height: 100vh;
   padding: 18px 14px 14px;
   border-right: 1px solid var(--border);
   background: var(--panel2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .brand {
@@ -20,7 +18,8 @@
 }
 
 .brand span {
-  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  color: transparent;
+  background: var(--logo-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -132,3 +131,4 @@
     border-bottom: 1px solid var(--border);
   }
 }
+

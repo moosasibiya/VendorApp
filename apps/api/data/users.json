@@ -10,6 +10,17 @@
       "createdAt": "2026-02-11T07:54:28.338Z",
       "passwordSalt": "167c0a1d98f8984183f4833fc07525f0",
       "passwordHash": "f312bd2b997ccce6a81582d2f5236cc192af2f5653c00a7ea14c2a53417bc0922f6efbc69a3aff343a0d7da1ee06a69d2ccb49c5c9144563638496df2da09e6e"
+    },
+    {
+      "id": "148c0eaef0df06fa92068658",
+      "fullName": "Tester",
+      "username": "Admin",
+      "email": "tester@email.com",
+      "emailNormalized": "tester@email.com",
+      "accountType": "CLIENT",
+      "createdAt": "2026-02-18T08:25:18.055Z",
+      "passwordSalt": "dbf2476aa45ba62ada964f10cc6069eb",
+      "passwordHash": "5c3e81fa9293cd8343b21cba198d2757834a8d4158ee1df2613fa295f595b81d517bada6c8aaa6c5dd83dc3d26b0aa87b4c417edb3f30477f892301a38dab6eb"
     }
   ]
 }

@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   min-height: 100vh;
   color: var(--text);
   padding: 32px;
@@ -143,7 +143,7 @@
 }
 
 .primaryBtn {
-  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  background: var(--brand-gradient);
   border: none;
 }
 
@@ -166,3 +166,4 @@
     grid-template-columns: 1fr;
   }
 }
+

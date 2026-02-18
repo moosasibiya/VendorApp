@@ -20,7 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={outfit.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={outfit.variable}
+      data-theme="light"
+      suppressHydrationWarning
+    >
       <head>
         <link
           rel="stylesheet"
@@ -31,9 +36,8 @@ export default function RootLayout({
             __html: `
               (function () {
                 try {
-                  var stored = localStorage.getItem("vendrman_theme");
-                  var theme = stored || "light";
-                  document.documentElement.setAttribute("data-theme", theme);
+                  document.documentElement.setAttribute("data-theme", "light");
+                  localStorage.setItem("vendrman_theme", "light");
                 } catch (e) {}
               })();
             `,
