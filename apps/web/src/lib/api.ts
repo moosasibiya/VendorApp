@@ -1,4 +1,5 @@
 import type {
+  AccountType,
   Artist,
   AuthResponse,
   Booking,
@@ -27,23 +28,61 @@ export class ApiError extends Error {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
-const AUTH_TOKEN_KEY = "vendrman_token";
+const CSRF_COOKIE_NAME = "vendrman_csrf";
+const CSRF_HEADER_NAME = "X-CSRF-Token";
 
-function getAuthTokenFromBrowser(): string | null {
+function isSafeHttpMethod(method: string): boolean {
+  const upper = method.toUpperCase();
+  return upper === "GET" || upper === "HEAD" || upper === "OPTIONS";
+}
+
+function getCookieValue(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const prefix = `${name}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((chunk) => chunk.trim())
+    .find((chunk) => chunk.startsWith(prefix));
+  if (!cookie) return null;
+  return decodeURIComponent(cookie.slice(prefix.length));
+}
+
+async function ensureCsrfToken(): Promise<string | null> {
+  const existing = getCookieValue(CSRF_COOKIE_NAME);
+  if (existing) return existing;
+
   if (typeof window === "undefined") return null;
-  return (
-    localStorage.getItem(AUTH_TOKEN_KEY) ?? sessionStorage.getItem(AUTH_TOKEN_KEY)
-  );
+  const response = await fetch(`${API_BASE_URL}/auth/csrf`, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, "Unable to initialize CSRF token");
+  }
+
+  try {
+    const data = (await response.json()) as { csrfToken?: string };
+    if (typeof data.csrfToken === "string" && data.csrfToken) {
+      return data.csrfToken;
+    }
+  } catch {
+    // Fall back to cookie read below.
+  }
+
+  return getCookieValue(CSRF_COOKIE_NAME);
 }
 
 async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getAuthTokenFromBrowser();
+  const method = (init?.method ?? "GET").toUpperCase();
+  const csrfToken = isSafeHttpMethod(method) ? null : await ensureCsrfToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     cache: "no-store",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -105,4 +144,32 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
 
 export async function fetchMe(): Promise<User> {
   return getJson<User>("/auth/me");
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await getJson<{ success: boolean }>("/auth/logout", {
+      method: "POST",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      return;
+    }
+    throw error;
+  }
+}
+
+export function buildGoogleAuthStartUrl(input: {
+  mode: "login" | "signup";
+  nextPath?: string;
+  accountType?: AccountType;
+}): string {
+  const params = new URLSearchParams({
+    mode: input.mode,
+    next: input.nextPath ?? (input.mode === "signup" ? "/onboarding" : "/dashboard"),
+  });
+  if (input.accountType) {
+    params.set("accountType", input.accountType);
+  }
+  return `${API_BASE_URL}/auth/google/start?${params.toString()}`;
 }

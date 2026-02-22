@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { logout as logoutRequest } from "@/lib/api";
 import styles from "./Topbar.module.css";
 
 const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
@@ -91,10 +92,12 @@ export default function Topbar() {
     localStorage.setItem("vendrman_theme", next);
   };
 
-  const logout = () => {
-    localStorage.removeItem("vendrman_token");
-    sessionStorage.removeItem("vendrman_token");
-    window.location.href = "/";
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -125,7 +128,7 @@ export default function Topbar() {
           <span className="material-symbols-outlined">notifications</span>
         </button>
 
-        <button className={styles.logoutBtn} type="button" onClick={logout}>
+        <button className={styles.logoutBtn} type="button" onClick={() => void logout()}>
           <span className="material-symbols-outlined">logout</span>
           Logout
         </button>

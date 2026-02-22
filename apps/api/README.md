@@ -1,98 +1,108 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# VendorApp API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API for VendorApp, now backed by PostgreSQL via Prisma.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Supabase/PostgreSQL setup
 
-## Description
+1. Copy `apps/api/.env.example` to `apps/api/.env`.
+2. Set:
+   - `DATABASE_URL`: pooled Supabase connection string (port `6543`).
+   - `DIRECT_URL`: direct Supabase connection string (port `5432`) for migrations.
+   - `AUTH_TOKEN_SECRET`: at least 32 random characters.
+   - `CSRF_COOKIE_NAME`: cookie used for CSRF double-submit token (default `vendrman_csrf`).
+   - `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`, `AUTH_MFA_ISSUER`.
+   - `AUTH_RESET_TOKEN_PEPPER` and `AUTH_BACKUP_CODE_PEPPER`.
+   - Optional distributed limiter: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+3. Keep `AUTH_COOKIE_SECURE=true` in production.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## CSRF protection
 
-## Project setup
+- The API enforces CSRF validation on non-safe methods (`POST`, `PUT`, `PATCH`, `DELETE`) when an auth cookie is present.
+- Clients must send `X-CSRF-Token` matching the CSRF cookie value.
+- `GET /api/auth/csrf` issues a CSRF cookie and token. The web client already does this automatically before mutating calls.
 
-```bash
-$ pnpm install
-```
+## Auth security endpoints
 
-## Compile and run the project
+- `POST /api/auth/password/forgot`
+- `POST /api/auth/password/reset`
+- `POST /api/auth/mfa/setup`
+- `POST /api/auth/mfa/enable`
+- `POST /api/auth/mfa/disable`
+- `POST /api/auth/mfa/backup/regenerate`
+- `GET /api/auth/google/start`
+- `GET /api/auth/google/callback`
 
-```bash
-# development
-$ pnpm run start
+## Google OAuth setup
 
-# watch mode
-$ pnpm run start:dev
+1. Create a Google OAuth 2.0 Web application in Google Cloud Console.
+2. Add an authorized redirect URI matching `GOOGLE_OAUTH_REDIRECT_URI`.
+   - Local example: `http://localhost:4000/api/auth/google/callback`
+3. Set these environment variables:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `GOOGLE_OAUTH_REDIRECT_URI`
+   - Optional: `GOOGLE_OAUTH_STATE_SECRET`
 
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Prisma commands
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm --filter @vendorapp/api run prisma:generate
+pnpm --filter @vendorapp/api run prisma:migrate:deploy
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+For local development:
 
-## Resources
+```bash
+pnpm --filter @vendorapp/api run prisma:migrate:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Migrate legacy users.json data
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+After DB schema migration is applied:
 
-## Support
+```bash
+pnpm --filter @vendorapp/api run db:import:users
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+The importer reads `apps/api/data/users.json` and upserts users into PostgreSQL.
 
-## Stay in touch
+## Seed artists and bookings
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+pnpm --filter @vendorapp/api run db:seed:core
+```
 
-## License
+## E2E tests
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+pnpm --filter @vendorapp/api run test:e2e
+```
+
+CI runs API e2e tests with PostgreSQL using `.github/workflows/api-e2e.yml`.
+
+## Production secrets manager wiring
+
+Use your deployment secrets manager (or GitHub Environment secrets) to inject these values at runtime:
+
+- `AUTH_TOKEN_SECRET`
+- `AUTH_RESET_TOKEN_PEPPER`
+- `AUTH_BACKUP_CODE_PEPPER`
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+In production mode, the API now enforces secure configuration:
+
+- `AUTH_RESET_TOKEN_PEPPER` and `AUTH_BACKUP_CODE_PEPPER` must be set.
+- Distributed rate limiting is required by default in production (`UPSTASH_REDIS_*`).
+
+To validate deployment-level secret wiring, run:
+
+- `.github/workflows/api-e2e-production-env.yml`
+
+This workflow uses the `production` GitHub Environment and executes the same generate/migrate/e2e flow with secret-backed auth and Redis configuration.
+
+## Run API
+
+```bash
+pnpm --filter @vendorapp/api run dev
+```

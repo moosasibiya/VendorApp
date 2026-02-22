@@ -1,12 +1,6 @@
-import { IsEmail, IsOptional, IsString, Matches } from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
-export class LoginDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  password!: string;
-
+export class MfaVerifyDto {
   @IsOptional()
   @IsString()
   @Matches(/^\d{6}$/, { message: 'mfaCode must be a 6-digit code' })

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AccountType } from "@vendorapp/shared";
-import { ApiError, signup } from "@/lib/api";
+import { ApiError, buildGoogleAuthStartUrl, signup } from "@/lib/api";
 import styles from "./page.module.css";
 
-const AUTH_TOKEN_KEY = "vendrman_token";
+const STRONG_PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,6 +22,31 @@ export default function SignupPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const googleAuthUrl = useMemo(
+    () =>
+      buildGoogleAuthStartUrl({
+        mode: "signup",
+        nextPath: "/onboarding",
+        accountType,
+      }),
+    [accountType],
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (!oauthError) return;
+    if (oauthError === "google_auth") {
+      setError("Google sign-up failed. Please try again.");
+      return;
+    }
+    if (oauthError === "missing_code_or_state") {
+      setError("Google sign-up was cancelled or interrupted.");
+      return;
+    }
+    setError("Unable to sign up with Google.");
+  }, []);
 
   return (
     <div className={styles.stack}>
@@ -42,8 +68,10 @@ export default function SignupPage() {
             setError("Full name, username, and email are required.");
             return;
           }
-          if (password.length < 8) {
-            setError("Password must be at least 8 characters.");
+          if (!STRONG_PASSWORD_REGEX.test(password)) {
+            setError(
+              "Password must be at least 12 characters and include upper, lower, number, and symbol.",
+            );
             return;
           }
           if (password !== confirmPassword) {
@@ -57,14 +85,13 @@ export default function SignupPage() {
 
           setIsSubmitting(true);
           try {
-            const response = await signup({
+            await signup({
               fullName: fullName.trim(),
               username: username.trim().replace(/^@+/, ""),
               email: email.trim(),
               password,
               accountType,
             });
-            localStorage.setItem(AUTH_TOKEN_KEY, response.token);
             router.push("/onboarding");
           } catch (err) {
             if (err instanceof ApiError) {
@@ -160,6 +187,23 @@ export default function SignupPage() {
           <span className="material-symbols-outlined">person_add</span>
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
+
+        <div className={styles.divider}>
+          <span>or continue with</span>
+        </div>
+
+        <div className={styles.socials}>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.assign(googleAuthUrl);
+            }}
+            disabled={isSubmitting}
+          >
+            <span className="material-symbols-outlined">mail</span>
+            Google
+          </button>
+        </div>
 
         <div className={styles.footer}>
           <span>Already have an account?</span>

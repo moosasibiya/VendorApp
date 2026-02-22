@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { fetchMe, logout as logoutRequest } from "@/lib/api";
 import styles from "./PublicHeader.module.css";
 
 export default function PublicHeader() {
@@ -10,11 +11,18 @@ export default function PublicHeader() {
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setAuthed(
-      !!localStorage.getItem("vendrman_token") ||
-        !!sessionStorage.getItem("vendrman_token"),
-    );
+    let cancelled = false;
+    void (async () => {
+      try {
+        await fetchMe();
+        if (!cancelled) setAuthed(true);
+      } catch {
+        if (!cancelled) setAuthed(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -73,6 +81,16 @@ export default function PublicHeader() {
     localStorage.setItem("vendrman_theme", next);
   };
 
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      setAuthed(false);
+      setOpen(false);
+      window.location.href = "/";
+    }
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -86,10 +104,16 @@ export default function PublicHeader() {
           <button className={styles.themeBtn} onClick={toggleTheme} type="button">
             <span className="material-symbols-outlined">contrast</span>
           </button>
-          <Link href="/login">Login</Link>
-          <Link href="/signup" className={styles.cta}>
-            Sign Up
-          </Link>
+          {authed ? <Link href="/dashboard">Dashboard</Link> : <Link href="/login">Login</Link>}
+          {authed ? (
+            <button className={styles.themeBtn} onClick={() => void logout()} type="button">
+              Logout
+            </button>
+          ) : (
+            <Link href="/signup" className={styles.cta}>
+              Sign Up
+            </Link>
+          )}
         </nav>
 
         <button
@@ -122,8 +146,14 @@ export default function PublicHeader() {
               {!authed ? (
                 <Link href="/login?next=/messages">Messages (sign in)</Link>
               ) : null}
-              <Link href="/login">Sign in</Link>
-              <Link href="/signup">Create account</Link>
+              {authed ? (
+                <button type="button" onClick={() => void logout()}>
+                  Sign out
+                </button>
+              ) : (
+                <Link href="/login">Sign in</Link>
+              )}
+              {!authed ? <Link href="/signup">Create account</Link> : null}
             </div>
           </div>
         </div>

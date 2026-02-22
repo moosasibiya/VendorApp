@@ -1,23 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { ApiError, login } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { ApiError, buildGoogleAuthStartUrl, login } from "@/lib/api";
 import styles from "./page.module.css";
-
-const AUTH_TOKEN_KEY = "vendrman_token";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const [nextPath, setNextPath] = useState("/dashboard");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const googleAuthUrl = useMemo(
+    () =>
+      buildGoogleAuthStartUrl({
+        mode: "login",
+        nextPath,
+      }),
+    [nextPath],
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      setNextPath(next);
+    }
+
+    const oauthError = params.get("error");
+    if (!oauthError) return;
+    if (oauthError === "google_auth") {
+      setError("Google sign-in failed. Please try again.");
+      return;
+    }
+    if (oauthError === "missing_code_or_state") {
+      setError("Google sign-in was cancelled or interrupted.");
+      return;
+    }
+    setError("Unable to sign in with Google.");
+  }, []);
 
   return (
     <div className={styles.stack}>
@@ -42,17 +67,11 @@ export default function LoginPage() {
 
           setIsSubmitting(true);
           try {
-            const response = await login({
+            await login({
               email: email.trim(),
               password,
             });
-            if (rememberMe) {
-              localStorage.setItem(AUTH_TOKEN_KEY, response.token);
-            } else {
-              sessionStorage.setItem(AUTH_TOKEN_KEY, response.token);
-              localStorage.removeItem(AUTH_TOKEN_KEY);
-            }
-            router.push(next);
+            router.push(nextPath);
           } catch (err) {
             if (err instanceof ApiError) {
               setError(err.message);
@@ -89,14 +108,7 @@ export default function LoginPage() {
         </div>
 
         <div className={styles.row}>
-          <label className={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            Remember me
-          </label>
+          <div />
           <Link className={styles.link} href="#">
             Forgot password?
           </Link>
@@ -112,7 +124,13 @@ export default function LoginPage() {
         </div>
 
         <div className={styles.socials}>
-          <button type="button" disabled>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.assign(googleAuthUrl);
+            }}
+            disabled={isSubmitting}
+          >
             <span className="material-symbols-outlined">mail</span>
             Google
           </button>

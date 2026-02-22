@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout as logoutRequest } from "@/lib/api";
 import styles from "./Sidebar.module.css";
 
 const NavItem = ({
@@ -28,6 +29,14 @@ const NavItem = ({
 };
 
 export default function Sidebar() {
+  const handleLogout = async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      window.location.href = "/login";
+    }
+  };
+
   return (
     <aside className={styles.sidebar}>
       <Link href="/" className={styles.brand}>
@@ -58,11 +67,7 @@ export default function Sidebar() {
         <button
           className={styles.footerBtn}
           type="button"
-          onClick={() => {
-            localStorage.removeItem("vendrman_token");
-            sessionStorage.removeItem("vendrman_token");
-            window.location.href = "/login";
-          }}
+          onClick={() => void handleLogout()}
         >
           <span className="material-symbols-outlined">logout</span>
           Logout

@@ -1,0 +1,62 @@
+name: API E2E
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  api-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vendorapp
+          POSTGRES_PASSWORD: vendorapp_password
+          POSTGRES_DB: vendorapp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vendorapp -d vendorapp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public
+      DIRECT_URL: postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public
+      AUTH_TOKEN_SECRET: 4f3c56d5379ef4b3800a4c7187ce1c6b6f84e7fb93c8a0d353cc35f198530815
+      AUTH_COOKIE_SECURE: "false"
+      AUTH_COOKIE_SAME_SITE: lax
+      AUTH_EXPOSE_RESET_TOKEN: "true"
+      AUTH_MFA_ISSUER: VendorApp
+      CSRF_COOKIE_NAME: vendrman_csrf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @vendorapp/api run prisma:generate
+
+      - name: Apply database migrations
+        run: pnpm --filter @vendorapp/api run prisma:migrate:deploy
+
+      - name: Run API e2e tests
+        run: pnpm --filter @vendorapp/api run test:e2e

@@ -10,12 +10,12 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Get()
-  findAll(): Booking[] {
+  async findAll(): Promise<Booking[]> {
     return this.bookingsService.findAll();
   }
 
   @Post()
-  create(@Body() input: CreateBookingDto): Booking {
+  async create(@Body() input: CreateBookingDto): Promise<Booking> {
     return this.bookingsService.create(input);
   }
 }

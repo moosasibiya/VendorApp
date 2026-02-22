@@ -1,28 +1,40 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppShell from "../../components/layout/AppShell/AppShell";
-
-const AUTH_TOKEN_KEY = "vendrman_token";
+import { fetchMe } from "@/lib/api";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-
-  const authed =
-    typeof window !== "undefined" &&
-    (!!localStorage.getItem(AUTH_TOKEN_KEY) ||
-      !!sessionStorage.getItem(AUTH_TOKEN_KEY));
+  const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!authed) {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        await fetchMe();
+        if (!cancelled) setAuthed(true);
+      } catch {
+        if (!cancelled) setAuthed(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (authed === false) {
       const next = encodeURIComponent(pathname || "/dashboard");
       router.replace(`/login?next=${next}`);
     }
   }, [authed, router, pathname]);
 
-  if (!authed) return null;
+  if (authed !== true) return null;
 
   return <AppShell>{children}</AppShell>;
 }

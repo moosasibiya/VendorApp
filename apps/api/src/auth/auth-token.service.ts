@@ -4,8 +4,11 @@ import type { AuthTokenPayload } from './auth.types';
 
 @Injectable()
 export class AuthTokenService {
-  sign(payload: Omit<AuthTokenPayload, 'iat' | 'exp'>): string {
-    const expiresInSeconds = this.getExpiresInSeconds();
+  sign(
+    payload: Omit<AuthTokenPayload, 'iat' | 'exp'>,
+    options?: { expiresInSeconds?: number },
+  ): string {
+    const expiresInSeconds = options?.expiresInSeconds ?? this.getExpiresInSeconds();
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + expiresInSeconds;
     const tokenPayload: AuthTokenPayload = { ...payload, iat, exp };
@@ -37,7 +40,13 @@ export class AuthTokenService {
       throw new UnauthorizedException('Invalid token payload');
     }
 
-    if (!payload.sub || !payload.email || !payload.exp) {
+    if (
+      !payload.sub ||
+      !payload.email ||
+      !payload.exp ||
+      !Number.isInteger(payload.ver) ||
+      payload.ver < 0
+    ) {
       throw new UnauthorizedException('Invalid token payload');
     }
     if (payload.exp <= Math.floor(Date.now() / 1000)) {
@@ -52,14 +61,18 @@ export class AuthTokenService {
   }
 
   private getSecret(): string {
-    return process.env.AUTH_TOKEN_SECRET ?? 'dev-only-change-me';
+    const secret = process.env.AUTH_TOKEN_SECRET?.trim();
+    if (!secret || secret.length < 32) {
+      throw new Error('AUTH_TOKEN_SECRET must be set and at least 32 characters');
+    }
+    return secret;
   }
 
   private getExpiresInSeconds(): number {
     const raw = process.env.AUTH_TOKEN_EXPIRES_IN_SECONDS;
-    if (!raw) return 60 * 60 * 24 * 7;
+    if (!raw) return 60 * 60;
     const value = Number(raw);
-    if (!Number.isFinite(value) || value <= 0) return 60 * 60 * 24 * 7;
+    if (!Number.isFinite(value) || value <= 0) return 60 * 60;
     return Math.floor(value);
   }
 

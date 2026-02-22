@@ -7,12 +7,12 @@ export class ArtistsController {
   constructor(private readonly artistsService: ArtistsService) {}
 
   @Get()
-  findAll(): Artist[] {
+  async findAll(): Promise<Artist[]> {
     return this.artistsService.findAll();
   }
 
   @Get(':slug')
-  findBySlug(@Param('slug') slug: string): Artist {
+  async findBySlug(@Param('slug') slug: string): Promise<Artist> {
     return this.artistsService.findBySlug(slug);
   }
 }

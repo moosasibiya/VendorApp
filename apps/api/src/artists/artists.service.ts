@@ -1,25 +1,37 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Artist } from '@vendorapp/shared';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ArtistsService {
-  private readonly artists: Artist[] = Array.from({ length: 12 }).map((_, i) => ({
-    name: `Artist ${i + 1}`,
-    role: i % 2 === 0 ? 'Photographer' : 'Videographer',
-    location: ['Cape Town', 'Johannesburg', 'Pretoria', 'Durban', 'All'][i % 5],
-    rating: (4.7 + (i % 3) * 0.1).toFixed(1),
-    slug: `artist-${i + 1}`,
-  }));
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Artist[] {
-    return this.artists;
+  async findAll(): Promise<Artist[]> {
+    const artists = await this.prisma.artist.findMany({
+      orderBy: { slug: 'asc' },
+    });
+    return artists.map((artist) => ({
+      name: artist.name,
+      role: artist.role,
+      location: artist.location,
+      rating: artist.rating,
+      slug: artist.slug,
+    }));
   }
 
-  findBySlug(slug: string): Artist {
-    const artist = this.artists.find((item) => item.slug === slug);
+  async findBySlug(slug: string): Promise<Artist> {
+    const artist = await this.prisma.artist.findUnique({
+      where: { slug },
+    });
     if (!artist) {
       throw new NotFoundException(`Artist not found: ${slug}`);
     }
-    return artist;
+    return {
+      name: artist.name,
+      role: artist.role,
+      location: artist.location,
+      rating: artist.rating,
+      slug: artist.slug,
+    };
   }
 }

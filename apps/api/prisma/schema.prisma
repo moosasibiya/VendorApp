@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AccountType {
+  CREATIVE
+  CLIENT
+  AGENCY
+}
+
+enum BookingStatus {
+  Pending
+  Confirmed
+  Completed
+  Cancelled
+}
+
+model User {
+  id                  String      @id @db.VarChar(64)
+  fullName            String
+  username            String      @db.VarChar(30)
+  usernameNormalized  String      @unique @db.VarChar(30)
+  email               String
+  emailNormalized     String      @unique
+  accountType         AccountType
+  createdAt           DateTime    @default(now())
+  passwordSalt        String
+  passwordHash        String
+  passwordResetHash   String?
+  passwordResetExpiry DateTime?
+  mfaEnabled          Boolean     @default(false)
+  mfaSecret           String?
+  mfaTempSecret       String?
+  mfaBackupCodeHashes Json?
+  failedLoginAttempts Int         @default(0)
+  lockoutUntil        DateTime?
+  tokenVersion        Int         @default(0)
+  auditEvents         AuthAuditEvent[]
+
+  @@index([emailNormalized])
+  @@index([usernameNormalized])
+  @@map("users")
+}
+
+model Artist {
+  slug      String   @id @db.VarChar(100)
+  name      String
+  role      String
+  location  String
+  rating    String   @db.VarChar(8)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("artists")
+}
+
+model Booking {
+  id             String        @id @db.VarChar(64)
+  artistName     String
+  artistInitials String        @db.VarChar(3)
+  status         BookingStatus @default(Pending)
+  title          String
+  location       String
+  date           String
+  amount         String
+  applications   Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+model AuthAuditEvent {
+  id              String   @id @db.VarChar(64)
+  userId          String?  @db.VarChar(64)
+  emailNormalized String?
+  eventType       String   @db.VarChar(64)
+  success         Boolean
+  ipAddress       String?  @db.VarChar(64)
+  requestId       String?  @db.VarChar(128)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("auth_audit_events")
+}

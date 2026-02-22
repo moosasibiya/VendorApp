@@ -4,10 +4,11 @@ import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
 import { UsersStore } from './users.store';
+import { AuthAuditService } from './auth-audit.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, AuthTokenService, UsersStore, AuthGuard],
-  exports: [AuthService, AuthTokenService, AuthGuard],
+  providers: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],
+  exports: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],
 })
 export class AuthModule {}
