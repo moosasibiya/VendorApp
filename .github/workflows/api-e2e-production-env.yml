@@ -1,0 +1,97 @@
+name: API E2E (Production Environment Secrets)
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  api-e2e-production-env:
+    runs-on: ubuntu-latest
+    environment: production
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vendorapp
+          POSTGRES_PASSWORD: vendorapp_password
+          POSTGRES_DB: vendorapp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vendorapp -d vendorapp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public
+      DIRECT_URL: postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public
+      AUTH_TOKEN_SECRET: ${{ secrets.AUTH_TOKEN_SECRET }}
+      AUTH_RESET_TOKEN_PEPPER: ${{ secrets.AUTH_RESET_TOKEN_PEPPER }}
+      AUTH_BACKUP_CODE_PEPPER: ${{ secrets.AUTH_BACKUP_CODE_PEPPER }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      REQUIRE_DISTRIBUTED_RATE_LIMIT: "true"
+      RATE_LIMIT_KEY_PREFIX: vendorapp:ci:${{ github.run_id }}
+      AUTH_COOKIE_SECURE: "false"
+      AUTH_COOKIE_SAME_SITE: lax
+      AUTH_EXPOSE_RESET_TOKEN: "true"
+      AUTH_MFA_ISSUER: VendorApp
+      CSRF_COOKIE_NAME: vendrman_csrf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required production secrets
+        run: |
+          set -euo pipefail
+          required_vars=(
+            AUTH_TOKEN_SECRET
+            AUTH_RESET_TOKEN_PEPPER
+            AUTH_BACKUP_CODE_PEPPER
+            UPSTASH_REDIS_REST_URL
+            UPSTASH_REDIS_REST_TOKEN
+          )
+          for key in "${required_vars[@]}"; do
+            if [ -z "${!key:-}" ]; then
+              echo "::error::Missing required environment secret: ${key}"
+              exit 1
+            fi
+          done
+          if [ "${#AUTH_TOKEN_SECRET}" -lt 32 ]; then
+            echo "::error::AUTH_TOKEN_SECRET must be at least 32 characters"
+            exit 1
+          fi
+          if [ "${#AUTH_RESET_TOKEN_PEPPER}" -lt 16 ]; then
+            echo "::error::AUTH_RESET_TOKEN_PEPPER should be at least 16 characters"
+            exit 1
+          fi
+          if [ "${#AUTH_BACKUP_CODE_PEPPER}" -lt 16 ]; then
+            echo "::error::AUTH_BACKUP_CODE_PEPPER should be at least 16 characters"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @vendorapp/api run prisma:generate
+
+      - name: Apply database migrations
+        run: pnpm --filter @vendorapp/api run prisma:migrate:deploy
+
+      - name: Run API e2e tests
+        run: pnpm --filter @vendorapp/api run test:e2e
