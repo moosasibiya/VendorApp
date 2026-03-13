@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import type { User as PrismaUser } from '@prisma/client';
 import type { StoredUser } from './auth.types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -109,10 +109,12 @@ export class UsersStore {
     return {
       id: user.id,
       fullName: user.fullName,
+      name: user.fullName,
       username: user.username,
       usernameNormalized: user.usernameNormalized,
       email: user.email,
       emailNormalized: user.emailNormalized,
+      role: this.accountTypeToUserRole(user.accountType),
       accountType: user.accountType,
       createdAt: new Date(user.createdAt),
       passwordSalt: user.passwordSalt,
@@ -132,6 +134,18 @@ export class UsersStore {
       lockoutUntil: user.lockoutUntil ? new Date(user.lockoutUntil) : null,
       tokenVersion: user.tokenVersion ?? 0,
     };
+  }
+
+  private accountTypeToUserRole(accountType: StoredUser['accountType']): UserRole {
+    switch (accountType) {
+      case 'CREATIVE':
+        return UserRole.ARTIST;
+      case 'AGENCY':
+        return UserRole.AGENCY;
+      case 'CLIENT':
+      default:
+        return UserRole.CLIENT;
+    }
   }
 
   private toStoredUser(user: PrismaUser): StoredUser {

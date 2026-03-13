@@ -1,6 +1,10 @@
-import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class CreateBookingDto {
+  @IsOptional()
+  @IsString()
+  artistSlug?: string;
+
   @IsString()
   @IsNotEmpty()
   artistName!: string;
@@ -26,4 +30,8 @@ export class CreateBookingDto {
   @IsString()
   @IsNotEmpty()
   amount!: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

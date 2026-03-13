@@ -14,68 +14,287 @@ enum AccountType {
   AGENCY
 }
 
+enum UserRole {
+  CLIENT
+  ARTIST
+  AGENCY
+  ADMIN
+}
+
 enum BookingStatus {
-  Pending
-  Confirmed
-  Completed
-  Cancelled
+  PENDING     @map("Pending")
+  CONFIRMED   @map("Confirmed")
+  IN_PROGRESS @map("InProgress")
+  COMPLETED   @map("Completed")
+  CANCELLED   @map("Cancelled")
+  DISPUTED    @map("Disputed")
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  MESSAGE_RECEIVED
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
 }
 
 model User {
-  id                  String      @id @db.VarChar(64)
+  id                  String               @id @db.VarChar(64)
   fullName            String
-  username            String      @db.VarChar(30)
-  usernameNormalized  String      @unique @db.VarChar(30)
-  email               String
-  emailNormalized     String      @unique
+  name                String
+  username            String               @db.VarChar(30)
+  usernameNormalized  String               @unique @db.VarChar(30)
+  email               String               @unique
+  emailNormalized     String               @unique
+  googleId            String?              @unique @db.VarChar(191)
+  role                UserRole             @default(CLIENT)
   accountType         AccountType
-  createdAt           DateTime    @default(now())
+  avatarUrl           String?
+  isEmailVerified     Boolean              @default(false)
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   passwordSalt        String
   passwordHash        String
   passwordResetHash   String?
   passwordResetExpiry DateTime?
-  mfaEnabled          Boolean     @default(false)
+  mfaEnabled          Boolean              @default(false)
   mfaSecret           String?
   mfaTempSecret       String?
   mfaBackupCodeHashes Json?
-  failedLoginAttempts Int         @default(0)
+  failedLoginAttempts Int                  @default(0)
   lockoutUntil        DateTime?
-  tokenVersion        Int         @default(0)
+  tokenVersion        Int                  @default(0)
   auditEvents         AuthAuditEvent[]
+  artistProfile       Artist?              @relation("ArtistUserProfile")
+  ownedAgency         Agency?              @relation("AgencyOwner")
+  clientBookings      Booking[]            @relation("ClientBookings")
+  reviews             Review[]             @relation("ReviewerReviews")
+  sentMessages        Message[]            @relation("SenderMessages")
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
+  mediaUploads        MediaUpload[]
 
   @@index([emailNormalized])
   @@index([usernameNormalized])
+  @@index([role])
   @@map("users")
 }
 
 model Artist {
-  slug      String   @id @db.VarChar(100)
-  name      String
-  role      String
-  location  String
-  rating    String   @db.VarChar(8)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String    @id @default(cuid()) @db.VarChar(64)
+  userId              String?   @unique @db.VarChar(64)
+  slug                String    @unique @db.VarChar(100)
+  displayName         String
+  name                String
+  bio                 String    @default("")
+  categoryId          String?   @db.VarChar(64)
+  role                String
+  location            String
+  hourlyRate          Decimal   @default(0) @db.Decimal(10, 2)
+  isAvailable         Boolean   @default(true)
+  portfolioImages     String[]  @default([])
+  portfolioLinks      String[]  @default([])
+  tags                String[]  @default([])
+  services            String[]  @default([])
+  specialties         String[]  @default([])
+  pricingSummary      String?
+  availabilitySummary String?
+  averageRating       Float     @default(0)
+  totalReviews        Int       @default(0)
+  rating              String    @default("0.0") @db.VarChar(8)
+  isVerified          Boolean   @default(false)
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User?     @relation("ArtistUserProfile", fields: [userId], references: [id], onDelete: SetNull)
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  bookings            Booking[] @relation("ArtistBookings")
+  reviews             Review[]  @relation("ArtistReviews")
 
+  @@index([categoryId])
+  @@index([isAvailable])
   @@map("artists")
 }
 
-model Booking {
-  id             String        @id @db.VarChar(64)
-  artistName     String
-  artistInitials String        @db.VarChar(3)
-  status         BookingStatus @default(Pending)
-  title          String
-  location       String
-  date           String
-  amount         String
-  applications   Int           @default(0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+model Agency {
+  id         String    @id @default(cuid()) @db.VarChar(64)
+  ownerId    String    @unique @db.VarChar(64)
+  name       String
+  slug       String    @unique
+  description String
+  logoUrl    String?
+  website    String?
+  isVerified Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  owner      User      @relation("AgencyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
 
+  @@map("agencies")
+}
+
+model Category {
+  id        String   @id @default(cuid()) @db.VarChar(64)
+  name      String   @unique
+  slug      String   @unique
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  artists   Artist[]
+
+  @@map("categories")
+}
+
+model Booking {
+  id                    String         @id @db.VarChar(64)
+  clientId              String         @db.VarChar(64)
+  artistId              String         @db.VarChar(64)
+  agencyId              String?        @db.VarChar(64)
+  title                 String
+  description           String         @default("")
+  eventDate             DateTime       @default(now())
+  eventEndDate          DateTime?
+  location              String
+  status                BookingStatus  @default(PENDING)
+  totalAmount           Decimal        @default(0) @db.Decimal(10, 2)
+  platformFee           Decimal        @default(0) @db.Decimal(10, 2)
+  artistPayout          Decimal        @default(0) @db.Decimal(10, 2)
+  paymentStatus         PaymentStatus  @default(UNPAID)
+  stripePaymentIntentId String?
+  notes                 String?
+  cancelledAt           DateTime?
+  cancelReason          String?
+  artistName            String
+  artistInitials        String         @db.VarChar(3)
+  date                  String
+  amount                String
+  applications          Int            @default(0)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  client                User           @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Restrict)
+  artist                Artist         @relation("ArtistBookings", fields: [artistId], references: [id], onDelete: Restrict)
+  agency                Agency?        @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  review                Review?
+  conversation          Conversation?
+
+  @@index([clientId])
+  @@index([artistId])
   @@index([status])
+  @@index([paymentStatus])
+  @@index([eventDate])
+  @@index([agencyId])
   @@index([createdAt])
   @@map("bookings")
+}
+
+model Review {
+  id         String   @id @default(cuid()) @db.VarChar(64)
+  bookingId  String   @unique @db.VarChar(64)
+  reviewerId String   @db.VarChar(64)
+  artistId   String   @db.VarChar(64)
+  rating     Int
+  comment    String
+  isPublic   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewer   User     @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Restrict)
+  artist     Artist   @relation("ArtistReviews", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+  @@index([reviewerId])
+  @@map("reviews")
+}
+
+model Conversation {
+  id            String    @id @default(cuid()) @db.VarChar(64)
+  bookingId     String?   @unique @db.VarChar(64)
+  participantIds String[] @default([])
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  messages      Message[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid()) @db.VarChar(64)
+  conversationId String       @db.VarChar(64)
+  senderId       String       @db.VarChar(64)
+  type           MessageType  @default(TEXT)
+  content        String
+  fileUrl        String?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([isRead])
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(cuid()) @db.VarChar(64)
+  userId    String           @db.VarChar(64)
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid()) @db.VarChar(64)
+  userId    String   @db.VarChar(64)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model MediaUpload {
+  id         String   @id @default(cuid()) @db.VarChar(64)
+  uploaderId String   @db.VarChar(64)
+  url        String
+  key        String   @unique
+  mimeType   String
+  sizeBytes  Int
+  isPublic   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  uploader   User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([uploaderId])
+  @@map("media_uploads")
 }
 
 model AuthAuditEvent {

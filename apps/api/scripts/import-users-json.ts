@@ -1,4 +1,4 @@
-import { AccountType, PrismaClient } from '@prisma/client';
+import { AccountType, PrismaClient, UserRole } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -67,6 +67,18 @@ function toAccountType(value?: string): AccountType {
   return 'CREATIVE';
 }
 
+function toUserRole(accountType: AccountType): UserRole {
+  switch (accountType) {
+    case 'CREATIVE':
+      return UserRole.ARTIST;
+    case 'AGENCY':
+      return UserRole.AGENCY;
+    case 'CLIENT':
+    default:
+      return UserRole.CLIENT;
+  }
+}
+
 function toPositiveInt(value: number | undefined): number {
   if (!Number.isInteger(value) || value === undefined || value < 0) return 0;
   return value;
@@ -119,15 +131,19 @@ async function run(): Promise<void> {
     const createdAt = toDateOrFallback(user.createdAt, now);
     const lockoutUntil = user.lockoutUntil ? toDateOrFallback(user.lockoutUntil, now) : null;
     const id = user.id?.trim() || randomBytes(12).toString('hex');
+    const accountType = toAccountType(user.accountType);
+    const fullName = user.fullName.trim();
 
     await prisma.user.upsert({
       where: { emailNormalized },
       update: {
-        fullName: user.fullName.trim(),
+        fullName,
+        name: fullName,
         username,
         usernameNormalized,
         email,
-        accountType: toAccountType(user.accountType),
+        role: toUserRole(accountType),
+        accountType,
         passwordSalt: user.passwordSalt,
         passwordHash: user.passwordHash,
         failedLoginAttempts: toPositiveInt(user.failedLoginAttempts),
@@ -136,12 +152,14 @@ async function run(): Promise<void> {
       },
       create: {
         id,
-        fullName: user.fullName.trim(),
+        fullName,
+        name: fullName,
         username,
         usernameNormalized,
         email,
         emailNormalized,
-        accountType: toAccountType(user.accountType),
+        role: toUserRole(accountType),
+        accountType,
         createdAt,
         passwordSalt: user.passwordSalt,
         passwordHash: user.passwordHash,

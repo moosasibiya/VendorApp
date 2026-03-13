@@ -1,8 +1,14 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import type { Booking } from '@vendorapp/shared';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { AuthGuard } from '../auth/auth.guard';
+
+type AuthenticatedRequest = {
+  auth?: {
+    userId: string;
+  };
+};
 
 @Controller('bookings')
 @UseGuards(AuthGuard)
@@ -15,7 +21,11 @@ export class BookingsController {
   }
 
   @Post()
-  async create(@Body() input: CreateBookingDto): Promise<Booking> {
-    return this.bookingsService.create(input);
+  async create(@Req() request: AuthenticatedRequest, @Body() input: CreateBookingDto): Promise<Booking> {
+    const userId = request.auth?.userId;
+    if (!userId) {
+      throw new UnauthorizedException('Authenticated user context missing');
+    }
+    return this.bookingsService.create(userId, input);
   }
 }
