@@ -1,7 +1,7 @@
 import { IsIn, IsOptional, IsString, MaxLength, Matches } from 'class-validator';
-import type { AccountType } from '@vendorapp/shared';
+import { ACCOUNT_TYPE_VALUES, type AccountType } from '@vendorapp/shared';
 
-const accountTypes: AccountType[] = ['CREATIVE', 'CLIENT', 'AGENCY'];
+const accountTypes = [...ACCOUNT_TYPE_VALUES] satisfies AccountType[];
 
 export class GoogleOauthStartDto {
   @IsOptional()

@@ -9,7 +9,7 @@
     "docker:up": "docker compose up -d --wait",
     "docker:down": "docker compose down",
     "dev:local": "pnpm run docker:up && pnpm dev",
-    "dev": "turbo dev",
+    "dev": "pnpm --filter @vendorapp/shared build && turbo dev",
     "db:migrate": "pnpm --filter @vendorapp/api run db:migrate",
     "db:seed": "pnpm --filter @vendorapp/api run db:seed:core",
     "db:reset": "pnpm --filter @vendorapp/api run db:reset",
