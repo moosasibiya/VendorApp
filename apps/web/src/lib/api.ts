@@ -1,10 +1,13 @@
 import type {
   AccountType,
+  ApiResponse as ApiEnvelope,
   Agency,
   Artist,
   ArtistProfileInput,
   AuthResponse,
+  BookingAction,
   Booking,
+  CreateBookingInput,
   LoginRequest,
   OnboardingAgencyInput,
   OnboardingClientInput,
@@ -16,14 +19,10 @@ export type {
   Artist,
   ArtistProfileInput,
   Booking,
+  CreateBookingInput,
   OnboardingAgencyInput,
   OnboardingClientInput,
 } from "@vendorapp/shared";
-
-export type CreateBookingInput = Pick<
-  Booking,
-  "artistName" | "artistInitials" | "title" | "location" | "date" | "amount"
->;
 
 export class ApiError extends Error {
   status: number;
@@ -169,15 +168,63 @@ export async function updateMyArtistProfile(
   });
 }
 
-export async function fetchBookings(): Promise<Booking[]> {
-  return getJson<Booking[]>("/bookings");
+export async function fetchBookings(query?: {
+  status?: Booking["status"];
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}): Promise<ApiEnvelope<Booking[]>> {
+  const params = new URLSearchParams();
+  if (query?.status) {
+    params.set("status", query.status);
+  }
+  if (query?.page) {
+    params.set("page", String(query.page));
+  }
+  if (query?.limit) {
+    params.set("limit", String(query.limit));
+  }
+  if (query?.startDate) {
+    params.set("startDate", query.startDate);
+  }
+  if (query?.endDate) {
+    params.set("endDate", query.endDate);
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return getJson<ApiEnvelope<Booking[]>>(`/bookings${suffix}`);
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
-  return getJson<Booking>("/bookings", {
+  const response = await getJson<ApiEnvelope<Booking>>("/bookings", {
     method: "POST",
     body: JSON.stringify(input),
   });
+  return response.data;
+}
+
+export async function fetchBooking(id: string): Promise<Booking> {
+  const response = await getJson<ApiEnvelope<Booking>>(`/bookings/${id}`);
+  return response.data;
+}
+
+export async function updateBookingStatus(input: {
+  bookingId: string;
+  action: BookingAction;
+  reason?: string;
+}): Promise<Booking> {
+  const response = await getJson<ApiEnvelope<Booking>>(
+    `/bookings/${encodeURIComponent(input.bookingId)}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: input.action,
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    },
+  );
+  return response.data;
 }
 
 export async function signup(input: SignupRequest): Promise<AuthResponse> {

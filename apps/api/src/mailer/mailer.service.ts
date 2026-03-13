@@ -13,7 +13,6 @@ type BookingEmailInput = {
 @Injectable()
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
-  private readonly client = new Resend(process.env.RESEND_API_KEY?.trim());
   private readonly isProduction = process.env.NODE_ENV === 'production';
 
   async sendPasswordReset(to: string, token: string): Promise<void> {
@@ -98,7 +97,8 @@ export class MailerService {
       return;
     }
 
-    const response = await this.client.emails.send({
+    const client = new Resend(apiKey);
+    const response = await client.emails.send({
       from,
       to: input.to,
       subject: input.subject,

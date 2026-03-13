@@ -1,266 +1,320 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ApiError, createBooking } from "@/lib/api";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { ApiError, Artist, createBooking, fetchArtists } from "@/lib/api";
 import styles from "./page.module.css";
 
-const steps = ["Event Details", "Pricing & Add-ons", "Review"];
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
 
-function initialsFromName(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
-    .slice(0, 3);
+function estimateTotal(hourlyRate: number | undefined, start: string, end: string): number | null {
+  if (!hourlyRate || hourlyRate <= 0) {
+    return null;
+  }
+
+  if (!start) {
+    return hourlyRate;
+  }
+
+  if (!end) {
+    return hourlyRate;
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return hourlyRate;
+  }
+
+  const hours = Math.max((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60), 1);
+  return Number((hourlyRate * hours).toFixed(2));
 }
 
 export default function NewBookingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const searchParams = useSearchParams();
+  const requestedArtistId = searchParams.get("artistId") ?? "";
+
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [selectedArtistId, setSelectedArtistId] = useState(requestedArtistId);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [loadingArtists, setLoadingArtists] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [eventType, setEventType] = useState("Wedding");
-  const [location, setLocation] = useState("Cape Town");
-  const [date, setDate] = useState("12 Aug 2025");
-  const [time, setTime] = useState("09:00 - 17:00");
-  const [description, setDescription] = useState("");
-  const [serviceType, setServiceType] = useState("Full-day wedding coverage");
-  const [duration, setDuration] = useState("Full day");
+  useEffect(() => {
+    setSelectedArtistId(requestedArtistId);
+  }, [requestedArtistId]);
 
-  const summary = useMemo(
-    () => ({
-      artist: "Ayanda Khumalo",
-      subtotal: "R12,000",
-      addOns: "R1,800",
-      fee: "R420",
-      total: "R14,220",
-    }),
-    [],
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadArtists = async () => {
+      setLoadingArtists(true);
+      setError(null);
+      try {
+        const data = await fetchArtists();
+        if (cancelled) {
+          return;
+        }
+        setArtists(data);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        if (err instanceof ApiError) {
+          setError(err.message);
+          return;
+        }
+        setError("Unable to load artists right now.");
+      } finally {
+        if (!cancelled) {
+          setLoadingArtists(false);
+        }
+      }
+    };
+
+    void loadArtists();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedArtist = useMemo(
+    () => artists.find((artist) => artist.id === selectedArtistId) ?? null,
+    [artists, selectedArtistId],
   );
 
-  const next = () => setStep((prev) => Math.min(prev + 1, steps.length - 1));
-  const prev = () => setStep((prev) => Math.max(prev - 1, 0));
+  const estimatedTotal = useMemo(
+    () => estimateTotal(selectedArtist?.hourlyRate, eventDate, eventEndDate),
+    [selectedArtist?.hourlyRate, eventDate, eventEndDate],
+  );
 
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <header className={styles.header}>
+        <div className={styles.header}>
           <div>
-            <h1>Create Booking</h1>
-            <p>
-              Step {step + 1} of {steps.length} - {steps[step]}
+            <p className={styles.kicker}>Phase 4 booking flow</p>
+            <h1>Create a booking request</h1>
+            <p className={styles.subtle}>
+              Choose a live artist profile, set the event window, and send a request
+              that the artist can confirm.
             </p>
           </div>
-          <div className={styles.progress}>
-            <div
-              className={styles.progressBar}
-              style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-            />
-          </div>
-        </header>
+          <Link href="/bookings" className={styles.ghostLink}>
+            Back to bookings
+          </Link>
+        </div>
 
         {error ? <div className={styles.error}>{error}</div> : null}
 
-        {step === 0 && (
-          <div className={styles.form}>
+        <div className={styles.layout}>
+          <form
+            className={styles.form}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setError(null);
+
+              if (!selectedArtistId) {
+                setError("Select an artist before sending the request.");
+                return;
+              }
+              if (!title.trim() || !description.trim() || !location.trim() || !eventDate) {
+                setError("Title, description, location, and event date are required.");
+                return;
+              }
+
+              const parsedStart = new Date(eventDate);
+              const parsedEnd = eventEndDate ? new Date(eventEndDate) : null;
+              if (Number.isNaN(parsedStart.getTime())) {
+                setError("Choose a valid event start date and time.");
+                return;
+              }
+              if (parsedStart.getTime() <= Date.now()) {
+                setError("Event date must be in the future.");
+                return;
+              }
+              if (parsedEnd && Number.isNaN(parsedEnd.getTime())) {
+                setError("Choose a valid event end date and time.");
+                return;
+              }
+              if (parsedEnd && parsedEnd.getTime() <= parsedStart.getTime()) {
+                setError("Event end must be after the event start.");
+                return;
+              }
+
+              setIsSubmitting(true);
+              try {
+                const booking = await createBooking({
+                  artistId: selectedArtistId,
+                  title: title.trim(),
+                  description: description.trim(),
+                  eventDate: parsedStart.toISOString(),
+                  eventEndDate: parsedEnd ? parsedEnd.toISOString() : null,
+                  location: location.trim(),
+                  notes: notes.trim() ? notes.trim() : null,
+                });
+                router.push(`/bookings/${booking.id}`);
+              } catch (err) {
+                if (err instanceof ApiError) {
+                  setError(err.message);
+                  return;
+                }
+                setError("Unable to create the booking right now.");
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+          >
             <label>
-              Event Type
+              Artist
+              <select
+                value={selectedArtistId}
+                onChange={(event) => setSelectedArtistId(event.target.value)}
+                disabled={loadingArtists || isSubmitting}
+              >
+                <option value="">Select an artist</option>
+                {artists.map((artist) => (
+                  <option
+                    key={artist.id ?? artist.slug}
+                    value={artist.id ?? ""}
+                    disabled={!artist.id || artist.isAvailable === false}
+                  >
+                    {artist.name} {artist.isAvailable === false ? "(Unavailable)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Booking title
               <input
-                placeholder="Wedding, Corporate, Portrait"
-                value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Editorial campaign, wedding, launch event..."
+                disabled={isSubmitting}
               />
             </label>
-            <label>
-              Location
-              <input
-                placeholder="Cape Town"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-            </label>
-            <label>
-              Date
-              <input
-                placeholder="Select date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </label>
-            <label>
-              Time Range
-              <input
-                placeholder="09:00 - 17:00"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
-            </label>
+
             <label className={styles.fullRow}>
               Description
               <textarea
-                placeholder="Tell us about the project"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe the event, deliverables, and any creative direction."
+                disabled={isSubmitting}
               />
             </label>
-          </div>
-        )}
 
-        {step === 1 && (
-          <div className={styles.form}>
             <label>
-              Service Type
+              Event starts
               <input
-                placeholder="Full-day wedding coverage"
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value)}
+                type="datetime-local"
+                value={eventDate}
+                onChange={(event) => setEventDate(event.target.value)}
+                disabled={isSubmitting}
               />
             </label>
+
             <label>
-              Duration
+              Event ends
               <input
-                placeholder="Full day"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                type="datetime-local"
+                value={eventEndDate}
+                onChange={(event) => setEventEndDate(event.target.value)}
+                disabled={isSubmitting}
               />
             </label>
+
+            <label>
+              Location
+              <input
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="Johannesburg, Cape Town, virtual..."
+                disabled={isSubmitting}
+              />
+            </label>
+
             <label className={styles.fullRow}>
-              Add-ons
-              <div className={styles.checkboxRow}>
-                <label>
-                  <input type="checkbox" /> Drone footage (+R900)
-                </label>
-                <label>
-                  <input type="checkbox" /> Highlight reel (+R650)
-                </label>
-                <label>
-                  <input type="checkbox" /> Same-day edits (+R250)
-                </label>
-              </div>
+              Notes
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Optional timing, access, wardrobe, or vendor notes."
+                disabled={isSubmitting}
+              />
             </label>
-            <div className={styles.pricingBox}>
-              <div>
-                <span>Base price</span>
-                <strong>{summary.subtotal}</strong>
-              </div>
-              <div>
-                <span>Add-ons</span>
-                <strong>{summary.addOns}</strong>
-              </div>
-              <div>
-                <span>Platform fee</span>
-                <strong>{summary.fee}</strong>
-              </div>
+
+            <div className={styles.actions}>
+              <Link href="/artists" className={styles.ghostLink}>
+                Browse artists
+              </Link>
+              <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
+                {isSubmitting ? "Sending request..." : "Send booking request"}
+              </button>
+            </div>
+          </form>
+
+          <aside className={styles.sidebar}>
+            <div className={styles.summaryCard}>
+              <p className={styles.sidebarKicker}>Selected artist</p>
+              {loadingArtists ? <p>Loading artists...</p> : null}
+              {!loadingArtists && !selectedArtist ? (
+                <p className={styles.subtle}>Choose an artist to see pricing and availability.</p>
+              ) : null}
+              {selectedArtist ? (
+                <>
+                  <h2>{selectedArtist.name}</h2>
+                  <p>{selectedArtist.role}</p>
+                  <p>{selectedArtist.location}</p>
+                  <div className={styles.badgeRow}>
+                    <span
+                      className={
+                        selectedArtist.isAvailable === false ? styles.badgeMuted : styles.badge
+                      }
+                    >
+                      {selectedArtist.isAvailable === false ? "Unavailable" : "Available"}
+                    </span>
+                    {selectedArtist.hourlyRate ? (
+                      <span className={styles.badge}>{formatCurrency(selectedArtist.hourlyRate)}/hr</span>
+                    ) : null}
+                  </div>
+                  <p className={styles.subtle}>
+                    {selectedArtist.bio?.trim()
+                      ? selectedArtist.bio
+                      : "This artist profile is ready to accept booking requests."}
+                  </p>
+                </>
+              ) : null}
+            </div>
+
+            <div className={styles.summaryCard}>
+              <p className={styles.sidebarKicker}>Estimated totals</p>
               <div className={styles.totalRow}>
-                <span>Total</span>
-                <strong>{summary.total}</strong>
+                <span>Estimated booking total</span>
+                <strong>{estimatedTotal ? formatCurrency(estimatedTotal) : "Waiting for event details"}</strong>
               </div>
+              <p className={styles.subtle}>
+                Totals are calculated from the artist hourly rate and finalized on the booking
+                record. Platform fees are applied automatically.
+              </p>
             </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className={styles.review}>
-            <div className={styles.reviewCard}>
-              <h2>Booking Summary</h2>
-              <div className={styles.reviewRow}>
-                <span>Artist</span>
-                <strong>{summary.artist}</strong>
-              </div>
-              <div className={styles.reviewRow}>
-                <span>Location</span>
-                <strong>{location}</strong>
-              </div>
-              <div className={styles.reviewRow}>
-                <span>Date</span>
-                <strong>{date}</strong>
-              </div>
-              <div className={styles.reviewRow}>
-                <span>Time</span>
-                <strong>{time}</strong>
-              </div>
-              <div className={styles.reviewRow}>
-                <span>Service</span>
-                <strong>{serviceType}</strong>
-              </div>
-              <div className={styles.reviewRow}>
-                <span>Total</span>
-                <strong>{summary.total}</strong>
-              </div>
-            </div>
-            <div className={styles.reviewNote}>
-              Card will be authorized but not charged until the booking is
-              confirmed.
-            </div>
-          </div>
-        )}
-
-        <div className={styles.actions}>
-          <button
-            className={styles.ghostBtn}
-            onClick={prev}
-            disabled={step === 0 || isSubmitting}
-          >
-            Previous
-          </button>
-          {step < steps.length - 1 ? (
-            <button
-              className={styles.primaryBtn}
-              onClick={() => {
-                setError(null);
-                if (step === 0) {
-                  if (!eventType.trim() || !location.trim() || !date.trim()) {
-                    setError("Please complete event type, location, and date.");
-                    return;
-                  }
-                }
-                if (step === 1) {
-                  if (!serviceType.trim() || !duration.trim()) {
-                    setError("Please complete service type and duration.");
-                    return;
-                  }
-                }
-                next();
-              }}
-              disabled={isSubmitting}
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              className={styles.primaryBtn}
-              onClick={async () => {
-                setError(null);
-                setIsSubmitting(true);
-                try {
-                  await createBooking({
-                    artistName: summary.artist,
-                    artistInitials: initialsFromName(summary.artist),
-                    title: `${eventType} - ${serviceType}`,
-                    location,
-                    date,
-                    amount: summary.total,
-                  });
-                  router.push("/bookings");
-                } catch (err) {
-                  if (err instanceof ApiError) {
-                    setError(err.message);
-                  } else {
-                    setError("Unable to submit booking right now.");
-                  }
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Submitting..." : "Send Request"}
-            </button>
-          )}
+          </aside>
         </div>
       </section>
     </main>

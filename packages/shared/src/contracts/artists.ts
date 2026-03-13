@@ -6,6 +6,8 @@ export interface Artist {
   location: string;
   rating: string;
   slug: string;
+  hourlyRate?: number;
+  isAvailable?: boolean;
   bio?: string;
   services?: string[];
   specialties?: string[];

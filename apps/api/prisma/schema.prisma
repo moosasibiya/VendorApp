@@ -95,6 +95,7 @@ model User {
   notifications       Notification[]
   passwordResetTokens PasswordResetToken[]
   mediaUploads        MediaUpload[]
+  bookingStatusEvents BookingStatusHistory[] @relation("BookingStatusHistoryActor")
 
   @@index([emailNormalized])
   @@index([usernameNormalized])
@@ -199,6 +200,7 @@ model Booking {
   agency                Agency?        @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   review                Review?
   conversation          Conversation?
+  statusHistory         BookingStatusHistory[]
 
   @@index([clientId])
   @@index([artistId])
@@ -227,6 +229,26 @@ model Review {
   @@index([artistId])
   @@index([reviewerId])
   @@map("reviews")
+}
+
+model BookingStatusHistory {
+  id         String        @id @default(cuid()) @db.VarChar(64)
+  bookingId  String        @db.VarChar(64)
+  fromStatus BookingStatus?
+  toStatus   BookingStatus
+  action     String        @db.VarChar(32)
+  reason     String?
+  actorUserId String?      @db.VarChar(64)
+  actorName  String?
+  actorRole  UserRole?
+  createdAt  DateTime      @default(now())
+  booking    Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor      User?         @relation("BookingStatusHistoryActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("booking_status_history")
 }
 
 model Conversation {

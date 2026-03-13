@@ -1,40 +1,41 @@
-﻿.page {
+.page {
   min-height: 100vh;
-  color: var(--text);
   padding: 32px;
+  color: var(--text);
 }
 
 .card {
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 24px;
   background: var(--panel);
-  padding: 24px;
-  max-width: 860px;
-  margin: 0 auto;
+  padding: 28px;
+  display: grid;
+  gap: 24px;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
+  align-items: flex-start;
+  gap: 20px;
 }
 
-.header p {
+.kicker,
+.sidebarKicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
   color: var(--muted);
 }
 
-.progress {
-  width: 180px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--panel3);
-  overflow: hidden;
+.subtle {
+  color: var(--muted);
 }
 
-.progressBar {
-  height: 100%;
-  background: var(--brand-gradient);
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: 20px;
 }
 
 .form {
@@ -44,179 +45,145 @@
 }
 
 .form label {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
 .form input,
+.form select,
 .form textarea {
-  background: transparent;
+  width: 100%;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text);
+  padding: 12px 14px;
 }
 
 .form textarea {
-  min-height: 120px;
+  min-height: 140px;
+  resize: vertical;
 }
 
 .fullRow {
   grid-column: 1 / -1;
 }
 
-.checkboxRow {
+.sidebar {
   display: grid;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 16px;
+  align-content: start;
 }
 
-.checkboxRow label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.pricingBox {
-  grid-column: 1 / -1;
+.summaryCard {
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  background: var(--panel);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 20px;
   display: grid;
+  gap: 12px;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.pricingBox div {
+.badge,
+.badgeMuted {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.badge {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.badgeMuted {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+}
+
+.actions {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  color: var(--muted);
-  font-size: 13px;
+  align-items: center;
+  gap: 12px;
 }
 
-.pricingBox strong {
+.primaryBtn,
+.ghostLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.primaryBtn {
+  border: none;
+  padding: 0 18px;
+  background: var(--brand-gradient);
+  color: #fff;
+}
+
+.ghostLink {
+  padding: 0 16px;
+  border: 1px solid var(--border);
   color: var(--text);
 }
 
 .totalRow {
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.review {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.reviewCard {
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px;
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.reviewCard h2 {
-  font-size: 18px;
-}
-
-.reviewRow {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.reviewRow strong {
-  color: var(--text);
-}
-
-.reviewNote {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.confirmation {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 12px;
-}
-
-.successIcon {
-  width: 64px;
-  height: 64px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-  font-size: 28px;
-}
-
-.confirmCard {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 16px;
-  background: var(--panel);
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.confirmActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.actions {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
   gap: 12px;
 }
 
 .error {
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.12);
   color: #fca5a5;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: 14px;
+  padding: 12px 14px;
 }
 
-.primaryBtn,
-.ghostBtn {
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-weight: 700;
-  border: 1px solid var(--border);
-}
-
-.primaryBtn {
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.ghostBtn {
-  background: var(--panel);
-  color: var(--text);
-}
-
-@media (max-width: 800px) {
-  .form {
+@media (max-width: 960px) {
+  .layout {
     grid-template-columns: 1fr;
   }
 }
 
+@media (max-width: 720px) {
+  .page {
+    padding: 20px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .header,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .fullRow {
+    grid-column: auto;
+  }
+}

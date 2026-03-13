@@ -1,30 +1,55 @@
-﻿.page {
+.page {
   min-height: 100vh;
-  color: var(--text);
   padding: 32px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 20px;
+  color: var(--text);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
 }
 
-.header p {
+.kicker,
+.overline {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
   color: var(--muted);
 }
 
-.primaryBtn {
-  padding: 10px 18px;
+.subtle {
+  color: var(--muted);
+}
+
+.primaryBtn,
+.actionPrimary,
+.actionGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
   border-radius: 12px;
-  background: var(--brand-gradient);
-  color: white;
-  text-decoration: none;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.primaryBtn,
+.actionPrimary {
+  background: var(--brand-gradient);
+  color: #fff;
+  border: none;
+  padding: 0 16px;
+}
+
+.actionGhost {
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: transparent;
+  padding: 0 14px;
 }
 
 .tabs {
@@ -35,11 +60,11 @@
 
 .tabBtn,
 .tabActive {
-  padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
+  padding: 10px 16px;
 }
 
 .tabActive {
@@ -50,77 +75,125 @@
 
 .list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .card {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--panel);
+  padding: 18px;
   display: grid;
-  grid-template-columns: 60px 1fr auto;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
   gap: 16px;
-  padding: 16px;
+  align-items: center;
 }
 
 .avatar {
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
-  background: var(--panel3);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
+  background: rgba(255, 255, 255, 0.06);
   font-weight: 700;
+}
+
+.cardBody {
+  display: grid;
+  gap: 10px;
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
-
-.cardHeader p,
-.cardBody p {
-  color: var(--muted);
-}
-
-.status {
-  background: rgba(251, 146, 60, 0.2);
-  color: #fb923c;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12.5px;
-}
-
-.meta {
-  display: flex;
+  align-items: flex-start;
   gap: 12px;
+}
+
+.title {
+  font-size: 15px;
+}
+
+.metaGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .cardActions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.cardActions button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 10px;
+.status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
 }
 
-@media (max-width: 900px) {
+.statusPENDING {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fde68a;
+}
+
+.statusCONFIRMED,
+.statusIN_PROGRESS,
+.statusCOMPLETED {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.statusCANCELLED,
+.statusDISPUTED {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fca5a5;
+}
+
+.emptyState {
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.error {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 880px) {
   .card {
     grid-template-columns: 1fr;
   }
 
   .cardActions {
     flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
+@media (max-width: 720px) {
+  .page {
+    padding: 20px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+  }
+}

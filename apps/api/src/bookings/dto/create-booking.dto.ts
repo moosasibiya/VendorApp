@@ -1,37 +1,34 @@
-import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateBookingDto {
-  @IsOptional()
   @IsString()
-  artistSlug?: string;
+  @IsNotEmpty()
+  artistId!: string;
 
   @IsString()
   @IsNotEmpty()
-  artistName!: string;
-
-  @IsString()
-  @Matches(/^[A-Z]{1,3}$/, {
-    message: 'artistInitials must be 1-3 uppercase letters',
-  })
-  artistInitials!: string;
-
-  @IsString()
-  @IsNotEmpty()
+  @MaxLength(120)
   title!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(2000)
+  description!: string;
+
+  @IsDateString()
+  eventDate!: string;
+
+  @IsOptional()
+  @IsDateString()
+  eventEndDate?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(160)
   location!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  date!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  amount!: string;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  @MaxLength(1000)
+  notes?: string;
 }
