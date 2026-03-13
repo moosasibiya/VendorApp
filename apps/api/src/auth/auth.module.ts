@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { MailerModule } from '../mailer/mailer.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
@@ -7,6 +9,7 @@ import { UsersStore } from './users.store';
 import { AuthAuditService } from './auth-audit.service';
 
 @Module({
+  imports: [PrismaModule, MailerModule],
   controllers: [AuthController],
   providers: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],
   exports: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],

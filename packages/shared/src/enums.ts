@@ -4,6 +4,7 @@ export enum UserRole {
   AGENCY = 'AGENCY',
   ADMIN = 'ADMIN',
 }
+export type UserRoleValue = `${UserRole}`;
 
 export enum BookingStatus {
   PENDING = 'PENDING',
@@ -13,6 +14,7 @@ export enum BookingStatus {
   CANCELLED = 'CANCELLED',
   DISPUTED = 'DISPUTED',
 }
+export type BookingStatusValue = `${BookingStatus}`;
 
 export enum PaymentStatus {
   UNPAID = 'UNPAID',
@@ -20,6 +22,7 @@ export enum PaymentStatus {
   REFUNDED = 'REFUNDED',
   FAILED = 'FAILED',
 }
+export type PaymentStatusValue = `${PaymentStatus}`;
 
 export enum MessageType {
   TEXT = 'TEXT',
@@ -27,6 +30,7 @@ export enum MessageType {
   FILE = 'FILE',
   SYSTEM = 'SYSTEM',
 }
+export type MessageTypeValue = `${MessageType}`;
 
 export enum NotificationType {
   BOOKING_REQUEST = 'BOOKING_REQUEST',
@@ -36,6 +40,7 @@ export enum NotificationType {
   PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
   REVIEW_RECEIVED = 'REVIEW_RECEIVED',
 }
+export type NotificationTypeValue = `${NotificationType}`;
 
 export const ACCOUNT_TYPE_VALUES = ['CREATIVE', 'CLIENT', 'AGENCY'] as const;
 export type AccountType = (typeof ACCOUNT_TYPE_VALUES)[number];

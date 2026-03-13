@@ -65,6 +65,12 @@ model User {
   role                UserRole             @default(CLIENT)
   accountType         AccountType
   avatarUrl           String?
+  location            String?
+  clientEventTypes    String[]             @default([])
+  clientBudgetMin     Decimal?             @db.Decimal(10, 2)
+  clientBudgetMax     Decimal?             @db.Decimal(10, 2)
+  notificationPreferences Json?
+  onboardingCompletedAt DateTime?
   isEmailVerified     Boolean              @default(false)
   isActive            Boolean              @default(true)
   createdAt           DateTime             @default(now())
@@ -133,18 +139,20 @@ model Artist {
 }
 
 model Agency {
-  id         String    @id @default(cuid()) @db.VarChar(64)
-  ownerId    String    @unique @db.VarChar(64)
-  name       String
-  slug       String    @unique
+  id          String    @id @default(cuid()) @db.VarChar(64)
+  ownerId     String    @unique @db.VarChar(64)
+  name        String
+  slug        String    @unique
   description String
-  logoUrl    String?
-  website    String?
-  isVerified Boolean   @default(false)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  owner      User      @relation("AgencyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  bookings   Booking[]
+  logoUrl     String?
+  website     String?
+  contactName String?
+  contactEmail String?
+  isVerified  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  owner       User      @relation("AgencyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
 
   @@map("agencies")
 }

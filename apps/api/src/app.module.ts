@@ -7,9 +7,19 @@ import { BookingsModule } from './bookings/bookings.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { UsersModule } from './users/users.module';
+import { AgenciesModule } from './agencies/agencies.module';
 
 @Module({
-  imports: [PrismaModule, RateLimitModule, ArtistsModule, BookingsModule, AuthModule],
+  imports: [
+    PrismaModule,
+    RateLimitModule,
+    ArtistsModule,
+    BookingsModule,
+    AuthModule,
+    UsersModule,
+    AgenciesModule,
+  ],
   controllers: [AppController, HealthController],
   providers: [AppService],
 })

@@ -1,13 +1,24 @@
 import type {
   AccountType,
+  Agency,
   Artist,
+  ArtistProfileInput,
   AuthResponse,
   Booking,
   LoginRequest,
+  OnboardingAgencyInput,
+  OnboardingClientInput,
   SignupRequest,
   User,
 } from "@vendorapp/shared";
-export type { Artist, Booking } from "@vendorapp/shared";
+export type {
+  Agency,
+  Artist,
+  ArtistProfileInput,
+  Booking,
+  OnboardingAgencyInput,
+  OnboardingClientInput,
+} from "@vendorapp/shared";
 
 export type CreateBookingInput = Pick<
   Booking,
@@ -24,6 +35,18 @@ export class ApiError extends Error {
     this.status = status;
     this.details = details;
   }
+}
+
+function toApiError(error: unknown, fallbackMessage: string): ApiError {
+  if (error instanceof ApiError) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return new ApiError(0, fallbackMessage, { cause: error.message });
+  }
+
+  return new ApiError(0, fallbackMessage);
 }
 
 const API_BASE_URL =
@@ -52,11 +75,19 @@ async function ensureCsrfToken(): Promise<string | null> {
   if (existing) return existing;
 
   if (typeof window === "undefined") return null;
-  const response = await fetch(`${API_BASE_URL}/auth/csrf`, {
-    method: "GET",
-    cache: "no-store",
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/csrf`, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+  } catch (error) {
+    throw toApiError(
+      error,
+      "Unable to reach the API. Start the API server and database, then try again.",
+    );
+  }
   if (!response.ok) {
     throw new ApiError(response.status, "Unable to initialize CSRF token");
   }
@@ -76,16 +107,24 @@ async function ensureCsrfToken(): Promise<string | null> {
 async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
   const method = (init?.method ?? "GET").toUpperCase();
   const csrfToken = isSafeHttpMethod(method) ? null : await ensureCsrfToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    cache: "no-store",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      cache: "no-store",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {}),
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch (error) {
+    throw toApiError(
+      error,
+      "Unable to reach the API. Start the API server and database, then try again.",
+    );
+  }
 
   if (!response.ok) {
     let errorMessage: string | undefined;
@@ -117,6 +156,19 @@ export async function fetchArtistBySlug(slug: string): Promise<Artist> {
   return getJson<Artist>(`/artists/${slug}`);
 }
 
+export async function fetchMyArtistProfile(): Promise<Artist | null> {
+  return getJson<Artist | null>("/artists/me/profile");
+}
+
+export async function updateMyArtistProfile(
+  input: ArtistProfileInput,
+): Promise<Artist> {
+  return getJson<Artist>("/artists/me/profile", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function fetchBookings(): Promise<Booking[]> {
   return getJson<Booking[]>("/bookings");
 }
@@ -146,6 +198,54 @@ export async function fetchMe(): Promise<User> {
   return getJson<User>("/auth/me");
 }
 
+export async function requestPasswordReset(email: string): Promise<{ success: true; resetToken?: string }> {
+  return getJson<{ success: true; resetToken?: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(input: {
+  token: string;
+  newPassword: string;
+}): Promise<{ success: true }> {
+  return getJson<{ success: true }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function verifyEmail(token: string): Promise<{ success: true; email: string }> {
+  return getJson<{ success: true; email: string }>(
+    `/auth/verify-email?token=${encodeURIComponent(token)}`,
+  );
+}
+
+export async function resendVerificationEmail(email: string): Promise<{ success: true }> {
+  return getJson<{ success: true }>("/auth/verify-email/resend", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function updateClientOnboarding(input: OnboardingClientInput): Promise<User> {
+  return getJson<User>("/users/me/onboarding/client", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function fetchMyAgency(): Promise<Agency | null> {
+  return getJson<Agency | null>("/agencies/me");
+}
+
+export async function createAgency(input: OnboardingAgencyInput): Promise<Agency> {
+  return getJson<Agency>("/agencies", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function logout(): Promise<void> {
   try {
     await getJson<{ success: boolean }>("/auth/logout", {
@@ -172,4 +272,22 @@ export function buildGoogleAuthStartUrl(input: {
     params.set("accountType", input.accountType);
   }
   return `${API_BASE_URL}/auth/google/start?${params.toString()}`;
+}
+
+export function defaultAppPathForUser(user: User): string {
+  if (!user.onboardingCompleted) {
+    return "/onboarding";
+  }
+
+  switch (user.role) {
+    case "CLIENT":
+      return "/explore";
+    case "AGENCY":
+      return "/agency/dashboard";
+    case "ADMIN":
+      return "/admin";
+    case "ARTIST":
+    default:
+      return "/dashboard";
+  }
 }

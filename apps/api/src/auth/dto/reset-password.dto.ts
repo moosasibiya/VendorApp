@@ -1,14 +1,20 @@
 import { IsString, Matches, MinLength } from 'class-validator';
+import {
+  PASSWORD_LETTER_MESSAGE,
+  PASSWORD_LETTER_REGEX,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH_MESSAGE,
+  PASSWORD_NUMBER_MESSAGE,
+  PASSWORD_NUMBER_REGEX,
+} from '../password-policy';
 
 export class ResetPasswordDto {
   @IsString()
   token!: string;
 
   @IsString()
-  @MinLength(12, { message: 'password must be at least 12 characters' })
-  @Matches(/[a-z]/, { message: 'password must include a lowercase letter' })
-  @Matches(/[A-Z]/, { message: 'password must include an uppercase letter' })
-  @Matches(/[0-9]/, { message: 'password must include a number' })
-  @Matches(/[^A-Za-z0-9]/, { message: 'password must include a special character' })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: PASSWORD_MIN_LENGTH_MESSAGE })
+  @Matches(PASSWORD_LETTER_REGEX, { message: PASSWORD_LETTER_MESSAGE })
+  @Matches(PASSWORD_NUMBER_REGEX, { message: PASSWORD_NUMBER_MESSAGE })
   newPassword!: string;
 }

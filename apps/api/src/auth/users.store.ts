@@ -22,6 +22,13 @@ export class UsersStore {
     return user ? this.toStoredUser(user) : null;
   }
 
+  async findByGoogleId(googleId: string): Promise<StoredUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { googleId },
+    });
+    return user ? this.toStoredUser(user) : null;
+  }
+
   async findByUsernameNormalized(usernameNormalized: string): Promise<StoredUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { usernameNormalized },
@@ -114,8 +121,17 @@ export class UsersStore {
       usernameNormalized: user.usernameNormalized,
       email: user.email,
       emailNormalized: user.emailNormalized,
-      role: this.accountTypeToUserRole(user.accountType),
+      googleId: user.googleId,
+      role: user.role,
       accountType: user.accountType,
+      avatarUrl: user.avatarUrl,
+      location: user.location,
+      clientEventTypes: user.clientEventTypes,
+      clientBudgetMin: user.clientBudgetMin ?? null,
+      clientBudgetMax: user.clientBudgetMax ?? null,
+      onboardingCompletedAt: user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt) : null,
+      isEmailVerified: user.isEmailVerified ?? false,
+      isActive: user.isActive ?? true,
       createdAt: new Date(user.createdAt),
       passwordSalt: user.passwordSalt,
       passwordHash: user.passwordHash,
@@ -156,7 +172,17 @@ export class UsersStore {
       usernameNormalized: user.usernameNormalized,
       email: user.email,
       emailNormalized: user.emailNormalized,
+      googleId: user.googleId,
+      role: user.role,
       accountType: user.accountType,
+      avatarUrl: user.avatarUrl,
+      location: user.location,
+      clientEventTypes: user.clientEventTypes,
+      clientBudgetMin: user.clientBudgetMin?.toString() ?? null,
+      clientBudgetMax: user.clientBudgetMax?.toString() ?? null,
+      onboardingCompletedAt: user.onboardingCompletedAt ? user.onboardingCompletedAt.toISOString() : null,
+      isEmailVerified: user.isEmailVerified,
+      isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
       passwordSalt: user.passwordSalt,
       passwordHash: user.passwordHash,

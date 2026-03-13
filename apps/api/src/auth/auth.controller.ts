@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { AuthResponse, User } from '@vendorapp/shared';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
@@ -10,6 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import { MfaDisableDto } from './dto/mfa-disable.dto';
 import { MfaEnableDto } from './dto/mfa-enable.dto';
 import { MfaVerifyDto } from './dto/mfa-verify.dto';
+import { ResendVerificationEmailDto } from './dto/resend-verification-email.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignupDto } from './dto/signup.dto';
 
@@ -44,9 +45,16 @@ export class AuthController {
       ipAddress: req.ip,
       requestId: req.headers['x-request-id'],
     });
-    this.setAuthCookie(response, result.token);
-    this.setCsrfCookie(response);
-    return { user: result.user };
+    if (result.token) {
+      this.setAuthCookie(response, result.token);
+      this.setCsrfCookie(response);
+    }
+    return {
+      user: result.user,
+      nextPath: result.nextPath,
+      requiresEmailVerification: result.requiresEmailVerification,
+      verificationEmailSent: result.verificationEmailSent,
+    };
   }
 
   @Post('login')
@@ -59,9 +67,16 @@ export class AuthController {
       ipAddress: req.ip,
       requestId: req.headers['x-request-id'],
     });
-    this.setAuthCookie(response, result.token);
-    this.setCsrfCookie(response);
-    return { user: result.user };
+    if (result.token) {
+      this.setAuthCookie(response, result.token);
+      this.setCsrfCookie(response);
+    }
+    return {
+      user: result.user,
+      nextPath: result.nextPath,
+      requiresEmailVerification: result.requiresEmailVerification,
+      verificationEmailSent: result.verificationEmailSent,
+    };
   }
 
   @Get('google/start')
@@ -124,7 +139,7 @@ export class AuthController {
     return { success: true };
   }
 
-  @Post('password/forgot')
+  @Post('forgot-password')
   async forgotPassword(
     @Body() input: ForgotPasswordDto,
     @Req() req: RequestWithIp,
@@ -136,12 +151,55 @@ export class AuthController {
     return { success: true, ...(result.resetToken ? { resetToken: result.resetToken } : {}) };
   }
 
-  @Post('password/reset')
+  @Post('password/forgot')
+  async forgotPasswordLegacy(
+    @Body() input: ForgotPasswordDto,
+    @Req() req: RequestWithIp,
+  ): Promise<{ success: true; resetToken?: string }> {
+    return this.forgotPassword(input, req);
+  }
+
+  @Post('reset-password')
   async resetPassword(
     @Body() input: ResetPasswordDto,
     @Req() req: RequestWithIp,
   ): Promise<{ success: true }> {
     await this.authService.resetPassword(input.token, input.newPassword, {
+      ipAddress: req.ip,
+      requestId: req.headers['x-request-id'],
+    });
+    return { success: true };
+  }
+
+  @Post('password/reset')
+  async resetPasswordLegacy(
+    @Body() input: ResetPasswordDto,
+    @Req() req: RequestWithIp,
+  ): Promise<{ success: true }> {
+    return this.resetPassword(input, req);
+  }
+
+  @Get('verify-email')
+  async verifyEmail(
+    @Query('token') token: string | undefined,
+    @Req() req: RequestWithIp,
+  ): Promise<{ success: true; email: string }> {
+    if (!token) {
+      throw new BadRequestException('Email verification token is required');
+    }
+    const result = await this.authService.verifyEmail(token, {
+      ipAddress: req.ip,
+      requestId: req.headers['x-request-id'],
+    });
+    return { success: true, email: result.email };
+  }
+
+  @Post('verify-email/resend')
+  async resendVerificationEmail(
+    @Body() input: ResendVerificationEmailDto,
+    @Req() req: RequestWithIp,
+  ): Promise<{ success: true }> {
+    await this.authService.resendVerificationEmail(input.email, {
       ipAddress: req.ip,
       requestId: req.headers['x-request-id'],
     });

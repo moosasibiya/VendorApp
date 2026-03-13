@@ -71,6 +71,169 @@
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
 }
 
+.passwordPanel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.18)),
+    linear-gradient(135deg, rgba(15, 111, 255, 0.06), rgba(18, 182, 196, 0.08)),
+    var(--panel2);
+  box-shadow: var(--shadow-card);
+}
+
+.passwordHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.passwordCopy {
+  display: grid;
+  gap: 4px;
+}
+
+.passwordEyebrow {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.passwordHeadline {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.passwordBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted-strong);
+}
+
+.passwordBadge[data-tone="empty"] {
+  color: var(--muted-strong);
+}
+
+.passwordBadge[data-tone="weak"] {
+  color: var(--bad);
+  border-color: rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.passwordBadge[data-tone="fair"] {
+  color: #b96d00;
+  border-color: rgba(245, 158, 11, 0.22);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.passwordBadge[data-tone="good"] {
+  color: #0f766e;
+  border-color: rgba(13, 148, 136, 0.2);
+  background: rgba(13, 148, 136, 0.1);
+}
+
+.passwordBadge[data-tone="strong"] {
+  color: var(--good);
+  border-color: rgba(22, 163, 74, 0.2);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.passwordMeter {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.passwordSegment {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--panel3);
+  border: 1px solid transparent;
+}
+
+.passwordSegment[data-active="true"][data-tone="weak"] {
+  background: rgba(220, 38, 38, 0.82);
+}
+
+.passwordSegment[data-active="true"][data-tone="fair"] {
+  background: rgba(245, 158, 11, 0.86);
+}
+
+.passwordSegment[data-active="true"][data-tone="good"] {
+  background: linear-gradient(90deg, #0ea5e9, #14b8a6);
+}
+
+.passwordSegment[data-active="true"][data-tone="strong"] {
+  background: linear-gradient(90deg, #0f766e, #16a34a);
+}
+
+.passwordDetail {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted-strong);
+}
+
+.passwordRules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.passwordRule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 13px;
+  color: var(--muted-strong);
+}
+
+.passwordRule[data-met="true"] {
+  border-color: rgba(22, 163, 74, 0.18);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.passwordRuleIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.passwordRule[data-met="true"] .passwordRuleIcon {
+  color: var(--good);
+}
+
+.confirmHint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.confirmHint[data-tone="match"] {
+  color: var(--good);
+}
+
+.confirmHint[data-tone="mismatch"] {
+  color: var(--bad);
+}
+
 .checkbox {
   display: flex;
   align-items: center;
@@ -180,6 +343,10 @@
 
 @media (max-width: 720px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .passwordRules {
     grid-template-columns: 1fr;
   }
 }

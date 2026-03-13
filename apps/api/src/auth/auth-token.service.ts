@@ -8,10 +8,38 @@ export class AuthTokenService {
     payload: Omit<AuthTokenPayload, 'iat' | 'exp'>,
     options?: { expiresInSeconds?: number },
   ): string {
+    return this.signPayload<Omit<AuthTokenPayload, 'iat' | 'exp'>>(payload, {
+      expiresInSeconds: options?.expiresInSeconds,
+    });
+  }
+
+  verify(token: string): AuthTokenPayload {
+    const payload = this.verifyPayload<AuthTokenPayload>(token);
+
+    if (
+      !payload.sub ||
+      !payload.email ||
+      !payload.exp ||
+      !Number.isInteger(payload.ver) ||
+      payload.ver < 0
+    ) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+      throw new UnauthorizedException('Token expired');
+    }
+
+    return payload;
+  }
+
+  signPayload<TPayload extends object>(
+    payload: TPayload,
+    options?: { expiresInSeconds?: number },
+  ): string {
     const expiresInSeconds = options?.expiresInSeconds ?? this.getExpiresInSeconds();
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + expiresInSeconds;
-    const tokenPayload: AuthTokenPayload = { ...payload, iat, exp };
+    const tokenPayload = { ...payload, iat, exp };
 
     const header = this.base64UrlEncode({ alg: 'HS256', typ: 'JWT' });
     const payloadPart = this.base64UrlEncode(tokenPayload);
@@ -20,7 +48,10 @@ export class AuthTokenService {
     return `${unsigned}.${signature}`;
   }
 
-  verify(token: string): AuthTokenPayload {
+  verifyPayload<TPayload extends object>(token: string): TPayload & {
+    iat: number;
+    exp: number;
+  } {
     const [header, payloadPart, signature] = token.split('.');
     if (!header || !payloadPart || !signature) {
       throw new UnauthorizedException('Invalid token');
@@ -33,23 +64,17 @@ export class AuthTokenService {
       throw new UnauthorizedException('Invalid token');
     }
 
-    let payload: AuthTokenPayload;
+    let payload: TPayload & { iat: number; exp: number };
     try {
-      payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8')) as AuthTokenPayload;
+      payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8')) as TPayload & {
+        iat: number;
+        exp: number;
+      };
     } catch {
       throw new UnauthorizedException('Invalid token payload');
     }
 
-    if (
-      !payload.sub ||
-      !payload.email ||
-      !payload.exp ||
-      !Number.isInteger(payload.ver) ||
-      payload.ver < 0
-    ) {
-      throw new UnauthorizedException('Invalid token payload');
-    }
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+    if (!payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
       throw new UnauthorizedException('Token expired');
     }
 

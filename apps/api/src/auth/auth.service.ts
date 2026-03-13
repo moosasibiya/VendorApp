@@ -7,20 +7,27 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomBytes, scryptSync, timingSafeEqual, createHash, createHmac } from 'crypto';
+import { compare, hash } from 'bcryptjs';
 import { authenticator } from 'otplib';
 import { OAuth2Client } from 'google-auth-library';
 import type { AccountType, User } from '@vendorapp/shared';
+import { UserRole, type UserRoleValue } from '@vendorapp/shared';
 import { AuthTokenService } from './auth-token.service';
-import type { StoredUser } from './auth.types';
+import type { EmailVerificationTokenPayload, StoredUser } from './auth.types';
 import type { LoginDto } from './dto/login.dto';
 import type { SignupDto } from './dto/signup.dto';
 import { UsersStore } from './users.store';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { AuthAuditService } from './auth-audit.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { MailerService } from '../mailer/mailer.service';
 
 type AuthResult = {
-  token: string;
+  token?: string;
   user: User;
+  nextPath: string;
+  requiresEmailVerification?: boolean;
+  verificationEmailSent?: boolean;
 };
 
 type LoginContext = {
@@ -59,18 +66,24 @@ type GoogleStatePayload = {
 export class AuthService {
   private readonly maxFailedLoginAttempts = this.getPositiveIntEnv(
     'AUTH_MAX_FAILED_LOGIN_ATTEMPTS',
-    5,
+    10,
   );
   private readonly lockoutMinutes = this.getPositiveIntEnv('AUTH_LOCKOUT_MINUTES', 15);
   private readonly maxIpAttemptsPerWindow = this.getPositiveIntEnv(
     'AUTH_MAX_LOGIN_ATTEMPTS_PER_WINDOW',
-    20,
+    5,
   );
   private readonly ipWindowSeconds = this.getPositiveIntEnv('AUTH_LOGIN_ATTEMPT_WINDOW_SECONDS', 60);
   private readonly passwordResetExpiresMinutes = this.getPositiveIntEnv(
     'AUTH_PASSWORD_RESET_EXPIRES_MINUTES',
-    15,
+    60,
   );
+  private readonly emailVerificationExpiresHours = this.getPositiveIntEnv(
+    'AUTH_EMAIL_VERIFICATION_EXPIRES_HOURS',
+    24,
+  );
+  private readonly bcryptRounds = this.getPositiveIntEnv('AUTH_BCRYPT_ROUNDS', 10);
+  private readonly requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
   private readonly mfaIssuer = process.env.AUTH_MFA_ISSUER?.trim() || 'VendorApp';
   private readonly googleOauthStateTtlSeconds = this.getPositiveIntEnv(
     'GOOGLE_OAUTH_STATE_TTL_SECONDS',
@@ -82,13 +95,17 @@ export class AuthService {
   private readonly googleClient = new OAuth2Client();
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly usersStore: UsersStore,
     private readonly tokenService: AuthTokenService,
     private readonly rateLimitService: RateLimitService,
     private readonly authAuditService: AuthAuditService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async signup(input: SignupDto, context?: RequestContext): Promise<AuthResult> {
+    await this.enforceAuthRateLimit('signup', context?.ipAddress);
+
     const emailNormalized = input.email.trim().toLowerCase();
     const username = input.username.trim().replace(/^@+/, '');
     const usernameNormalized = username.toLowerCase();
@@ -122,7 +139,17 @@ export class AuthService {
       usernameNormalized,
       email: input.email.trim(),
       emailNormalized,
+      role: this.accountTypeToUserRole(input.accountType),
       accountType: input.accountType,
+      avatarUrl: null,
+      location: null,
+      clientEventTypes: [],
+      clientBudgetMin: null,
+      clientBudgetMax: null,
+      isEmailVerified: false,
+      isActive: true,
+      onboardingCompletedAt: null,
+      googleId: null,
       createdAt: new Date().toISOString(),
       passwordSalt,
       passwordHash,
@@ -147,6 +174,9 @@ export class AuthService {
       throw error;
     }
 
+    const verificationToken = this.createEmailVerificationToken(user);
+    await this.mailerService.sendVerificationEmail(user.email, verificationToken);
+
     await this.audit('signup_success', true, {
       userId: user.id,
       emailNormalized: user.emailNormalized,
@@ -154,18 +184,29 @@ export class AuthService {
       requestId: context?.requestId,
     });
 
+    const nextPath = this.requireEmailVerification
+      ? `/verify-email?email=${encodeURIComponent(user.email)}`
+      : await this.resolvePostAuthPath(user);
+
     return {
-      token: this.tokenService.sign({
-        sub: user.id,
-        email: user.email,
-        ver: this.getTokenVersion(user),
-      }),
-      user: this.toPublicUser(user),
+      ...(this.requireEmailVerification
+        ? {}
+        : {
+            token: this.tokenService.sign({
+              sub: user.id,
+              email: user.email,
+              ver: this.getTokenVersion(user),
+            }),
+          }),
+      user: await this.toPublicUser(user),
+      nextPath,
+      requiresEmailVerification: this.requireEmailVerification,
+      verificationEmailSent: true,
     };
   }
 
   async login(input: LoginDto, context?: LoginContext): Promise<AuthResult> {
-    await this.enforceIpRateLimit(context?.ipAddress);
+    await this.enforceAuthRateLimit('login', context?.ipAddress);
 
     const emailNormalized = input.email.trim().toLowerCase();
     const user = await this.usersStore.findByEmailNormalized(emailNormalized);
@@ -190,6 +231,33 @@ export class AuthService {
       throw new HttpException(
         'Too many failed login attempts. Please try again later.',
         HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (user.isActive === false) {
+      await this.audit('login_failed', false, {
+        userId: user.id,
+        emailNormalized,
+        ipAddress: context?.ipAddress,
+        requestId: context?.requestId,
+        metadata: { reason: 'account_inactive' },
+      });
+      throw new UnauthorizedException('This account is inactive');
+    }
+    if (this.requireEmailVerification && !user.isEmailVerified) {
+      await this.audit('login_failed', false, {
+        userId: user.id,
+        emailNormalized,
+        ipAddress: context?.ipAddress,
+        requestId: context?.requestId,
+        metadata: { reason: 'email_unverified' },
+      });
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'Please verify your email before logging in.',
+          code: 'EMAIL_VERIFICATION_REQUIRED',
+        },
+        HttpStatus.FORBIDDEN,
       );
     }
 
@@ -234,7 +302,8 @@ export class AuthService {
 
     return {
       token,
-      user: this.toPublicUser(user),
+      user: await this.toPublicUser(user),
+      nextPath: await this.resolvePostAuthPath(user),
     };
   }
 
@@ -351,13 +420,20 @@ export class AuthService {
         email,
         fullName,
         accountType: statePayload.accountType,
+        googleId: payload?.sub ?? null,
       },
       context,
     );
+    if (!authResult.token) {
+      throw new UnauthorizedException('Unable to finalize Google authentication');
+    }
 
     return {
       token: authResult.token,
-      nextPath: statePayload.nextPath,
+      nextPath:
+        statePayload.nextPath === '/dashboard' || statePayload.nextPath === '/onboarding'
+          ? authResult.nextPath
+          : statePayload.nextPath,
     };
   }
 
@@ -378,6 +454,8 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string, context?: RequestContext): Promise<{ resetToken?: string }> {
+    await this.enforceAuthRateLimit('forgot-password', context?.ipAddress);
+
     const emailNormalized = email.trim().toLowerCase();
     const user = await this.usersStore.findByEmailNormalized(emailNormalized);
     if (!user) {
@@ -390,14 +468,36 @@ export class AuthService {
       return {};
     }
 
-    const resetToken = randomBytes(32).toString('hex');
-    const resetHash = this.hashResetToken(resetToken);
-    const expiry = new Date(Date.now() + this.passwordResetExpiresMinutes * 60_000).toISOString();
+    const resetSecret = randomBytes(32).toString('hex');
+    const resetToken = `${user.id}.${resetSecret}`;
+    const resetHash = await this.hashResetSecret(resetSecret);
+    const expiry = new Date(Date.now() + this.passwordResetExpiresMinutes * 60_000);
+
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: user.id,
+          usedAt: null,
+        },
+        data: {
+          usedAt: new Date(),
+        },
+      }),
+      this.prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: resetHash,
+          expiresAt: expiry,
+        },
+      }),
+    ]);
 
     await this.usersStore.updateAuthFields(user.id, {
-      passwordResetHash: resetHash,
-      passwordResetExpiry: expiry,
+      passwordResetHash: null,
+      passwordResetExpiry: null,
     });
+
+    await this.mailerService.sendPasswordReset(user.email, resetToken);
 
     await this.audit('password_reset_requested', true, {
       userId: user.id,
@@ -407,7 +507,7 @@ export class AuthService {
       metadata: { userFound: true },
     });
 
-    if (process.env.AUTH_EXPOSE_RESET_TOKEN === 'true') {
+    if (!this.isProduction && process.env.AUTH_EXPOSE_RESET_TOKEN === 'true') {
       return { resetToken };
     }
     return {};
@@ -418,9 +518,8 @@ export class AuthService {
     newPassword: string,
     context?: RequestContext,
   ): Promise<void> {
-    const tokenHash = this.hashResetToken(token);
-    const user = await this.usersStore.findByPasswordResetHash(tokenHash);
-    if (!user || !user.passwordResetExpiry) {
+    const [userId, resetSecret] = token.split('.');
+    if (!userId || !resetSecret) {
       await this.audit('password_reset_failed', false, {
         ipAddress: context?.ipAddress,
         requestId: context?.requestId,
@@ -428,37 +527,133 @@ export class AuthService {
       });
       throw new UnauthorizedException('Invalid or expired password reset token');
     }
-    const expiryMillis = Date.parse(user.passwordResetExpiry);
-    if (!Number.isFinite(expiryMillis) || expiryMillis <= Date.now()) {
-      await this.usersStore.updateAuthFields(user.id, {
-        passwordResetHash: null,
-        passwordResetExpiry: null,
+
+    const user = await this.usersStore.findById(userId);
+    if (!user) {
+      await this.audit('password_reset_failed', false, {
+        ipAddress: context?.ipAddress,
+        requestId: context?.requestId,
+        metadata: { reason: 'token_user_not_found' },
       });
+      throw new UnauthorizedException('Invalid or expired password reset token');
+    }
+
+    const candidateTokens = await this.prisma.passwordResetToken.findMany({
+      where: {
+        userId: user.id,
+        usedAt: null,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    let matchingTokenId: string | null = null;
+    for (const candidate of candidateTokens) {
+      const matches = await compare(this.formatPepperedResetSecret(resetSecret), candidate.tokenHash);
+      if (matches) {
+        matchingTokenId = candidate.id;
+        break;
+      }
+    }
+
+    if (!matchingTokenId) {
       await this.audit('password_reset_failed', false, {
         userId: user.id,
         emailNormalized: user.emailNormalized,
         ipAddress: context?.ipAddress,
         requestId: context?.requestId,
-        metadata: { reason: 'token_expired' },
+        metadata: { reason: 'token_not_found' },
       });
       throw new UnauthorizedException('Invalid or expired password reset token');
     }
 
     const passwordSalt = randomBytes(16).toString('hex');
     const passwordHash = this.hashPassword(newPassword, passwordSalt);
-    await this.usersStore.updateAuthFields(user.id, {
-      passwordSalt,
-      passwordHash,
-      passwordResetHash: null,
-      passwordResetExpiry: null,
-      failedLoginAttempts: 0,
-      lockoutUntil: null,
-      tokenVersion: this.getTokenVersion(user) + 1,
-    });
+    const nextTokenVersion = this.getTokenVersion(user) + 1;
+
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.update({
+        where: { id: matchingTokenId },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: user.id,
+          usedAt: null,
+        },
+        data: {
+          usedAt: new Date(),
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordSalt,
+          passwordHash,
+          passwordResetHash: null,
+          passwordResetExpiry: null,
+          failedLoginAttempts: 0,
+          lockoutUntil: null,
+          tokenVersion: nextTokenVersion,
+        },
+      }),
+    ]);
 
     await this.audit('password_reset_success', true, {
       userId: user.id,
       emailNormalized: user.emailNormalized,
+      ipAddress: context?.ipAddress,
+      requestId: context?.requestId,
+    });
+  }
+
+  async verifyEmail(token: string, context?: RequestContext): Promise<{ email: string }> {
+    const payload = this.tokenService.verifyPayload<EmailVerificationTokenPayload>(token);
+    if (payload.purpose !== 'email_verification') {
+      throw new UnauthorizedException('Invalid email verification token');
+    }
+
+    const user = await this.usersStore.findById(payload.sub);
+    if (!user || user.email !== payload.email) {
+      throw new UnauthorizedException('Invalid email verification token');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+      },
+    });
+
+    await this.audit('email_verified', true, {
+      userId: user.id,
+      emailNormalized: user.emailNormalized,
+      ipAddress: context?.ipAddress,
+      requestId: context?.requestId,
+    });
+
+    return { email: user.email };
+  }
+
+  async resendVerificationEmail(email: string, context?: RequestContext): Promise<void> {
+    await this.enforceAuthRateLimit('resend-verification', context?.ipAddress);
+
+    const emailNormalized = email.trim().toLowerCase();
+    const user = await this.usersStore.findByEmailNormalized(emailNormalized);
+    if (!user || user.isEmailVerified) {
+      return;
+    }
+
+    const token = this.createEmailVerificationToken(user);
+    await this.mailerService.sendVerificationEmail(user.email, token);
+
+    await this.audit('verification_email_resent', true, {
+      userId: user.id,
+      emailNormalized,
       ipAddress: context?.ipAddress,
       requestId: context?.requestId,
     });
@@ -608,11 +803,13 @@ export class AuthService {
   }
 
   private async loginOrCreateGoogleUser(
-    input: { email: string; fullName: string; accountType: AccountType },
+    input: { email: string; fullName: string; accountType: AccountType; googleId?: string | null },
     context?: RequestContext,
   ): Promise<AuthResult> {
     const emailNormalized = input.email.trim().toLowerCase();
-    let user = await this.usersStore.findByEmailNormalized(emailNormalized);
+    let user =
+      (input.googleId ? await this.usersStore.findByGoogleId(input.googleId) : null) ??
+      (await this.usersStore.findByEmailNormalized(emailNormalized));
     let created = false;
 
     if (!user) {
@@ -629,7 +826,17 @@ export class AuthService {
         usernameNormalized,
         email: input.email.trim(),
         emailNormalized,
+        googleId: input.googleId ?? null,
+        role: this.accountTypeToUserRole(input.accountType),
         accountType: input.accountType,
+        avatarUrl: null,
+        location: null,
+        clientEventTypes: [],
+        clientBudgetMin: null,
+        clientBudgetMax: null,
+        isEmailVerified: true,
+        isActive: true,
+        onboardingCompletedAt: null,
         createdAt: new Date().toISOString(),
         passwordSalt,
         passwordHash,
@@ -654,6 +861,25 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Unable to authenticate with Google');
+    }
+
+    if (input.googleId && user.googleId !== input.googleId) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: input.googleId,
+          isEmailVerified: true,
+        },
+      });
+      user = {
+        ...user,
+        googleId: input.googleId,
+        isEmailVerified: true,
+      };
+    }
+
+    if (user.isActive === false) {
+      throw new UnauthorizedException('This account is inactive');
     }
 
     if (this.isLockedOut(user)) {
@@ -701,7 +927,8 @@ export class AuthService {
 
     return {
       token,
-      user: this.toPublicUser(user),
+      user: await this.toPublicUser(user),
+      nextPath: await this.resolvePostAuthPath(user),
     };
   }
 
@@ -857,15 +1084,115 @@ export class AuthService {
     return `user_${randomBytes(5).toString('hex')}`.slice(0, 30);
   }
 
-  private toPublicUser(user: StoredUser): User {
+  private async toPublicUser(user: StoredUser): Promise<User> {
     return {
       id: user.id,
       fullName: user.fullName,
       username: user.username,
       email: user.email,
       accountType: user.accountType,
+      role: user.role,
+      avatarUrl: user.avatarUrl ?? null,
+      location: user.location ?? null,
+      clientEventTypes: user.clientEventTypes ?? [],
+      clientBudgetMin: user.clientBudgetMin ? Number(user.clientBudgetMin) : null,
+      clientBudgetMax: user.clientBudgetMax ? Number(user.clientBudgetMax) : null,
+      isEmailVerified: user.isEmailVerified ?? false,
+      isActive: user.isActive ?? true,
+      onboardingCompleted: await this.isOnboardingComplete(user),
       createdAt: user.createdAt,
     };
+  }
+
+  private accountTypeToUserRole(accountType: AccountType): UserRole {
+    switch (accountType) {
+      case 'CREATIVE':
+        return UserRole.ARTIST;
+      case 'AGENCY':
+        return UserRole.AGENCY;
+      case 'CLIENT':
+      default:
+        return UserRole.CLIENT;
+    }
+  }
+
+  private async resolvePostAuthPath(user: StoredUser): Promise<string> {
+    if (!(await this.isOnboardingComplete(user))) {
+      return '/onboarding';
+    }
+    return this.getRoleLandingPath(user.role);
+  }
+
+  private getRoleLandingPath(role: UserRoleValue): string {
+    switch (role) {
+      case UserRole.CLIENT:
+        return '/explore';
+      case UserRole.AGENCY:
+        return '/agency/dashboard';
+      case UserRole.ADMIN:
+        return '/admin';
+      case UserRole.ARTIST:
+      default:
+        return '/dashboard';
+    }
+  }
+
+  private async isOnboardingComplete(user: StoredUser): Promise<boolean> {
+    if (user.onboardingCompletedAt) {
+      return true;
+    }
+
+    switch (user.role) {
+      case UserRole.ARTIST: {
+        const artistProfile = await this.prisma.artist.findFirst({
+          where: { userId: user.id },
+          select: { onboardingCompleted: true },
+        });
+        return Boolean(artistProfile?.onboardingCompleted);
+      }
+      case UserRole.AGENCY: {
+        const agency = await this.prisma.agency.findUnique({
+          where: { ownerId: user.id },
+          select: { id: true },
+        });
+        return Boolean(agency);
+      }
+      case UserRole.CLIENT:
+        return Boolean(user.location && (user.clientEventTypes?.length ?? 0) > 0);
+      case UserRole.ADMIN:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private createEmailVerificationToken(user: StoredUser): string {
+    return this.tokenService.signPayload<{
+      sub: string;
+      email: string;
+      purpose: 'email_verification';
+    }>(
+      {
+        sub: user.id,
+        email: user.email,
+        purpose: 'email_verification',
+      },
+      {
+        expiresInSeconds: this.emailVerificationExpiresHours * 60 * 60,
+      },
+    );
+  }
+
+  private async hashResetSecret(secret: string): Promise<string> {
+    return hash(this.formatPepperedResetSecret(secret), this.bcryptRounds);
+  }
+
+  private formatPepperedResetSecret(secret: string): string {
+    const pepper = this.getSecretWithDevFallback(
+      'AUTH_RESET_TOKEN_PEPPER',
+      'dev-reset-token-pepper-change-me',
+    );
+    return `${pepper}:${secret}`;
   }
 
   private hashPassword(password: string, salt: string): string {
@@ -888,14 +1215,6 @@ export class AuthService {
       return false;
     }
     return timingSafeEqual(aBuffer, bBuffer);
-  }
-
-  private hashResetToken(token: string): string {
-    const pepper = this.getSecretWithDevFallback(
-      'AUTH_RESET_TOKEN_PEPPER',
-      'dev-reset-token-pepper-change-me',
-    );
-    return createHash('sha256').update(`${pepper}:${token}`).digest('hex');
   }
 
   private hashBackupCode(code: string): string {
@@ -982,8 +1301,8 @@ export class AuthService {
     return Math.floor(value);
   }
 
-  private async enforceIpRateLimit(ipAddress?: string | null): Promise<void> {
-    const key = `auth-login:${ipAddress?.trim() || 'unknown'}`;
+  private async enforceAuthRateLimit(scope: string, ipAddress?: string | null): Promise<void> {
+    const key = `auth:${scope}:${ipAddress?.trim() || 'unknown'}`;
     const decision = await this.rateLimitService.consume(
       key,
       this.maxIpAttemptsPerWindow,
@@ -995,7 +1314,7 @@ export class AuthService {
     }
 
     throw new HttpException(
-      'Too many login attempts. Please try again shortly.',
+      'Too many requests. Please try again shortly.',
       HttpStatus.TOO_MANY_REQUESTS,
     );
   }

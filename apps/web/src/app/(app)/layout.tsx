@@ -3,22 +3,23 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppShell from "../../components/layout/AppShell/AppShell";
-import { fetchMe } from "@/lib/api";
+import type { User } from "@vendorapp/shared";
+import { defaultAppPathForUser, fetchMe } from "@/lib/api";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
       try {
-        await fetchMe();
-        if (!cancelled) setAuthed(true);
+        const currentUser = await fetchMe();
+        if (!cancelled) setUser(currentUser);
       } catch {
-        if (!cancelled) setAuthed(false);
+        if (!cancelled) setUser(null);
       }
     })();
 
@@ -28,13 +29,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (authed === false) {
+    if (user === null) {
       const next = encodeURIComponent(pathname || "/dashboard");
       router.replace(`/login?next=${next}`);
+      return;
     }
-  }, [authed, router, pathname]);
 
-  if (authed !== true) return null;
+    if (!user) {
+      return;
+    }
+
+    if (!user.onboardingCompleted && pathname !== "/onboarding") {
+      router.replace("/onboarding");
+      return;
+    }
+
+    if (user.onboardingCompleted && pathname === "/onboarding") {
+      router.replace(defaultAppPathForUser(user));
+    }
+  }, [pathname, router, user]);
+
+  if (!user) return null;
 
   return <AppShell>{children}</AppShell>;
 }

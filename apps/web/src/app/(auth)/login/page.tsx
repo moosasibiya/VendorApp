@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, buildGoogleAuthStartUrl, login } from "@/lib/api";
+import {
+  ApiError,
+  buildGoogleAuthStartUrl,
+  defaultAppPathForUser,
+  login,
+} from "@/lib/api";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
@@ -67,13 +72,23 @@ export default function LoginPage() {
 
           setIsSubmitting(true);
           try {
-            await login({
+            const result = await login({
               email: email.trim(),
               password,
             });
-            router.push(nextPath);
+            router.push(result.nextPath ?? defaultAppPathForUser(result.user) ?? nextPath);
           } catch (err) {
             if (err instanceof ApiError) {
+              const code =
+                typeof err.details === "object" &&
+                err.details !== null &&
+                "code" in err.details
+                  ? String((err.details as { code?: string }).code)
+                  : "";
+              if (code === "EMAIL_VERIFICATION_REQUIRED") {
+                router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+                return;
+              }
               setError(err.message);
             } else {
               setError("Unable to sign in right now.");
@@ -109,7 +124,7 @@ export default function LoginPage() {
 
         <div className={styles.row}>
           <div />
-          <Link className={styles.link} href="#">
+          <Link className={styles.link} href="/forgot-password">
             Forgot password?
           </Link>
         </div>

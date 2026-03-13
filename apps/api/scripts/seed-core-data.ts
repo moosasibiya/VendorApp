@@ -46,6 +46,11 @@ type UserSeed = {
   role: UserRole;
   accountType: AccountType;
   avatarUrl: string;
+  location?: string;
+  clientEventTypes?: string[];
+  clientBudgetMin?: string;
+  clientBudgetMax?: string;
+  onboardingCompletedAt?: string;
 };
 
 type ArtistSeed = {
@@ -122,6 +127,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.ARTIST,
     accountType: AccountType.CREATIVE,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/kuhle.webp',
+    location: 'Johannesburg',
+    onboardingCompletedAt: '2026-01-10T09:00:00.000Z',
   },
   {
     fullName: 'Ayanda Khumalo',
@@ -130,6 +137,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.ARTIST,
     accountType: AccountType.CREATIVE,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/ayanda.webp',
+    location: 'Cape Town',
+    onboardingCompletedAt: '2026-01-11T09:00:00.000Z',
   },
   {
     fullName: 'Nandi Mokoena',
@@ -138,6 +147,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.ARTIST,
     accountType: AccountType.CREATIVE,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/nandi.webp',
+    location: 'Durban',
+    onboardingCompletedAt: '2026-01-12T09:00:00.000Z',
   },
   {
     fullName: 'Themba Dlamini',
@@ -146,6 +157,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.ARTIST,
     accountType: AccountType.CREATIVE,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/themba.webp',
+    location: 'Pretoria',
+    onboardingCompletedAt: '2026-01-13T09:00:00.000Z',
   },
   {
     fullName: 'Lindiwe Rossouw',
@@ -154,6 +167,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.ARTIST,
     accountType: AccountType.CREATIVE,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/lindiwe.webp',
+    location: 'Cape Town',
+    onboardingCompletedAt: '2026-01-14T09:00:00.000Z',
   },
   {
     fullName: 'Frame House Collective',
@@ -162,6 +177,8 @@ const userSeeds: UserSeed[] = [
     role: UserRole.AGENCY,
     accountType: AccountType.AGENCY,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/frame-house.webp',
+    location: 'Cape Town',
+    onboardingCompletedAt: '2026-01-15T09:00:00.000Z',
   },
   {
     fullName: 'Sarah Daniels',
@@ -170,6 +187,11 @@ const userSeeds: UserSeed[] = [
     role: UserRole.CLIENT,
     accountType: AccountType.CLIENT,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/sarah.webp',
+    location: 'Johannesburg',
+    clientEventTypes: ['Wedding', 'Private Celebration'],
+    clientBudgetMin: '5000.00',
+    clientBudgetMax: '25000.00',
+    onboardingCompletedAt: '2026-01-16T09:00:00.000Z',
   },
   {
     fullName: 'Musa Jacobs',
@@ -178,6 +200,11 @@ const userSeeds: UserSeed[] = [
     role: UserRole.CLIENT,
     accountType: AccountType.CLIENT,
     avatarUrl: 'https://cdn.vendorapp.local/avatars/musa.webp',
+    location: 'Cape Town',
+    clientEventTypes: ['Brand Campaign', 'Product Launch'],
+    clientBudgetMin: '7500.00',
+    clientBudgetMax: '40000.00',
+    onboardingCompletedAt: '2026-01-17T09:00:00.000Z',
   },
 ];
 
@@ -306,6 +333,8 @@ const agencySeed = {
   description: 'Boutique talent representation for premium photographers and filmmakers.',
   logoUrl: 'https://cdn.vendorapp.local/logos/frame-house.webp',
   website: 'https://framehouse.example.com',
+  contactName: 'Frame House Team',
+  contactEmail: 'agency@vendorapp.dev',
   isVerified: true,
 };
 
@@ -371,6 +400,12 @@ async function upsertUser(user: UserSeed) {
       role: user.role,
       accountType: user.accountType,
       avatarUrl: user.avatarUrl,
+      location: user.location ?? null,
+      clientEventTypes: user.clientEventTypes ?? [],
+      clientBudgetMin: user.clientBudgetMin ?? null,
+      clientBudgetMax: user.clientBudgetMax ?? null,
+      notificationPreferences: { email: true },
+      onboardingCompletedAt: user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt) : null,
       isEmailVerified: true,
       isActive: true,
       passwordSalt: seedPasswordSalt,
@@ -387,6 +422,12 @@ async function upsertUser(user: UserSeed) {
       role: user.role,
       accountType: user.accountType,
       avatarUrl: user.avatarUrl,
+      location: user.location ?? null,
+      clientEventTypes: user.clientEventTypes ?? [],
+      clientBudgetMin: user.clientBudgetMin ?? null,
+      clientBudgetMax: user.clientBudgetMax ?? null,
+      notificationPreferences: { email: true },
+      onboardingCompletedAt: user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt) : null,
       isEmailVerified: true,
       isActive: true,
       passwordSalt: seedPasswordSalt,
@@ -502,6 +543,8 @@ async function run(): Promise<void> {
       description: agencySeed.description,
       logoUrl: agencySeed.logoUrl,
       website: agencySeed.website,
+      contactName: agencySeed.contactName,
+      contactEmail: agencySeed.contactEmail,
       isVerified: agencySeed.isVerified,
     },
     create: {
@@ -511,6 +554,8 @@ async function run(): Promise<void> {
       description: agencySeed.description,
       logoUrl: agencySeed.logoUrl,
       website: agencySeed.website,
+      contactName: agencySeed.contactName,
+      contactEmail: agencySeed.contactEmail,
       isVerified: agencySeed.isVerified,
     },
     select: {

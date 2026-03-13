@@ -1,4 +1,4 @@
-import type { AccountType } from '../enums';
+import type { AccountType, UserRoleValue } from '../enums';
 
 export interface User {
   id: string;
@@ -6,6 +6,15 @@ export interface User {
   username: string;
   email: string;
   accountType: AccountType;
+  role: UserRoleValue;
+  avatarUrl?: string | null;
+  location?: string | null;
+  clientEventTypes?: string[];
+  clientBudgetMin?: number | null;
+  clientBudgetMax?: number | null;
+  isEmailVerified?: boolean;
+  isActive?: boolean;
+  onboardingCompleted?: boolean;
   createdAt: string;
 }
 
@@ -24,4 +33,7 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   user: User;
+  nextPath?: string;
+  requiresEmailVerification?: boolean;
+  verificationEmailSent?: boolean;
 }

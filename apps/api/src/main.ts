@@ -1,7 +1,10 @@
+import { loadEnvironment } from './env';
 import { randomUUID, timingSafeEqual } from 'crypto';
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+loadEnvironment();
 
 export async function configureApp(app: INestApplication): Promise<void> {
   const logger = new Logger('HTTP');
