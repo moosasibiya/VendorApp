@@ -1,108 +1,166 @@
 # VendorApp API
 
-NestJS API for VendorApp, now backed by PostgreSQL via Prisma.
+NestJS API for VendorApp, backed by PostgreSQL via Prisma.
 
-## Supabase/PostgreSQL setup
+## Prerequisites
 
-1. Copy `apps/api/.env.example` to `apps/api/.env`.
-2. Set:
-   - `DATABASE_URL`: pooled Supabase connection string (port `6543`).
-   - `DIRECT_URL`: direct Supabase connection string (port `5432`) for migrations.
-   - `AUTH_TOKEN_SECRET`: at least 32 random characters.
-   - `CSRF_COOKIE_NAME`: cookie used for CSRF double-submit token (default `vendrman_csrf`).
-   - `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`, `AUTH_MFA_ISSUER`.
-   - `AUTH_RESET_TOKEN_PEPPER` and `AUTH_BACKUP_CODE_PEPPER`.
-   - Optional distributed limiter: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
-3. Keep `AUTH_COOKIE_SECURE=true` in production.
+- Node.js 20+
+- pnpm 9+
+- Docker Desktop (or another local Docker engine) running
 
-## CSRF protection
+## First Run
 
-- The API enforces CSRF validation on non-safe methods (`POST`, `PUT`, `PATCH`, `DELETE`) when an auth cookie is present.
-- Clients must send `X-CSRF-Token` matching the CSRF cookie value.
-- `GET /api/auth/csrf` issues a CSRF cookie and token. The web client already does this automatically before mutating calls.
+1. Install dependencies from the repository root:
 
-## Auth security endpoints
+   ```bash
+   pnpm install
+   ```
 
-- `POST /api/auth/password/forgot`
-- `POST /api/auth/password/reset`
-- `POST /api/auth/mfa/setup`
-- `POST /api/auth/mfa/enable`
-- `POST /api/auth/mfa/disable`
-- `POST /api/auth/mfa/backup/regenerate`
-- `GET /api/auth/google/start`
-- `GET /api/auth/google/callback`
+2. Copy the Docker Compose env file at the repository root:
 
-## Google OAuth setup
+   ```bash
+   cp .env.example .env
+   ```
 
-1. Create a Google OAuth 2.0 Web application in Google Cloud Console.
-2. Add an authorized redirect URI matching `GOOGLE_OAUTH_REDIRECT_URI`.
-   - Local example: `http://localhost:4000/api/auth/google/callback`
-3. Set these environment variables:
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
-   - `GOOGLE_OAUTH_REDIRECT_URI`
-   - Optional: `GOOGLE_OAUTH_STATE_SECRET`
+   PowerShell:
 
-## Prisma commands
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+3. Copy the API env file:
+
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+
+   PowerShell:
+
+   ```powershell
+   Copy-Item apps/api/.env.example apps/api/.env
+   ```
+
+4. Copy the web env file:
+
+   ```bash
+   cp apps/web/.env.example apps/web/.env.local
+   ```
+
+   PowerShell:
+
+   ```powershell
+   Copy-Item apps/web/.env.example apps/web/.env.local
+   ```
+
+5. Start local infrastructure:
+
+   ```bash
+   docker compose up -d --wait
+   ```
+
+6. Apply database migrations:
+
+   ```bash
+   pnpm --filter @vendorapp/api run db:migrate
+   ```
+
+7. Seed the database:
+
+   ```bash
+   pnpm --filter @vendorapp/api run db:seed:core
+   ```
+
+8. Start the apps from the repository root:
+
+   ```bash
+   pnpm dev
+   ```
+
+   Convenience aliases:
+
+   ```bash
+   make dev
+   # or
+   pnpm run dev:local
+   ```
+
+## Local URLs
+
+- API: `http://localhost:4000/api`
+- Web: `http://localhost:3000`
+- Health: `http://localhost:4000/api/health`
+
+## Environment Variables
+
+The canonical API env reference lives in `apps/api/.env.example`.
+
+Important local values:
+
+- `DATABASE_URL`: Prisma runtime connection string
+- `DIRECT_URL`: direct PostgreSQL connection string for migrations
+- `JWT_SECRET`: used as the auth token secret by the current backend
+- `WEB_ORIGIN`: allowed web app origin for CORS and cookie redirects
+- `API_PORT`: API port, defaults to `4000`
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`: optional in local development, required for distributed rate limiting in production
+
+The current backend also accepts compatibility aliases from `apps/api/.env.example`:
+
+- `GOOGLE_CALLBACK_URL` -> `GOOGLE_OAUTH_REDIRECT_URI`
+- `RESET_TOKEN_PEPPER` -> `AUTH_RESET_TOKEN_PEPPER`
+- `BACKUP_CODE_PEPPER` -> `AUTH_BACKUP_CODE_PEPPER`
+- `JWT_EXPIRES_IN` -> `AUTH_TOKEN_EXPIRES_IN_SECONDS`
+- `API_PORT` -> `PORT`
+
+## Google OAuth Setup
+
+1. Open Google Cloud Console and create an OAuth 2.0 Web application.
+2. Add this local redirect URI:
+
+   ```text
+   http://localhost:4000/api/auth/google/callback
+   ```
+
+3. Set the following env vars in `apps/api/.env`:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CALLBACK_URL`
+
+## Database Commands
 
 ```bash
 pnpm --filter @vendorapp/api run prisma:generate
-pnpm --filter @vendorapp/api run prisma:migrate:deploy
-```
-
-For local development:
-
-```bash
-pnpm --filter @vendorapp/api run prisma:migrate:dev
-```
-
-## Migrate legacy users.json data
-
-After DB schema migration is applied:
-
-```bash
-pnpm --filter @vendorapp/api run db:import:users
-```
-
-The importer reads `apps/api/data/users.json` and upserts users into PostgreSQL.
-
-## Seed artists and bookings
-
-```bash
+pnpm --filter @vendorapp/api run db:migrate
 pnpm --filter @vendorapp/api run db:seed:core
+pnpm --filter @vendorapp/api run db:import:users
+pnpm --filter @vendorapp/api run db:reset
 ```
 
-## E2E tests
+## Local Convenience Commands
+
+From the repository root:
 
 ```bash
-pnpm --filter @vendorapp/api run test:e2e
+make dev
+make db:migrate
+make db:seed
+make db:reset
+make test
 ```
 
-CI runs API e2e tests with PostgreSQL using `.github/workflows/api-e2e.yml`.
-
-## Production secrets manager wiring
-
-Use your deployment secrets manager (or GitHub Environment secrets) to inject these values at runtime:
-
-- `AUTH_TOKEN_SECRET`
-- `AUTH_RESET_TOKEN_PEPPER`
-- `AUTH_BACKUP_CODE_PEPPER`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-
-In production mode, the API now enforces secure configuration:
-
-- `AUTH_RESET_TOKEN_PEPPER` and `AUTH_BACKUP_CODE_PEPPER` must be set.
-- Distributed rate limiting is required by default in production (`UPSTASH_REDIS_*`).
-
-To validate deployment-level secret wiring, run:
-
-- `.github/workflows/api-e2e-production-env.yml`
-
-This workflow uses the `production` GitHub Environment and executes the same generate/migrate/e2e flow with secret-backed auth and Redis configuration.
-
-## Run API
+If `make` is unavailable, use the equivalent `pnpm` scripts:
 
 ```bash
-pnpm --filter @vendorapp/api run dev
+pnpm run dev:local
+pnpm run db:migrate
+pnpm run db:seed
+pnpm run db:reset
+pnpm test
 ```
+
+## Troubleshooting
+
+- If `docker compose up -d --wait` fails, start Docker Desktop first.
+- If Prisma cannot connect to `localhost:5432`, confirm the `db` container is healthy.
+- If auth fails on startup, confirm `apps/api/.env` contains `JWT_SECRET` or `SESSION_SECRET`.
+- If Google sign-in fails, verify the callback URL matches both the Google console and `apps/api/.env`.

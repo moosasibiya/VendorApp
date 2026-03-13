@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticator } from 'otplib';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { loadEnvironment } from '../src/env';
 import { configureApp } from '../src/main';
 
 describe('API Security Flows (e2e)', () => {
@@ -11,10 +12,11 @@ describe('API Security Flows (e2e)', () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
+    loadEnvironment();
     process.env.DATABASE_URL ??=
-      'postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public';
+      'postgresql://postgres:postgres@localhost:5432/vendorapp';
     process.env.DIRECT_URL ??=
-      'postgresql://vendorapp:vendorapp_password@localhost:5432/vendorapp?schema=public';
+      'postgresql://postgres:postgres@localhost:5432/vendorapp';
     process.env.AUTH_TOKEN_SECRET ??=
       '4f3c56d5379ef4b3800a4c7187ce1c6b6f84e7fb93c8a0d353cc35f198530815';
     process.env.AUTH_EXPOSE_RESET_TOKEN ??= 'true';
@@ -50,7 +52,7 @@ describe('API Security Flows (e2e)', () => {
   it('enforces CSRF for authenticated mutations and supports login/logout', async () => {
     const agent = request.agent(app.getHttpServer());
     const email = `csrf.${Date.now()}@example.com`;
-    const password = 'StrongPass#12345';
+    const password = 'simple123';
 
     await agent.post('/api/auth/signup').send({
       fullName: 'CSRF Test User',
@@ -95,8 +97,8 @@ describe('API Security Flows (e2e)', () => {
   it('supports password reset flow', async () => {
     const agent = request.agent(app.getHttpServer());
     const email = `reset.${Date.now()}@example.com`;
-    const oldPassword = 'StrongPass#12345';
-    const newPassword = 'NewStrongPass#12345';
+    const oldPassword = 'simple123';
+    const newPassword = 'newpass123';
 
     await agent.post('/api/auth/signup').send({
       fullName: 'Reset Test User',
@@ -137,7 +139,7 @@ describe('API Security Flows (e2e)', () => {
   it('supports MFA setup, enable, and backup code consumption', async () => {
     const agent = request.agent(app.getHttpServer());
     const email = `mfa.${Date.now()}@example.com`;
-    const password = 'StrongPass#12345';
+    const password = 'simple123';
 
     await agent.post('/api/auth/signup').send({
       fullName: 'MFA Test User',
@@ -182,9 +184,49 @@ describe('API Security Flows (e2e)', () => {
       .expect(401);
   });
 
+  it('creates and loads an artist onboarding profile for creative accounts', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const email = `artist.${Date.now()}@example.com`;
+    const password = 'simple123';
+
+    await agent.post('/api/auth/signup').send({
+      fullName: 'Artist Onboarding User',
+      username: `artist_${Date.now()}`,
+      email,
+      password,
+      accountType: 'CREATIVE',
+    });
+
+    const csrfToken = await getCsrfToken(agent);
+    const saveResponse = await agent
+      .put('/api/artists/me/profile')
+      .set('X-CSRF-Token', csrfToken)
+      .send({
+        displayName: 'Studio Test',
+        role: 'Wedding Photographer',
+        location: 'Cape Town',
+        bio: 'Wedding photographer capturing intimate and editorial celebrations across South Africa.',
+        services: ['Photography', 'Content Creation'],
+        specialties: ['Weddings', 'Editorial'],
+        pricingSummary: 'Portraits from R3,500. Weddings from R12,000.',
+        availabilitySummary: 'Available nationwide with two weeks notice.',
+        portfolioLinks: ['https://example.com/portfolio'],
+      })
+      .expect(200);
+
+    expect(saveResponse.body.slug).toContain('artist');
+    expect(saveResponse.body.name).toBe('Studio Test');
+    expect(saveResponse.body.services).toEqual(['Photography', 'Content Creation']);
+
+    await agent.get('/api/artists/me/profile').expect(200);
+    await request(app.getHttpServer())
+      .get(`/api/artists/${saveResponse.body.slug as string}`)
+      .expect(200);
+  });
+
   it('persists auth audit events for failed and successful logins', async () => {
     const email = `audit.${Date.now()}@example.com`;
-    const password = 'StrongPass#12345';
+    const password = 'simple123';
 
     await request(app.getHttpServer())
       .post('/api/auth/signup')
