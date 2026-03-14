@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Booking, User } from "@vendorapp/shared";
 import { PaymentForm } from "@/components/PaymentForm";
-import { ApiError, fetchBooking, fetchMe, updateBookingStatus } from "@/lib/api";
+import {
+  ApiError,
+  createConversation,
+  fetchBooking,
+  fetchMe,
+  updateBookingStatus,
+} from "@/lib/api";
 import styles from "./page.module.css";
 
 function formatCurrency(amount: number): string {
@@ -33,6 +39,7 @@ function humanize(value: string): string {
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = typeof params.id === "string" ? params.id : "";
 
@@ -100,6 +107,24 @@ export default function BookingDetailPage() {
     }
   };
 
+  const openConversation = async () => {
+    if (!booking) {
+      return;
+    }
+
+    setError(null);
+    try {
+      const conversation = await createConversation(booking.id);
+      router.push(`/messages?conversationId=${encodeURIComponent(conversation.id)}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Unable to open the conversation right now.");
+      }
+    }
+  };
+
   const paymentState = searchParams.get("payment");
   const canPay =
     !!booking &&
@@ -118,9 +143,9 @@ export default function BookingDetailPage() {
           <h1>Booking detail</h1>
         </div>
         <div className={styles.topActions}>
-          <Link href="/messages" className={styles.ghostBtn}>
+          <button type="button" className={styles.ghostBtn} onClick={() => void openConversation()}>
             Open messages
-          </Link>
+          </button>
         </div>
       </div>
 

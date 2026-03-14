@@ -10,6 +10,17 @@ export interface ApiResponse<T> {
   meta?: PaginationMeta;
 }
 
+export interface CursorPaginationMeta {
+  limit: number;
+  hasMore: boolean;
+  nextCursor?: string | null;
+}
+
+export interface CursorApiResponse<T> {
+  data: T;
+  meta: CursorPaginationMeta;
+}
+
 export interface ApiError {
   statusCode: number;
   message: string;

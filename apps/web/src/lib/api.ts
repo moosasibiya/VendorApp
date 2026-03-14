@@ -7,8 +7,14 @@ import type {
   AuthResponse,
   BookingAction,
   Booking,
+  ConversationMessage,
+  ConversationSummary,
   CreateBookingInput,
+  CursorApiResponse,
   LoginRequest,
+  MessageTypeValue,
+  NotificationFeed,
+  NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
@@ -20,7 +26,13 @@ export type {
   Artist,
   ArtistProfileInput,
   Booking,
+  ConversationMessage,
+  ConversationSummary,
   CreateBookingInput,
+  CursorApiResponse,
+  MessageTypeValue,
+  NotificationFeed,
+  NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
@@ -211,6 +223,69 @@ export async function fetchBooking(id: string): Promise<Booking> {
   return response.data;
 }
 
+export async function createConversation(bookingId: string): Promise<ConversationSummary> {
+  const response = await getJson<ApiEnvelope<ConversationSummary>>("/conversations", {
+    method: "POST",
+    body: JSON.stringify({ bookingId }),
+  });
+  return response.data;
+}
+
+export async function fetchConversations(): Promise<ConversationSummary[]> {
+  const response = await getJson<ApiEnvelope<ConversationSummary[]>>("/conversations");
+  return response.data;
+}
+
+export async function fetchConversationMessages(input: {
+  conversationId: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<CursorApiResponse<ConversationMessage[]>> {
+  const params = new URLSearchParams();
+  if (input.cursor) {
+    params.set("cursor", input.cursor);
+  }
+  if (input.limit) {
+    params.set("limit", String(input.limit));
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return getJson<CursorApiResponse<ConversationMessage[]>>(
+    `/conversations/${encodeURIComponent(input.conversationId)}/messages${suffix}`,
+  );
+}
+
+export async function sendConversationMessage(input: {
+  conversationId: string;
+  content: string;
+  type?: MessageTypeValue;
+  fileUrl?: string;
+}): Promise<ConversationMessage> {
+  const response = await getJson<ApiEnvelope<ConversationMessage>>(
+    `/conversations/${encodeURIComponent(input.conversationId)}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        content: input.content,
+        ...(input.type ? { type: input.type } : {}),
+        ...(input.fileUrl ? { fileUrl: input.fileUrl } : {}),
+      }),
+    },
+  );
+  return response.data;
+}
+
+export async function markConversationRead(
+  conversationId: string,
+): Promise<{ success: true }> {
+  return getJson<{ success: true }>(
+    `/conversations/${encodeURIComponent(conversationId)}/read`,
+    {
+      method: "PATCH",
+    },
+  );
+}
+
 export async function updateBookingStatus(input: {
   bookingId: string;
   action: BookingAction;
@@ -239,6 +314,34 @@ export async function initiateBookingPayment(
     },
   );
   return response.data;
+}
+
+export async function fetchNotifications(query?: {
+  cursor?: string | null;
+  limit?: number;
+}): Promise<NotificationFeed> {
+  const params = new URLSearchParams();
+  if (query?.cursor) {
+    params.set("cursor", query.cursor);
+  }
+  if (query?.limit) {
+    params.set("limit", String(query.limit));
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return getJson<NotificationFeed>(`/notifications${suffix}`);
+}
+
+export async function markNotificationRead(id: string): Promise<NotificationItem> {
+  return getJson<NotificationItem>(`/notifications/${encodeURIComponent(id)}/read`, {
+    method: "PATCH",
+  });
+}
+
+export async function markAllNotificationsRead(): Promise<{ success: true }> {
+  return getJson<{ success: true }>("/notifications/read-all", {
+    method: "PATCH",
+  });
 }
 
 export async function signup(input: SignupRequest): Promise<AuthResponse> {
@@ -351,4 +454,8 @@ export function defaultAppPathForUser(user: User): string {
     default:
       return "/dashboard";
   }
+}
+
+export function getApiOrigin(): string {
+  return new URL(API_BASE_URL).origin;
 }

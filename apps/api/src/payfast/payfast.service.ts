@@ -16,6 +16,7 @@ import {
 import type { ApiResponse, PaymentCheckoutSession } from '@vendorapp/shared';
 import { createHash, timingSafeEqual } from 'crypto';
 import { MailerService } from '../mailer/mailer.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { PayfastItnDto } from './dto/payfast-itn.dto';
@@ -84,6 +85,7 @@ export class PayfastService {
     private readonly prisma: PrismaService,
     private readonly rateLimitService: RateLimitService,
     private readonly mailerService: MailerService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async initiateBookingPayment(
@@ -208,7 +210,7 @@ export class PayfastService {
     }
 
     const paidAt = new Date();
-    await this.prisma.$transaction(async (tx) => {
+    const createdNotifications = await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id: booking.id },
         data: {
@@ -222,8 +224,9 @@ export class PayfastService {
       });
 
       const recipients = this.getPaymentNotificationRecipients(booking);
-      await tx.notification.createMany({
-        data: recipients.map((userId) => ({
+      return this.notificationsService.createMany(
+        tx,
+        recipients.map((userId) => ({
           userId,
           type: NotificationType.PAYMENT_RECEIVED,
           title: 'Payment received',
@@ -234,8 +237,10 @@ export class PayfastService {
             provider: PaymentProvider.PAYFAST,
           },
         })),
-      });
+      );
     });
+
+    this.notificationsService.emitMany(createdNotifications);
 
     await Promise.all([
       this.mailerService.sendBookingConfirmation(booking.client.email, {
@@ -274,7 +279,7 @@ export class PayfastService {
     }
 
     const failedAt = new Date();
-    await this.prisma.$transaction(async (tx) => {
+    const createdNotifications = await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id: booking.id },
         data: {
@@ -286,8 +291,8 @@ export class PayfastService {
         },
       });
 
-      await tx.notification.create({
-        data: {
+      return this.notificationsService.createMany(tx, [
+        {
           userId: booking.clientId,
           type: NotificationType.PAYMENT_FAILED,
           title: 'Payment failed',
@@ -298,8 +303,10 @@ export class PayfastService {
             provider: PaymentProvider.PAYFAST,
           },
         },
-      });
+      ]);
     });
+
+    this.notificationsService.emitMany(createdNotifications);
 
     this.logger.warn(
       JSON.stringify({

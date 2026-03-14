@@ -16,6 +16,7 @@ import {
 import type { ApiResponse, Booking, BookingAction } from '@vendorapp/shared';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ListBookingsQueryDto } from './dto/list-bookings-query.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
@@ -120,7 +121,10 @@ type StatusChangePlan = {
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async findAll(userId: string, query: ListBookingsQueryDto): Promise<ApiResponse<Booking[]>> {
     const actor = await this.getActorContext(userId);
@@ -207,7 +211,7 @@ export class BookingsService {
     const normalizedNotes = this.normalizeOptionalString(input.notes);
     const normalizedReason = `Booking created by ${actor.name}`;
 
-    await this.prisma.$transaction(async (tx) => {
+    const transactionResult = await this.prisma.$transaction(async (tx) => {
       await tx.booking.create({
         data: {
           id: bookingId,
@@ -252,8 +256,8 @@ export class BookingsService {
       });
 
       if (artist.userId) {
-        await tx.notification.create({
-          data: {
+        return this.notificationsService.createMany(tx, [
+          {
             userId: artist.userId,
             type: NotificationType.BOOKING_REQUEST,
             title: 'New booking request',
@@ -263,9 +267,12 @@ export class BookingsService {
               status: PrismaBookingStatus.PENDING,
             },
           },
-        });
+        ]);
       }
+      return [];
     });
+
+    this.notificationsService.emitMany(transactionResult);
 
     const booking = await this.findAccessibleBookingOrThrow(actor, bookingId);
     return {
@@ -540,7 +547,7 @@ export class BookingsService {
   ): Promise<boolean> {
     const normalizedReason = this.normalizeOptionalString(plan.reason);
 
-    return this.prisma.$transaction(async (tx) => {
+    const createdNotifications = await this.prisma.$transaction(async (tx) => {
       const result = await tx.booking.updateMany({
         where: {
           id: booking.id,
@@ -566,7 +573,7 @@ export class BookingsService {
       });
 
       if (result.count === 0) {
-        return false;
+        return { changed: false, notifications: [] };
       }
 
       await tx.bookingStatusHistory.create({
@@ -584,23 +591,30 @@ export class BookingsService {
 
       const recipientIds = this.getNotificationRecipientIds(booking, actor?.userId ?? null);
       if (recipientIds.length > 0) {
-        await tx.notification.createMany({
-          data: recipientIds.map((recipientId) => ({
-            userId: recipientId,
-            type: plan.notificationType,
-            title: plan.notificationTitle,
-            body: plan.notificationBody,
-            metadata: {
-              bookingId: booking.id,
-              action: plan.action,
-              status: plan.nextStatus,
-            },
-          })),
-        });
+        return {
+          changed: true,
+          notifications: await this.notificationsService.createMany(
+            tx,
+            recipientIds.map((recipientId) => ({
+              userId: recipientId,
+              type: plan.notificationType,
+              title: plan.notificationTitle,
+              body: plan.notificationBody,
+              metadata: {
+                bookingId: booking.id,
+                action: plan.action,
+                status: plan.nextStatus,
+              },
+            })),
+          ),
+        };
       }
 
-      return true;
+      return { changed: true, notifications: [] };
     });
+
+    this.notificationsService.emitMany(createdNotifications.notifications);
+    return createdNotifications.changed;
   }
 
   private getNotificationRecipientIds(booking: BookingRecord, actorUserId: string | null): string[] {

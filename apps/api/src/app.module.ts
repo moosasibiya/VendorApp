@@ -7,20 +7,26 @@ import { BookingsModule } from './bookings/bookings.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { UsersModule } from './users/users.module';
 import { AgenciesModule } from './agencies/agencies.module';
 import { PayfastModule } from './payfast/payfast.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
     PrismaModule,
     RateLimitModule,
+    RealtimeModule,
     ArtistsModule,
     BookingsModule,
     AuthModule,
     UsersModule,
     AgenciesModule,
     PayfastModule,
+    NotificationsModule,
+    MessagesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
