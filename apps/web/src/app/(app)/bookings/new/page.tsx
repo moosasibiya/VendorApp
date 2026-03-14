@@ -65,11 +65,11 @@ export default function NewBookingPage() {
       setLoadingArtists(true);
       setError(null);
       try {
-        const data = await fetchArtists();
+        const response = await fetchArtists({ limit: 50, sortBy: "rating" });
         if (cancelled) {
           return;
         }
-        setArtists(data);
+        setArtists(response.data);
       } catch (err) {
         if (cancelled) {
           return;

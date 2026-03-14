@@ -1,7 +1,7 @@
-﻿.page {
+.page {
   min-height: 100vh;
   color: var(--text);
-  padding: 56px 20px 80px;
+  padding: 56px 20px 88px;
 }
 
 .shell {
@@ -9,293 +9,192 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
-}
-
-.header h1 {
-  font-size: clamp(28px, 3vw, 42px);
-  margin-bottom: 10px;
-}
-
-.header p {
-  color: var(--muted);
-  max-width: 640px;
-}
-
-.searchPill {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 12px 16px;
-  background: var(--panel);
-}
-
-.searchPill input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text);
-  flex: 1;
-}
-
-.searchPill button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-weight: 600;
-}
-
-.featuredAd {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
   gap: 24px;
-  background: var(--panel2);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.2fr 320px;
+  gap: 24px;
+  align-items: stretch;
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: 26px;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(209, 67, 67, 0.14), transparent 40%),
+    var(--panel2);
   box-shadow: var(--shadow-card);
 }
 
 .kicker {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   color: var(--muted);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.hero h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.04;
+  margin-bottom: 12px;
+}
+
+.hero p {
+  max-width: 640px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.heroPanel {
+  display: grid;
+  align-content: end;
+  gap: 12px;
+  border-radius: 22px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.heroPanel span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.heroPanel strong {
+  font-size: 20px;
 }
 
 .primaryBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: var(--brand-gradient);
+  margin-top: 18px;
+  padding: 11px 16px;
+  border-radius: 14px;
   border: none;
-  color: white;
-  margin-top: 16px;
+  color: #fff;
+  text-decoration: none;
   font-weight: 700;
+  background: linear-gradient(135deg, #d14343, #9f2b2b);
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sectionHeader h2 {
+  font-size: 24px;
+}
+
+.sectionHeader a {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.categoryCard,
+.categorySkeleton {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: start;
+}
+
+.categoryCard {
+  color: var(--text);
   text-decoration: none;
 }
 
-.adImage {
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.36), transparent 35%),
-    linear-gradient(135deg, rgba(15, 111, 255, 0.44), rgba(18, 182, 196, 0.34));
+.categoryCard span {
+  font-size: 26px;
 }
 
-.carouselSection {
+.categoryCard p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.categorySkeleton,
+.artistSkeleton {
+  min-height: 110px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.artistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.artistCard,
+.artistSkeleton {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.carouselHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.carouselControls {
-  display: flex;
-  gap: 8px;
-}
-
-.carouselControls button {
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  border-radius: 10px;
-  width: 34px;
-  height: 34px;
-}
-
-.carousel {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(260px, 1fr);
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
-.carouselCard {
-  border: 1px solid var(--border);
-  background: var(--panel2);
-  border-radius: 18px;
-  padding: 16px;
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-  position: relative;
-}
-
-.carouselCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
-}
-
-.preview {
-  height: 148px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.preview::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 40%),
-    radial-gradient(circle at 90% 12%, rgba(255, 255, 255, 0.22), transparent 32%);
-}
-
-.previewLabel {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 1;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: white;
-  padding: 6px 9px;
-  border-radius: 999px;
-  background: #1f2937;
-  border: 1px solid var(--border-strong);
-}
-
-.carouselFavBtn {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #1f2937;
-  color: #f8fbff;
-  display: grid;
-  place-items: center;
-  z-index: 2;
-}
-
-.carouselFavBtn .material-symbols-outlined {
-  font-size: 18px;
-}
-
-.carouselFavBtn:hover {
-  background: #111827;
-}
-
-.cardTop {
-  display: flex;
-  justify-content: space-between;
-}
-
-.cardBadge {
-  background: var(--panel3);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-}
-
-.cardRating {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.dot,
-.dotActive {
-  width: 10px;
-  height: 10px;
-  border-radius: 4px;
-  background: var(--chip);
-}
-
-.dotActive {
-  background: var(--chip-strong);
-}
-
-.jobs {
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  background: var(--panel2);
-  box-shadow: var(--shadow-card);
-}
-
-.jobsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.jobList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.jobCard {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
+.artistPreview {
+  height: 160px;
   border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--panel2);
-  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.jobCard h4 {
-  margin-bottom: 6px;
-}
-
-.jobCard p {
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.jobMeta {
+.artistMeta,
+.artistSummary {
   display: flex;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.jobCard button {
-  align-self: center;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
+.artistMeta p,
+.artistSummary {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.artistLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  padding: 8px 12px;
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
 }
 
 @media (max-width: 900px) {
-  .featuredAd {
+  .hero {
     grid-template-columns: 1fr;
   }
 }
-

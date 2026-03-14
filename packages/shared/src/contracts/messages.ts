@@ -46,7 +46,8 @@ export interface ConversationSummary {
 }
 
 export interface CreateConversationInput {
-  bookingId: string;
+  bookingId?: string;
+  participantId?: string;
 }
 
 export interface NotificationItem {

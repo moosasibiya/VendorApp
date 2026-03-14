@@ -1,14 +1,15 @@
+import { Suspense } from "react";
 import styles from "./page.module.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError, fetchArtistBySlug } from "@/lib/api";
+import { ArtistProfileActions } from "./ArtistProfileActions";
 
 const navItems = [
-  { label: "Messages", href: "/messages" },
-  { label: "Payments", href: "/payments" },
-  { label: "Bookings", href: "/bookings" },
-  { label: "Ratings", href: "/reviews" },
-  { label: "Settings", href: "/settings" },
+  { label: "Overview", href: "#overview" },
+  { label: "Portfolio", href: "#portfolio" },
+  { label: "Browse artists", href: "/artists" },
+  { label: "Explore categories", href: "/explore" },
 ];
 
 type ArtistProfilePageProps = {
@@ -22,6 +23,18 @@ function getInitials(name: string): string {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+function formatCurrency(amount: number | undefined): string {
+  if (!amount || amount <= 0) {
+    return "On request";
+  }
+
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export default async function ArtistProfilePage({ params }: ArtistProfilePageProps) {
@@ -38,13 +51,27 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
   }
 
   const initials = getInitials(artist.name);
+  const tags =
+    artist.specialties && artist.specialties.length > 0
+      ? artist.specialties
+      : artist.services && artist.services.length > 0
+        ? artist.services
+        : ["Open to bookings"];
+  const bio =
+    artist.bio?.trim() ||
+    `${artist.role} based in ${artist.location}. Available for new projects and collaborations.`;
+  const availabilitySummary = artist.availabilitySummary?.trim() || "Available this week";
+  const pricingSummary = artist.pricingSummary?.trim() || "Pricing shared on request";
+  const categoryLabel = artist.category?.name ?? "Independent creative";
+  const portfolioLinks =
+    artist.portfolioLinks?.filter((link) => typeof link === "string" && link.trim()) ?? [];
 
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
         <aside className={styles.sideNav}>
           <div className={styles.welcome}>
-            Welcome <span>{artist.name.split(" ")[0]}</span>
+            Meet <span>{artist.name.split(" ")[0]}</span>
           </div>
           <nav>
             {navItems.map((item) => (
@@ -56,10 +83,10 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
         </aside>
 
         <div className={styles.main}>
-          <div className={styles.profileCard}>
+          <div className={styles.profileCard} id="overview">
             <div className={styles.header}>
               <div>
-                <p className={styles.kicker}>Creative Profile</p>
+                <p className={styles.kicker}>{categoryLabel}</p>
                 <h1 className={styles.title}>{artist.name}</h1>
                 <p className={styles.username}>@{artist.slug}</p>
               </div>
@@ -69,89 +96,124 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
             <div className={styles.metaRow}>
               <span className={styles.badge}>{artist.role}</span>
               <span className={styles.badgeAlt}>{artist.location}</span>
-              <span className={styles.badgeAlt}>Available this week</span>
+              <span className={styles.badgeAlt}>{availabilitySummary}</span>
             </div>
 
             <div className={styles.stats}>
               <div>
-                <div className={styles.statValue}>1.2k</div>
-                <div className={styles.statLabel}>Followers</div>
+                <div className={styles.statValue}>{formatCurrency(artist.hourlyRate)}</div>
+                <div className={styles.statLabel}>Typical starting rate</div>
               </div>
               <div>
-                <div className={styles.statValue}>{artist.rating}</div>
+                <div className={styles.statValue}>
+                  {artist.averageRating?.toFixed(1) ?? artist.rating}
+                </div>
                 <div className={styles.statLabel}>Rating</div>
               </div>
               <div>
-                <div className={styles.statValue}>142</div>
-                <div className={styles.statLabel}>Bookings</div>
+                <div className={styles.statValue}>{artist.totalReviews ?? 0}</div>
+                <div className={styles.statLabel}>Reviews</div>
               </div>
             </div>
 
-            <p className={styles.bio}>
-              South African storyteller capturing weddings, brands, and editorial
-              portraits with a cinematic eye. Serving Western Cape & Gauteng.
-            </p>
+            <p className={styles.bio}>{bio}</p>
 
             <div className={styles.tags}>
-              <span>Wedding</span>
-              <span>Editorial</span>
-              <span>Portrait</span>
-              <span>Luxury</span>
+              {tags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
             </div>
 
             <div className={styles.actions}>
-              <button className={styles.primaryBtn}>Book Now</button>
-              <button className={styles.ghostBtn}>Message</button>
-              <button className={styles.ghostBtn}>View Portfolio</button>
+              <Suspense fallback={<button className={styles.ghostBtn}>Loading actions...</button>}>
+                <ArtistProfileActions
+                  artistId={artist.id}
+                  artistSlug={artist.slug}
+                  bookNowClassName={styles.primaryBtn}
+                  messageClassName={styles.ghostBtn}
+                  feedbackClassName={styles.actionFeedback}
+                />
+              </Suspense>
+              {portfolioLinks[0] ? (
+                <a
+                  className={styles.ghostBtn}
+                  href={portfolioLinks[0]}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View Portfolio
+                </a>
+              ) : (
+                <button className={styles.ghostBtn}>View Portfolio</button>
+              )}
             </div>
           </div>
 
-          <section className={styles.section}>
+          <section className={styles.section} id="portfolio">
             <div className={styles.sectionHeader}>
               <h2>Portfolio</h2>
               <div className={styles.filters}>
                 <button className={styles.filterActive}>All</button>
-                <button>Wedding</button>
-                <button>Corporate</button>
-                <button>Portraits</button>
+                {tags.slice(0, 3).map((tag) => (
+                  <button key={tag}>{tag}</button>
+                ))}
               </div>
             </div>
             <div className={styles.portfolioGrid}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className={styles.portfolioCard}>
-                  <div className={styles.portfolioBadge}>24 Photos</div>
+              {portfolioLinks.length ? (
+                portfolioLinks.map((link, index) => (
+                  <a
+                    key={link}
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.portfolioCard}
+                  >
+                    <div className={styles.portfolioBadge}>Live link</div>
+                    <div>
+                      <h3>Portfolio {index + 1}</h3>
+                      <p>{new URL(link).hostname}</p>
+                    </div>
+                  </a>
+                ))
+              ) : (
+                <div className={styles.portfolioCard}>
+                  <div className={styles.portfolioBadge}>Coming soon</div>
                   <div>
-                    <h3>Project {i + 1}</h3>
-                    <p>June 2025 ? {artist.location}</p>
+                    <h3>Portfolio update in progress</h3>
+                    <p>{pricingSummary}</p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </section>
         </div>
 
         <aside className={styles.rightCol}>
           <div className={styles.infoCard}>
-            <h3>Notifications</h3>
-            <p>2 pending requests</p>
-            <p>1 upcoming booking</p>
-            <p>3 new messages</p>
+            <h3>Booking details</h3>
+            <p>{availabilitySummary}</p>
+            <p>{pricingSummary}</p>
+            <p>{artist.isAvailable ? "Accepting new requests" : "Currently unavailable"}</p>
+            <p>{artist.isVerified ? "Verified by VendorApp" : "Verification pending"}</p>
           </div>
           <div className={styles.infoCard}>
-            <h3>Dashboard summary</h3>
+            <h3>Profile summary</h3>
             <div className={styles.summaryRow}>
-              <span>Total sales</span>
-              <strong>R84,200</strong>
+              <span>Category</span>
+              <strong>{categoryLabel}</strong>
             </div>
             <div className={styles.summaryRow}>
-              <span>Total bookings</span>
-              <strong>142</strong>
+              <span>Services</span>
+              <strong>{artist.services?.length ?? 0}</strong>
             </div>
             <div className={styles.summaryRow}>
-              <span>Upcoming</span>
-              <strong>6</strong>
+              <span>Specialties</span>
+              <strong>{artist.specialties?.length ?? 0}</strong>
             </div>
-            <button className={styles.ghostBtn}>Open dashboard</button>
+            <Link className={styles.ghostBtn} href="/artists">
+              Browse more artists
+            </Link>
           </div>
         </aside>
       </section>

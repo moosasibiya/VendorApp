@@ -3,12 +3,15 @@ import type {
   ApiResponse as ApiEnvelope,
   Agency,
   Artist,
+  ArtistCategory,
   ArtistProfileInput,
+  ArtistSearchParams,
   AuthResponse,
   BookingAction,
   Booking,
   ConversationMessage,
   ConversationSummary,
+  CreateConversationInput,
   CreateBookingInput,
   CursorApiResponse,
   LoginRequest,
@@ -24,10 +27,13 @@ import type {
 export type {
   Agency,
   Artist,
+  ArtistCategory,
   ArtistProfileInput,
+  ArtistSearchParams,
   Booking,
   ConversationMessage,
   ConversationSummary,
+  CreateConversationInput,
   CreateBookingInput,
   CursorApiResponse,
   MessageTypeValue,
@@ -161,8 +167,32 @@ async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function fetchArtists(): Promise<Artist[]> {
-  return getJson<Artist[]>("/artists");
+export async function fetchArtists(
+  query?: ArtistSearchParams,
+): Promise<ApiEnvelope<Artist[]>> {
+  const params = new URLSearchParams();
+  if (query?.category) params.set("category", query.category);
+  if (query?.location) params.set("location", query.location);
+  if (query?.minRate !== undefined) params.set("minRate", String(query.minRate));
+  if (query?.maxRate !== undefined) params.set("maxRate", String(query.maxRate));
+  if (query?.available !== undefined) {
+    params.set("available", String(query.available));
+  }
+  if (query?.tags && query.tags.length > 0) {
+    params.set("tags", query.tags.join(","));
+  }
+  if (query?.q) params.set("q", query.q);
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.sortBy) params.set("sortBy", query.sortBy);
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return getJson<ApiEnvelope<Artist[]>>(`/artists${suffix}`);
+}
+
+export async function fetchCategories(): Promise<ArtistCategory[]> {
+  const response = await getJson<ApiEnvelope<ArtistCategory[]>>("/categories");
+  return response.data;
 }
 
 export async function fetchArtistBySlug(slug: string): Promise<Artist> {
@@ -223,10 +253,12 @@ export async function fetchBooking(id: string): Promise<Booking> {
   return response.data;
 }
 
-export async function createConversation(bookingId: string): Promise<ConversationSummary> {
+export async function createConversation(
+  input: CreateConversationInput,
+): Promise<ConversationSummary> {
   const response = await getJson<ApiEnvelope<ConversationSummary>>("/conversations", {
     method: "POST",
-    body: JSON.stringify({ bookingId }),
+    body: JSON.stringify(input),
   });
   return response.data;
 }

@@ -162,6 +162,12 @@
   gap: 12px;
 }
 
+.actionFeedback {
+  flex-basis: 100%;
+  color: #d14343;
+  font-size: 13px;
+}
+
 .primaryBtn,
 .ghostBtn {
   padding: 12px 18px;

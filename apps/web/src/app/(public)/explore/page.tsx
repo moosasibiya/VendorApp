@@ -1,174 +1,150 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { Artist, ArtistCategory } from "@vendorapp/shared";
+import { fetchArtists, fetchCategories } from "@/lib/api";
 import styles from "./page.module.css";
 
-const carousels = [
-  "Photographers",
-  "Videographers",
-  "Graphic Designers",
-  "Content Creators",
-];
+function formatCurrency(amount: number | undefined): string {
+  if (!amount || amount <= 0) {
+    return "On request";
+  }
 
-const previewGradients = [
-  "linear-gradient(135deg, rgba(15, 111, 255, 0.82), rgba(18, 182, 196, 0.7))",
-  "linear-gradient(135deg, rgba(12, 74, 110, 0.8), rgba(14, 165, 233, 0.7))",
-  "linear-gradient(135deg, rgba(37, 99, 235, 0.78), rgba(6, 182, 212, 0.74))",
-  "linear-gradient(135deg, rgba(30, 64, 175, 0.8), rgba(13, 148, 136, 0.72))",
-  "linear-gradient(135deg, rgba(14, 165, 233, 0.78), rgba(8, 145, 178, 0.72))",
-];
-
-function getPreviewGradient(title: string, index: number) {
-  const seed = title.length + index;
-  return previewGradients[seed % previewGradients.length];
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
-function Carousel({ title }: { title: string }) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const [index, setIndex] = useState(0);
-  const artists = useMemo(
-    () =>
-      Array.from({ length: 9 }).map((_, i) => ({
-        name: `${title} ${i + 1}`,
-        bio: "Luxury brand visuals and campaign direction.",
-        rating: (4.6 + (i % 3) * 0.1).toFixed(1),
-        preview: getPreviewGradient(title, i),
-      })),
-    [title],
-  );
-
-  const scrollBy = (direction: number) => {
-    const node = trackRef.current;
-    if (!node) return;
-    const cardWidth = node.firstElementChild
-      ? (node.firstElementChild as HTMLElement).offsetWidth + 16
-      : 300;
-    node.scrollBy({ left: direction * cardWidth * 3, behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    const node = trackRef.current;
-    if (!node) return;
-    const handler = () => {
-      const cardWidth = node.firstElementChild
-        ? (node.firstElementChild as HTMLElement).offsetWidth + 16
-        : 280;
-      const nextIndex = Math.round(node.scrollLeft / (cardWidth * 3));
-      setIndex(Math.max(0, Math.min(2, nextIndex)));
-    };
-    node.addEventListener("scroll", handler, { passive: true });
-    return () => node.removeEventListener("scroll", handler);
-  }, []);
-
-  return (
-    <section className={styles.carouselSection}>
-      <div className={styles.carouselHeader}>
-        <h3>{title}</h3>
-        <div className={styles.carouselControls}>
-          <button type="button" onClick={() => scrollBy(-1)}>
-            <span className="material-symbols-outlined">chevron_left</span>
-          </button>
-          <button type="button" onClick={() => scrollBy(1)}>
-            <span className="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
-      </div>
-      <div className={styles.carousel} ref={trackRef}>
-        {artists.map((artist) => (
-          <article key={artist.name} className={styles.carouselCard}>
-            <button
-              type="button"
-              className={styles.carouselFavBtn}
-              aria-label="Add to favourites"
-              title="Favourites"
-            >
-              <span className="material-symbols-outlined">favorite</span>
-            </button>
-            <div
-              className={styles.preview}
-              style={{ backgroundImage: artist.preview }}
-            >
-              <span className={styles.previewLabel}>Project Preview</span>
-            </div>
-            <div className={styles.cardTop}>
-              <div className={styles.cardBadge}>{title}</div>
-              <div className={styles.cardRating}>{artist.rating}/5</div>
-            </div>
-            <h4>{artist.name}</h4>
-            <p>{artist.bio}</p>
-          </article>
-        ))}
-      </div>
-      <div className={styles.dots}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <span
-            key={i}
-            className={i === index ? styles.dotActive : styles.dot}
-          />
-        ))}
-      </div>
-    </section>
-  );
+function buildPreviewStyle(seed: string): { backgroundImage: string } {
+  const palettes = [
+    "linear-gradient(135deg, rgba(209, 67, 67, 0.84), rgba(159, 43, 43, 0.74))",
+    "linear-gradient(135deg, rgba(15, 118, 110, 0.82), rgba(8, 145, 178, 0.74))",
+    "linear-gradient(135deg, rgba(37, 99, 235, 0.82), rgba(14, 165, 233, 0.74))",
+    "linear-gradient(135deg, rgba(234, 88, 12, 0.82), rgba(202, 138, 4, 0.72))",
+  ];
+  return { backgroundImage: palettes[seed.length % palettes.length] };
 }
 
 export default function ExplorePage() {
+  const [categories, setCategories] = useState<ArtistCategory[]>([]);
+  const [featuredArtists, setFeaturedArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [categoryData, artistData] = await Promise.all([
+          fetchCategories(),
+          fetchArtists({ limit: 4, sortBy: "rating", available: true }),
+        ]);
+
+        if (!cancelled) {
+          setCategories(categoryData);
+          setFeaturedArtists(artistData.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setCategories([]);
+          setFeaturedArtists([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
-        <header className={styles.header}>
-          <h1>Explore creatives and services</h1>
-          <p>Curated collections and job postings tailored to your needs.</p>
-        </header>
-
-        <div className={styles.searchPill}>
-          <span className="material-symbols-outlined">search</span>
-          <input placeholder="Search by service, location, or artist..." />
-          <button type="button">Filters</button>
-        </div>
-
-        <section className={styles.featuredAd}>
+        <header className={styles.hero}>
           <div>
-            <p className={styles.kicker}>Featured</p>
-            <h2>Studio Kuhle - Johannesburg</h2>
+            <p className={styles.kicker}>Explore the marketplace</p>
+            <h1>Start with a category, then narrow to the right artist.</h1>
             <p>
-              Bold fashion and editorial storytelling with a boutique team of
-              stylists.
+              Browse live categories, jump straight into discovery filters, and review a few
+              of the artists currently ranking highest on the platform.
             </p>
-            <Link href="/artists/kuhle" className={styles.primaryBtn}>
-              View profile
+            <Link href="/artists" className={styles.primaryBtn}>
+              Browse all artists
             </Link>
           </div>
-          <div className={styles.adImage} />
+          <div className={styles.heroPanel}>
+            <span>Live marketplace data</span>
+            <strong>{loading ? "..." : `${categories.length} categories`}</strong>
+            <strong>{loading ? "..." : `${featuredArtists.length} featured artists`}</strong>
+          </div>
+        </header>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Categories</h2>
+            <Link href="/artists">Open full search</Link>
+          </div>
+
+          <div className={styles.categoryGrid}>
+            {loading
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className={styles.categorySkeleton} />
+                ))
+              : categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/artists?category=${encodeURIComponent(category.slug)}`}
+                    className={styles.categoryCard}
+                  >
+                    <span className="material-symbols-outlined">category</span>
+                    <div>
+                      <strong>{category.name}</strong>
+                      <p>Filter artists in {category.name.toLowerCase()}.</p>
+                    </div>
+                  </Link>
+                ))}
+          </div>
         </section>
 
-        {carousels.map((title) => (
-          <Carousel key={title} title={title} />
-        ))}
-
-        <section className={styles.jobs}>
-          <div className={styles.jobsHeader}>
-            <h2>Recent Job Postings</h2>
-            <button type="button" className={styles.primaryBtn}>
-              Post a Job
-            </button>
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Featured artists</h2>
+            <Link href="/artists?sortBy=rating">See top rated</Link>
           </div>
-          <div className={styles.jobList}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <article key={i} className={styles.jobCard}>
-                <div>
-                  <h4>Brand shoot - Cape Town</h4>
-                  <p>
-                    Lifestyle shoot for a luxury villa brand, 2-day production.
-                  </p>
-                  <div className={styles.jobMeta}>
-                    <span>R12k - R18k</span>
-                    <span>Posted 2 days ago</span>
-                  </div>
-                </div>
-                <button type="button">View details</button>
-              </article>
-            ))}
+
+          <div className={styles.artistGrid}>
+            {loading
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className={styles.artistSkeleton} />
+                ))
+              : featuredArtists.map((artist) => (
+                  <article key={artist.slug} className={styles.artistCard}>
+                    <div className={styles.artistPreview} style={buildPreviewStyle(artist.slug)} />
+                    <div className={styles.artistMeta}>
+                      <div>
+                        <strong>{artist.name}</strong>
+                        <p>{artist.location}</p>
+                      </div>
+                      <span>{artist.averageRating?.toFixed(1) ?? artist.rating}</span>
+                    </div>
+                    <div className={styles.artistSummary}>
+                      <span>{artist.category?.name ?? artist.role}</span>
+                      <span>{formatCurrency(artist.hourlyRate)}</span>
+                    </div>
+                    <Link href={`/artists/${artist.slug}`} className={styles.artistLink}>
+                      View profile
+                    </Link>
+                  </article>
+                ))}
           </div>
         </section>
       </section>

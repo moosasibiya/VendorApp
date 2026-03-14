@@ -102,53 +102,15 @@ export class MessagesService {
     userId: string,
     input: CreateConversationDto,
   ): Promise<ApiResponse<ConversationSummary>> {
-    const booking = await this.prisma.booking.findUnique({
-      where: {
-        id: input.bookingId,
-      },
-      select: {
-        id: true,
-        clientId: true,
-        artist: {
-          select: {
-            userId: true,
-          },
-        },
-      },
-    });
-    if (!booking) {
-      throw new NotFoundException('Booking not found');
+    if (input.bookingId?.trim()) {
+      return this.createBookingConversation(userId, input.bookingId.trim());
     }
 
-    const participantIds = this.buildParticipantIds(booking.clientId, booking.artist.userId);
-    if (!participantIds.includes(userId)) {
-      throw new ForbiddenException('Only booking participants can create a conversation');
+    if (input.participantId?.trim()) {
+      return this.createDirectConversation(userId, input.participantId.trim());
     }
 
-    let conversation = await this.prisma.conversation.findUnique({
-      where: {
-        bookingId: booking.id,
-      },
-      select: conversationSummarySelect,
-    });
-
-    if (!conversation) {
-      conversation = await this.prisma.conversation.create({
-        data: {
-          bookingId: booking.id,
-          participantIds,
-          lastMessageAt: new Date(),
-        },
-        select: conversationSummarySelect,
-      });
-    }
-
-    this.messagesGateway.joinConversationForUsers(participantIds, conversation.id);
-    this.messagesGateway.emitConversationUpdated(participantIds, conversation.id);
-
-    return {
-      data: await this.getConversationSummaryForUser(userId, conversation.id),
-    };
+    throw new BadRequestException('bookingId or participantId is required');
   }
 
   async listConversations(userId: string): Promise<ApiResponse<ConversationSummary[]>> {
@@ -436,6 +398,142 @@ export class MessagesService {
     }
 
     return Array.from(new Set([clientId, artistUserId]));
+  }
+
+  private async createBookingConversation(
+    userId: string,
+    bookingId: string,
+  ): Promise<ApiResponse<ConversationSummary>> {
+    const booking = await this.prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      select: {
+        id: true,
+        clientId: true,
+        artist: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const participantIds = this.buildParticipantIds(booking.clientId, booking.artist.userId);
+    if (!participantIds.includes(userId)) {
+      throw new ForbiddenException('Only booking participants can create a conversation');
+    }
+
+    let conversation = await this.prisma.conversation.findUnique({
+      where: {
+        bookingId: booking.id,
+      },
+      select: conversationSummarySelect,
+    });
+
+    if (!conversation) {
+      conversation = await this.prisma.conversation.create({
+        data: {
+          bookingId: booking.id,
+          participantIds,
+          lastMessageAt: new Date(),
+        },
+        select: conversationSummarySelect,
+      });
+    }
+
+    this.messagesGateway.joinConversationForUsers(participantIds, conversation.id);
+    this.messagesGateway.emitConversationUpdated(participantIds, conversation.id);
+
+    return {
+      data: await this.getConversationSummaryForUser(userId, conversation.id),
+    };
+  }
+
+  private async createDirectConversation(
+    userId: string,
+    participantId: string,
+  ): Promise<ApiResponse<ConversationSummary>> {
+    const targetUserId = await this.resolveDirectConversationParticipantId(participantId);
+    if (targetUserId === userId) {
+      throw new BadRequestException('You cannot start a conversation with yourself');
+    }
+
+    const participantIds = Array.from(new Set([userId, targetUserId]));
+    const existingConversations = await this.prisma.conversation.findMany({
+      where: {
+        bookingId: null,
+        participantIds: {
+          hasEvery: participantIds,
+        },
+      },
+      orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
+      select: conversationSummarySelect,
+    });
+
+    let conversation =
+      existingConversations.find(
+        (item) =>
+          item.participantIds.length === participantIds.length &&
+          participantIds.every((id) => item.participantIds.includes(id)),
+      ) ?? null;
+
+    if (!conversation) {
+      conversation = await this.prisma.conversation.create({
+        data: {
+          bookingId: null,
+          participantIds,
+          lastMessageAt: new Date(),
+        },
+        select: conversationSummarySelect,
+      });
+    }
+
+    this.messagesGateway.joinConversationForUsers(participantIds, conversation.id);
+    this.messagesGateway.emitConversationUpdated(participantIds, conversation.id);
+
+    return {
+      data: await this.getConversationSummaryForUser(userId, conversation.id),
+    };
+  }
+
+  private async resolveDirectConversationParticipantId(participantId: string): Promise<string> {
+    const directUser = await this.prisma.user.findUnique({
+      where: {
+        id: participantId,
+      },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+    if (directUser?.isActive) {
+      return directUser.id;
+    }
+
+    const artist = await this.prisma.artist.findUnique({
+      where: {
+        id: participantId,
+      },
+      select: {
+        userId: true,
+        user: {
+          select: {
+            id: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!artist?.userId || !artist.user?.isActive) {
+      throw new NotFoundException('Conversation participant not found');
+    }
+
+    return artist.userId;
   }
 
   private buildMessagePreview(content: string, type: MessageType): string {

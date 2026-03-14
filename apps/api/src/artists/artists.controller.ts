@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ArtistsService } from './artists.service';
-import type { Artist } from '@vendorapp/shared';
+import type { ApiResponse, Artist } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
 import { UpsertArtistProfileDto } from './dto/upsert-artist-profile.dto';
+import { ListArtistsQueryDto } from './dto/list-artists-query.dto';
 
 type AuthRequest = {
   auth: {
@@ -15,8 +16,8 @@ export class ArtistsController {
   constructor(private readonly artistsService: ArtistsService) {}
 
   @Get()
-  async findAll(): Promise<Artist[]> {
-    return this.artistsService.findAll();
+  async findAll(@Query() query: ListArtistsQueryDto): Promise<ApiResponse<Artist[]>> {
+    return this.artistsService.findAll(query);
   }
 
   @Get('me/profile')

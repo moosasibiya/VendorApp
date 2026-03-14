@@ -114,7 +114,7 @@ export default function BookingDetailPage() {
 
     setError(null);
     try {
-      const conversation = await createConversation(booking.id);
+      const conversation = await createConversation({ bookingId: booking.id });
       router.push(`/messages?conversationId=${encodeURIComponent(conversation.id)}`);
     } catch (err) {
       if (err instanceof ApiError) {
