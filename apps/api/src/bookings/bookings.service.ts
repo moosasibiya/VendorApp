@@ -8,6 +8,7 @@ import {
 import {
   BookingStatus as PrismaBookingStatus,
   NotificationType,
+  PaymentProvider,
   PaymentStatus,
   Prisma,
   UserRole,
@@ -33,8 +34,14 @@ const bookingSelect = {
   totalAmount: true,
   platformFee: true,
   artistPayout: true,
+  paymentProvider: true,
   paymentStatus: true,
   stripePaymentIntentId: true,
+  paymentReference: true,
+  paymentGatewayReference: true,
+  paymentInitiatedAt: true,
+  paymentPaidAt: true,
+  paymentFailedAt: true,
   notes: true,
   cancelledAt: true,
   cancelReason: true,
@@ -215,7 +222,13 @@ export class BookingsService {
           totalAmount: amounts.totalAmount,
           platformFee: amounts.platformFee,
           artistPayout: amounts.artistPayout,
+          paymentProvider: null,
           paymentStatus: PaymentStatus.UNPAID,
+          paymentReference: null,
+          paymentGatewayReference: null,
+          paymentInitiatedAt: null,
+          paymentPaidAt: null,
+          paymentFailedAt: null,
           notes: normalizedNotes,
           artistName: artist.displayName,
           artistInitials: this.getInitials(artist.displayName),
@@ -536,6 +549,14 @@ export class BookingsService {
         data: {
           status: plan.nextStatus,
           updatedAt: new Date(),
+          paymentProvider:
+            plan.nextStatus === PrismaBookingStatus.CONFIRMED
+              ? booking.paymentProvider ?? PaymentProvider.PAYFAST
+              : booking.paymentProvider,
+          paymentReference:
+            plan.nextStatus === PrismaBookingStatus.CONFIRMED
+              ? booking.paymentReference ?? this.buildPaymentReference(booking.id)
+              : booking.paymentReference,
           cancelledAt: plan.nextStatus === PrismaBookingStatus.CANCELLED ? new Date() : booking.cancelledAt,
           cancelReason:
             plan.nextStatus === PrismaBookingStatus.CANCELLED
@@ -625,7 +646,9 @@ export class BookingsService {
   }
 
   private getPlatformFeePercent(): number {
-    const raw = Number.parseFloat(process.env.STRIPE_PLATFORM_FEE_PERCENT ?? '10');
+    const raw = Number.parseFloat(
+      process.env.PLATFORM_FEE_PERCENT ?? process.env.STRIPE_PLATFORM_FEE_PERCENT ?? '10',
+    );
     if (!Number.isFinite(raw) || raw < 0) {
       return 0.1;
     }
@@ -650,6 +673,10 @@ export class BookingsService {
 
   private formatMoney(value: number): string {
     return `R${value.toFixed(2)}`;
+  }
+
+  private buildPaymentReference(bookingId: string): string {
+    return bookingId;
   }
 
   private normalizeOptionalString(value: string | null | undefined): string | null {
@@ -682,8 +709,14 @@ export class BookingsService {
       totalAmount: this.decimalToNumber(booking.totalAmount),
       platformFee: this.decimalToNumber(booking.platformFee),
       artistPayout: this.decimalToNumber(booking.artistPayout),
+      paymentProvider: booking.paymentProvider,
       paymentStatus: booking.paymentStatus,
       stripePaymentIntentId: booking.stripePaymentIntentId,
+      paymentReference: booking.paymentReference,
+      paymentGatewayReference: booking.paymentGatewayReference,
+      paymentInitiatedAt: booking.paymentInitiatedAt?.toISOString() ?? null,
+      paymentPaidAt: booking.paymentPaidAt?.toISOString() ?? null,
+      paymentFailedAt: booking.paymentFailedAt?.toISOString() ?? null,
       notes: booking.notes,
       cancelledAt: booking.cancelledAt?.toISOString() ?? null,
       cancelReason: booking.cancelReason,

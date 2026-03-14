@@ -37,6 +37,10 @@ enum PaymentStatus {
   FAILED
 }
 
+enum PaymentProvider {
+  PAYFAST
+}
+
 enum MessageType {
   TEXT
   IMAGE
@@ -50,6 +54,7 @@ enum NotificationType {
   BOOKING_CANCELLED
   MESSAGE_RECEIVED
   PAYMENT_RECEIVED
+  PAYMENT_FAILED
   REVIEW_RECEIVED
 }
 
@@ -183,8 +188,14 @@ model Booking {
   totalAmount           Decimal        @default(0) @db.Decimal(10, 2)
   platformFee           Decimal        @default(0) @db.Decimal(10, 2)
   artistPayout          Decimal        @default(0) @db.Decimal(10, 2)
+  paymentProvider       PaymentProvider?
   paymentStatus         PaymentStatus  @default(UNPAID)
   stripePaymentIntentId String?
+  paymentReference      String?        @unique
+  paymentGatewayReference String?
+  paymentInitiatedAt    DateTime?
+  paymentPaidAt         DateTime?
+  paymentFailedAt       DateTime?
   notes                 String?
   cancelledAt           DateTime?
   cancelReason          String?
@@ -206,6 +217,7 @@ model Booking {
   @@index([artistId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([paymentProvider])
   @@index([eventDate])
   @@index([agencyId])
   @@index([createdAt])

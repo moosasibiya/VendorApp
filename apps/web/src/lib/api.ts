@@ -11,6 +11,7 @@ import type {
   LoginRequest,
   OnboardingAgencyInput,
   OnboardingClientInput,
+  PaymentCheckoutSession,
   SignupRequest,
   User,
 } from "@vendorapp/shared";
@@ -22,6 +23,7 @@ export type {
   CreateBookingInput,
   OnboardingAgencyInput,
   OnboardingClientInput,
+  PaymentCheckoutSession,
 } from "@vendorapp/shared";
 
 export class ApiError extends Error {
@@ -222,6 +224,18 @@ export async function updateBookingStatus(input: {
         action: input.action,
         ...(input.reason ? { reason: input.reason } : {}),
       }),
+    },
+  );
+  return response.data;
+}
+
+export async function initiateBookingPayment(
+  bookingId: string,
+): Promise<PaymentCheckoutSession> {
+  const response = await getJson<ApiEnvelope<PaymentCheckoutSession>>(
+    `/bookings/${encodeURIComponent(bookingId)}/payment/initiate`,
+    {
+      method: "POST",
     },
   );
   return response.data;

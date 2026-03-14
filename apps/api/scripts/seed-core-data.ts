@@ -1,6 +1,7 @@
 import {
   AccountType,
   BookingStatus,
+  PaymentProvider,
   PaymentStatus,
   PrismaClient,
   UserRole,
@@ -88,8 +89,14 @@ type BookingSeed = {
   totalAmount: string;
   platformFee: string;
   artistPayout: string;
+  paymentProvider?: PaymentProvider;
   paymentStatus: PaymentStatus;
+  paymentReference?: string;
+  paymentGatewayReference?: string;
   stripePaymentIntentId?: string;
+  paymentInitiatedAt?: string;
+  paymentPaidAt?: string;
+  paymentFailedAt?: string;
   notes?: string;
   artistName: string;
   artistInitials: string;
@@ -352,7 +359,9 @@ const bookingSeeds: BookingSeed[] = [
     totalAmount: '15000.00',
     platformFee: '1500.00',
     artistPayout: '13500.00',
+    paymentProvider: PaymentProvider.PAYFAST,
     paymentStatus: PaymentStatus.UNPAID,
+    paymentReference: 'booking-kuhle-wedding',
     notes: 'Client requested a calm documentary style with family portraits.',
     artistName: 'Kuhle Ndlovu',
     artistInitials: 'KN',
@@ -374,8 +383,13 @@ const bookingSeeds: BookingSeed[] = [
     totalAmount: '18500.00',
     platformFee: '1850.00',
     artistPayout: '16650.00',
+    paymentProvider: PaymentProvider.PAYFAST,
     paymentStatus: PaymentStatus.PAID,
+    paymentReference: 'booking-ayanda-brand-campaign',
+    paymentGatewayReference: 'pf_test_vendorapp_phase5',
     stripePaymentIntentId: 'pi_test_vendorapp_phase2',
+    paymentInitiatedAt: '2026-05-01T09:00:00.000Z',
+    paymentPaidAt: '2026-05-01T09:10:00.000Z',
     notes: 'Final delivery includes a master edit and three cutdowns.',
     artistName: 'Ayanda Khumalo',
     artistInitials: 'AK',
@@ -588,8 +602,14 @@ async function run(): Promise<void> {
         totalAmount: booking.totalAmount,
         platformFee: booking.platformFee,
         artistPayout: booking.artistPayout,
+        paymentProvider: booking.paymentProvider ?? null,
         paymentStatus: booking.paymentStatus,
+        paymentReference: booking.paymentReference ?? null,
+        paymentGatewayReference: booking.paymentGatewayReference ?? null,
         stripePaymentIntentId: booking.stripePaymentIntentId ?? null,
+        paymentInitiatedAt: booking.paymentInitiatedAt ? new Date(booking.paymentInitiatedAt) : null,
+        paymentPaidAt: booking.paymentPaidAt ? new Date(booking.paymentPaidAt) : null,
+        paymentFailedAt: booking.paymentFailedAt ? new Date(booking.paymentFailedAt) : null,
         notes: booking.notes ?? null,
         cancelledAt: null,
         cancelReason: null,
@@ -613,8 +633,14 @@ async function run(): Promise<void> {
         totalAmount: booking.totalAmount,
         platformFee: booking.platformFee,
         artistPayout: booking.artistPayout,
+        paymentProvider: booking.paymentProvider ?? null,
         paymentStatus: booking.paymentStatus,
+        paymentReference: booking.paymentReference ?? null,
+        paymentGatewayReference: booking.paymentGatewayReference ?? null,
         stripePaymentIntentId: booking.stripePaymentIntentId ?? null,
+        paymentInitiatedAt: booking.paymentInitiatedAt ? new Date(booking.paymentInitiatedAt) : null,
+        paymentPaidAt: booking.paymentPaidAt ? new Date(booking.paymentPaidAt) : null,
+        paymentFailedAt: booking.paymentFailedAt ? new Date(booking.paymentFailedAt) : null,
         notes: booking.notes ?? null,
         cancelledAt: null,
         cancelReason: null,

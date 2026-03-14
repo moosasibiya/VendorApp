@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Booking } from "@vendorapp/shared";
-import { ApiError, fetchBooking, updateBookingStatus } from "@/lib/api";
+import type { Booking, User } from "@vendorapp/shared";
+import { PaymentForm } from "@/components/PaymentForm";
+import { ApiError, fetchBooking, fetchMe, updateBookingStatus } from "@/lib/api";
 import styles from "./page.module.css";
 
 function formatCurrency(amount: number): string {
@@ -32,9 +33,11 @@ function humanize(value: string): string {
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const bookingId = typeof params.id === "string" ? params.id : "";
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [viewer, setViewer] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +52,10 @@ export default function BookingDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchBooking(bookingId);
+        const [data, me] = await Promise.all([fetchBooking(bookingId), fetchMe()]);
         if (!cancelled) {
           setBooking(data);
+          setViewer(me);
         }
       } catch (err) {
         if (cancelled) {
@@ -96,6 +100,14 @@ export default function BookingDetailPage() {
     }
   };
 
+  const paymentState = searchParams.get("payment");
+  const canPay =
+    !!booking &&
+    !!viewer &&
+    viewer.id === booking.client.id &&
+    booking.status === "CONFIRMED" &&
+    (booking.paymentStatus === "UNPAID" || booking.paymentStatus === "FAILED");
+
   return (
     <main className={styles.page}>
       <div className={styles.topRow}>
@@ -114,6 +126,17 @@ export default function BookingDetailPage() {
 
       {loading ? <p className={styles.subtle}>Loading booking...</p> : null}
       {error ? <div className={styles.error}>{error}</div> : null}
+      {paymentState === "returned" ? (
+        <div className={styles.infoBanner}>
+          Returned from Payfast. Payment confirmation is finalized when the ITN webhook reaches
+          the API, so refresh if the paid status does not appear immediately.
+        </div>
+      ) : null}
+      {paymentState === "cancelled" ? (
+        <div className={styles.infoBanner}>
+          Payfast checkout was cancelled before payment completed.
+        </div>
+      ) : null}
 
       {booking ? (
         <section className={styles.layout}>
@@ -171,6 +194,20 @@ export default function BookingDetailPage() {
               <p className={styles.label}>Description</p>
               <p>{booking.description}</p>
             </div>
+
+            {canPay ? (
+              <div className={styles.section}>
+                <p className={styles.label}>Payment</p>
+                <p className={styles.subtle}>
+                  This booking is confirmed and ready for Payfast checkout.
+                </p>
+                <PaymentForm
+                  bookingId={booking.id}
+                  className={styles.primaryBtn}
+                  onError={(message) => setError(message)}
+                />
+              </div>
+            ) : null}
 
             {booking.notes ? (
               <div className={styles.section}>
@@ -248,6 +285,18 @@ export default function BookingDetailPage() {
                 <span>Artist payout</span>
                 <strong>{formatCurrency(booking.artistPayout)}</strong>
               </div>
+              {booking.paymentProvider ? (
+                <div className={styles.totalRow}>
+                  <span>Provider</span>
+                  <strong>{humanize(booking.paymentProvider)}</strong>
+                </div>
+              ) : null}
+              {booking.paymentReference ? (
+                <div className={styles.totalRow}>
+                  <span>Reference</span>
+                  <strong>{booking.paymentReference}</strong>
+                </div>
+              ) : null}
             </div>
 
             <div className={styles.sidebarCard}>

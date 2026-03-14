@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { UsersModule } from './users/users.module';
 import { AgenciesModule } from './agencies/agencies.module';
+import { PayfastModule } from './payfast/payfast.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AgenciesModule } from './agencies/agencies.module';
     AuthModule,
     UsersModule,
     AgenciesModule,
+    PayfastModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

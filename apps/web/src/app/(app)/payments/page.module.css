@@ -1,23 +1,29 @@
-﻿.page {
+.page {
   min-height: 100vh;
   color: var(--text);
   padding: 32px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 24px;
 }
 
-.header p {
+.header p,
+.subtle {
+  color: var(--muted);
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
   color: var(--muted);
 }
 
 .wallet {
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 24px;
   background: var(--brand-gradient);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  display: grid;
+  gap: 20px;
 }
 
 .wallet p {
@@ -37,7 +43,7 @@
 }
 
 .walletStats span {
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .walletStats strong {
@@ -45,47 +51,127 @@
   font-size: 16px;
 }
 
-.grid {
+.listCard {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--panel);
+  padding: 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 16px;
 }
 
-.card {
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px;
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
+.table {
+  display: grid;
   gap: 12px;
 }
 
-.cardRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.row {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 16px;
+}
+
+.rowMain {
+  display: grid;
   gap: 10px;
 }
 
-.cardRow span {
+.rowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
-.cardRow button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  border-radius: 999px;
+.statusBadge,
+.providerBadge {
+  display: inline-flex;
+  align-items: center;
   padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.statusBadge {
+  background: rgba(125, 211, 252, 0.12);
+  color: #bae6fd;
+}
+
+.providerBadge {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.artistStats {
+  display: grid;
+  gap: 4px;
+}
+
+.primaryBtn,
+.ghostBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.primaryBtn {
+  border: none;
+  background: var(--brand-gradient);
+  color: #fff;
 }
 
 .ghostBtn {
-  border: 1px dashed var(--border);
-  background: transparent;
+  border: 1px solid var(--border);
   color: var(--text);
-  padding: 10px 12px;
-  border-radius: 12px;
+  background: transparent;
 }
 
+.emptyState {
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.error {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 20px;
+  }
+
+  .rowActions {
+    align-items: stretch;
+  }
+}

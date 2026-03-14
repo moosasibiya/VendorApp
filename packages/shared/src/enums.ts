@@ -24,6 +24,11 @@ export enum PaymentStatus {
 }
 export type PaymentStatusValue = `${PaymentStatus}`;
 
+export enum PaymentProvider {
+  PAYFAST = 'PAYFAST',
+}
+export type PaymentProviderValue = `${PaymentProvider}`;
+
 export enum MessageType {
   TEXT = 'TEXT',
   IMAGE = 'IMAGE',
@@ -38,6 +43,7 @@ export enum NotificationType {
   BOOKING_CANCELLED = 'BOOKING_CANCELLED',
   MESSAGE_RECEIVED = 'MESSAGE_RECEIVED',
   PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
   REVIEW_RECEIVED = 'REVIEW_RECEIVED',
 }
 export type NotificationTypeValue = `${NotificationType}`;

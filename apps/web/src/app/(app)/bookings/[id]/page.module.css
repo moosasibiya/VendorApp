@@ -167,6 +167,14 @@
   padding: 12px 14px;
 }
 
+.infoBanner {
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: rgba(14, 165, 233, 0.12);
+  color: #bae6fd;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;

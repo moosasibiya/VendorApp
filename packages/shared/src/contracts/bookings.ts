@@ -1,4 +1,9 @@
-import type { BookingStatusValue, PaymentStatusValue, UserRoleValue } from '../enums';
+import type {
+  BookingStatusValue,
+  PaymentProviderValue,
+  PaymentStatusValue,
+  UserRoleValue,
+} from '../enums';
 
 export const BOOKING_ACTION_VALUES = ['confirm', 'cancel', 'complete', 'dispute'] as const;
 export type BookingAction = (typeof BOOKING_ACTION_VALUES)[number];
@@ -54,8 +59,14 @@ export interface Booking {
   totalAmount: number;
   platformFee: number;
   artistPayout: number;
+  paymentProvider?: PaymentProviderValue | null;
   paymentStatus: PaymentStatusValue;
   stripePaymentIntentId?: string | null;
+  paymentReference?: string | null;
+  paymentGatewayReference?: string | null;
+  paymentInitiatedAt?: string | null;
+  paymentPaidAt?: string | null;
+  paymentFailedAt?: string | null;
   notes?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
@@ -66,4 +77,12 @@ export interface Booking {
   agency?: BookingAgencySummary | null;
   timeline?: BookingTimelineEvent[];
   availableActions?: BookingAction[];
+}
+
+export interface PaymentCheckoutSession {
+  bookingId: string;
+  provider: PaymentProviderValue;
+  method: 'POST';
+  gatewayUrl: string;
+  formFields: Record<string, string>;
 }
