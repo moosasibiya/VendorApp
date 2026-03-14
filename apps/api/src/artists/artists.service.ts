@@ -31,6 +31,7 @@ const artistSelect = {
   portfolioLinks: true,
   averageRating: true,
   totalReviews: true,
+  profileViews: true,
   slug: true,
   onboardingCompleted: true,
   createdAt: true,
@@ -99,10 +100,27 @@ export class ArtistsService {
   }
 
   async findBySlug(slug: string): Promise<Artist> {
-    const artist = await this.prisma.artist.findUnique({
-      where: { slug },
-      select: artistSelect,
-    });
+    let artist: ArtistRecord;
+    try {
+      artist = await this.prisma.artist.update({
+        where: { slug },
+        data: {
+          profileViews: {
+            increment: 1,
+          },
+        },
+        select: artistSelect,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Artist not found: ${slug}`);
+      }
+      throw error;
+    }
+
     if (!artist) {
       throw new NotFoundException(`Artist not found: ${slug}`);
     }
@@ -398,6 +416,7 @@ export class ArtistsService {
       portfolioLinks: artist.portfolioLinks,
       averageRating: artist.averageRating,
       totalReviews: artist.totalReviews,
+      profileViews: artist.profileViews,
       category: artist.category
         ? {
             id: artist.category.id,

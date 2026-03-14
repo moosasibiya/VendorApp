@@ -78,6 +78,34 @@
   gap: 8px;
 }
 
+.reviewForm {
+  display: grid;
+  gap: 12px;
+}
+
+.reviewField {
+  display: grid;
+  gap: 8px;
+}
+
+.reviewField select,
+.reviewField textarea {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.reviewSummary {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

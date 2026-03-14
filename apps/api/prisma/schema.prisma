@@ -129,6 +129,7 @@ model Artist {
   availabilitySummary String?
   averageRating       Float     @default(0)
   totalReviews        Int       @default(0)
+  profileViews        Int       @default(0)
   rating              String    @default("0.0") @db.VarChar(8)
   isVerified          Boolean   @default(false)
   onboardingCompleted Boolean   @default(false)

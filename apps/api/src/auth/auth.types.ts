@@ -1,4 +1,4 @@
-import type { AccountType, UserRoleValue } from '@vendorapp/shared';
+import type { AccountType, UserNotificationPreferences, UserRoleValue } from '@vendorapp/shared';
 
 export interface StoredUser {
   id: string;
@@ -14,6 +14,7 @@ export interface StoredUser {
   clientEventTypes?: string[];
   clientBudgetMin?: string | null;
   clientBudgetMax?: string | null;
+  notificationPreferences?: UserNotificationPreferences | null;
   isEmailVerified?: boolean;
   isActive?: boolean;
   onboardingCompletedAt?: string | null;

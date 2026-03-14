@@ -45,6 +45,14 @@ export interface BookingTimelineEvent {
   createdAt: string;
 }
 
+export interface BookingReviewSummary {
+  id: string;
+  rating: number;
+  comment: string;
+  isPublic: boolean;
+  createdAt: string;
+}
+
 export interface Booking {
   id: string;
   clientId: string;
@@ -77,6 +85,8 @@ export interface Booking {
   agency?: BookingAgencySummary | null;
   timeline?: BookingTimelineEvent[];
   availableActions?: BookingAction[];
+  review?: BookingReviewSummary | null;
+  canReview?: boolean;
 }
 
 export interface PaymentCheckoutSession {

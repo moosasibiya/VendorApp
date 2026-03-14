@@ -13,6 +13,7 @@ import { AgenciesModule } from './agencies/agencies.module';
 import { PayfastModule } from './payfast/payfast.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MessagesModule } from './messages/messages.module';
     PayfastModule,
     NotificationsModule,
     MessagesModule,
+    ReviewsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

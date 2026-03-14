@@ -66,6 +66,7 @@ type ArtistSeed = {
   isAvailable: boolean;
   averageRating: number;
   totalReviews: number;
+  profileViews: number;
   isVerified: boolean;
   portfolioImages: string[];
   tags: string[];
@@ -228,6 +229,7 @@ const artistSeeds: ArtistSeed[] = [
     isAvailable: true,
     averageRating: 4.9,
     totalReviews: 28,
+    profileViews: 184,
     isVerified: true,
     portfolioImages: [
       'https://cdn.vendorapp.local/portfolio/kuhle-1.webp',
@@ -251,6 +253,7 @@ const artistSeeds: ArtistSeed[] = [
     isAvailable: true,
     averageRating: 4.8,
     totalReviews: 19,
+    profileViews: 141,
     isVerified: true,
     portfolioImages: [
       'https://cdn.vendorapp.local/portfolio/ayanda-1.webp',
@@ -274,6 +277,7 @@ const artistSeeds: ArtistSeed[] = [
     isAvailable: true,
     averageRating: 4.7,
     totalReviews: 15,
+    profileViews: 96,
     isVerified: true,
     portfolioImages: [
       'https://cdn.vendorapp.local/portfolio/nandi-1.webp',
@@ -297,6 +301,7 @@ const artistSeeds: ArtistSeed[] = [
     isAvailable: false,
     averageRating: 4.6,
     totalReviews: 11,
+    profileViews: 73,
     isVerified: false,
     portfolioImages: [
       'https://cdn.vendorapp.local/portfolio/themba-1.webp',
@@ -320,6 +325,7 @@ const artistSeeds: ArtistSeed[] = [
     isAvailable: true,
     averageRating: 4.9,
     totalReviews: 24,
+    profileViews: 165,
     isVerified: true,
     portfolioImages: [
       'https://cdn.vendorapp.local/portfolio/lindiwe-1.webp',
@@ -506,6 +512,7 @@ async function run(): Promise<void> {
         availabilitySummary: artist.availabilitySummary,
         averageRating: artist.averageRating,
         totalReviews: artist.totalReviews,
+        profileViews: artist.profileViews,
         rating: artist.averageRating.toFixed(1),
         isVerified: artist.isVerified,
         onboardingCompleted: true,
@@ -530,6 +537,7 @@ async function run(): Promise<void> {
         availabilitySummary: artist.availabilitySummary,
         averageRating: artist.averageRating,
         totalReviews: artist.totalReviews,
+        profileViews: artist.profileViews,
         rating: artist.averageRating.toFixed(1),
         isVerified: artist.isVerified,
         onboardingCompleted: true,

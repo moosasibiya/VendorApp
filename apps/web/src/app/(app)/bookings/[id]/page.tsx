@@ -8,6 +8,7 @@ import { PaymentForm } from "@/components/PaymentForm";
 import {
   ApiError,
   createConversation,
+  createReview,
   fetchBooking,
   fetchMe,
   updateBookingStatus,
@@ -48,6 +49,9 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState("5");
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     if (!bookingId) {
@@ -132,6 +136,49 @@ export default function BookingDetailPage() {
     viewer.id === booking.client.id &&
     booking.status === "CONFIRMED" &&
     (booking.paymentStatus === "UNPAID" || booking.paymentStatus === "FAILED");
+
+  const submitReview = async () => {
+    if (!booking) {
+      return;
+    }
+
+    const trimmedComment = reviewComment.trim();
+    if (!trimmedComment) {
+      setError("Please add a short review comment.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setError(null);
+    try {
+      const review = await createReview({
+        bookingId: booking.id,
+        rating: Number(reviewRating),
+        comment: trimmedComment,
+        isPublic: true,
+      });
+      setBooking({
+        ...booking,
+        review: {
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          isPublic: review.isPublic,
+          createdAt: review.createdAt,
+        },
+        canReview: false,
+      });
+      setReviewComment("");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Unable to submit your review right now.");
+      }
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   return (
     <main className={styles.page}>
@@ -245,6 +292,58 @@ export default function BookingDetailPage() {
               <div className={styles.section}>
                 <p className={styles.label}>Cancellation reason</p>
                 <p>{booking.cancelReason}</p>
+              </div>
+            ) : null}
+
+            {booking.canReview ? (
+              <div className={styles.section}>
+                <p className={styles.label}>Leave a review</p>
+                <p className={styles.subtle}>
+                  This booking is complete. Share feedback for the artist.
+                </p>
+                <div className={styles.reviewForm}>
+                  <label className={styles.reviewField}>
+                    Rating
+                    <select
+                      value={reviewRating}
+                      onChange={(event) => setReviewRating(event.target.value)}
+                    >
+                      <option value="5">5 stars</option>
+                      <option value="4">4 stars</option>
+                      <option value="3">3 stars</option>
+                      <option value="2">2 stars</option>
+                      <option value="1">1 star</option>
+                    </select>
+                  </label>
+                  <label className={styles.reviewField}>
+                    Comment
+                    <textarea
+                      rows={4}
+                      placeholder="How did the booking go?"
+                      value={reviewComment}
+                      onChange={(event) => setReviewComment(event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className={styles.primaryBtn}
+                    onClick={() => void submitReview()}
+                    disabled={reviewSubmitting}
+                  >
+                    {reviewSubmitting ? "Submitting..." : "Submit review"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {booking.review ? (
+              <div className={styles.section}>
+                <p className={styles.label}>Review submitted</p>
+                <div className={styles.reviewSummary}>
+                  <strong>{booking.review.rating} / 5</strong>
+                  <p>{booking.review.comment}</p>
+                  <p className={styles.subtle}>Submitted {formatDate(booking.review.createdAt)}</p>
+                </div>
               </div>
             ) : null}
 

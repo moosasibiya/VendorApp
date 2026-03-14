@@ -26,6 +26,7 @@ export interface Artist {
   portfolioLinks?: string[];
   averageRating?: number;
   totalReviews?: number;
+  profileViews?: number;
   category?: ArtistCategory | null;
   onboardingCompleted?: boolean;
   createdAt?: string;

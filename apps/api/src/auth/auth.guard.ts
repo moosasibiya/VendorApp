@@ -30,6 +30,9 @@ export class AuthGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('Invalid token user');
     }
+    if (user.isActive === false) {
+      throw new UnauthorizedException('This account is inactive');
+    }
     const tokenVersion =
       Number.isInteger(user.tokenVersion) &&
       user.tokenVersion !== undefined &&

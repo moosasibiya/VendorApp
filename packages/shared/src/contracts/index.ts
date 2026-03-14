@@ -3,4 +3,7 @@ export * from './api';
 export * from './artists';
 export * from './auth';
 export * from './bookings';
+export * from './dashboard';
 export * from './messages';
+export * from './reviews';
+export * from './users';

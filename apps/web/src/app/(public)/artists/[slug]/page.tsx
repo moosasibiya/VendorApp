@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import styles from "./page.module.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApiError, fetchArtistBySlug } from "@/lib/api";
+import { ApiError, fetchArtistBySlug, fetchArtistReviews } from "@/lib/api";
 import { ArtistProfileActions } from "./ArtistProfileActions";
 
 const navItems = [
   { label: "Overview", href: "#overview" },
   { label: "Portfolio", href: "#portfolio" },
+  { label: "Reviews", href: "#reviews" },
   { label: "Browse artists", href: "/artists" },
   { label: "Explore categories", href: "/explore" },
 ];
@@ -49,6 +50,8 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
     }
     throw error;
   }
+  const reviewsResponse = await fetchArtistReviews(slug, { page: 1, limit: 4 });
+  const reviews = reviewsResponse.data;
 
   const initials = getInitials(artist.name);
   const tags =
@@ -187,6 +190,34 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
               )}
             </div>
           </section>
+
+          <section className={styles.section} id="reviews">
+            <div className={styles.sectionHeader}>
+              <h2>Recent reviews</h2>
+              <span className={styles.reviewCount}>{artist.totalReviews ?? 0} total</span>
+            </div>
+            <div className={styles.reviewList}>
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <article key={review.id} className={styles.reviewCard}>
+                    <div className={styles.reviewMeta}>
+                      <div>
+                        <strong>{review.reviewer.name}</strong>
+                        <p>{new Date(review.eventDate).toLocaleDateString("en-ZA")}</p>
+                      </div>
+                      <span className={styles.reviewRating}>{review.rating} / 5</span>
+                    </div>
+                    <p>{review.comment}</p>
+                    <p className={styles.reviewBooking}>{review.bookingTitle}</p>
+                  </article>
+                ))
+              ) : (
+                <div className={styles.reviewEmpty}>
+                  No public reviews yet. Completed bookings will appear here.
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
         <aside className={styles.rightCol}>
@@ -210,6 +241,10 @@ export default async function ArtistProfilePage({ params }: ArtistProfilePagePro
             <div className={styles.summaryRow}>
               <span>Specialties</span>
               <strong>{artist.specialties?.length ?? 0}</strong>
+            </div>
+            <div className={styles.summaryRow}>
+              <span>Profile views</span>
+              <strong>{artist.profileViews ?? 0}</strong>
             </div>
             <Link className={styles.ghostBtn} href="/artists">
               Browse more artists

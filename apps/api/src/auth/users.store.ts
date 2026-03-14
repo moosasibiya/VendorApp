@@ -1,12 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
 import type { User as PrismaUser } from '@prisma/client';
+import type { UserNotificationPreferences } from '@vendorapp/shared';
 import type { StoredUser } from './auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersStore {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly defaultNotificationPreferences: UserNotificationPreferences = {
+    email: true,
+    bookingUpdates: true,
+    newMessages: true,
+    marketing: false,
+  };
 
   async findById(id: string): Promise<StoredUser | null> {
     const user = await this.prisma.user.findUnique({
@@ -129,6 +137,8 @@ export class UsersStore {
       clientEventTypes: user.clientEventTypes,
       clientBudgetMin: user.clientBudgetMin ?? null,
       clientBudgetMax: user.clientBudgetMax ?? null,
+      notificationPreferences: (user.notificationPreferences ??
+        this.defaultNotificationPreferences) as unknown as Prisma.InputJsonObject,
       onboardingCompletedAt: user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt) : null,
       isEmailVerified: user.isEmailVerified ?? false,
       isActive: user.isActive ?? true,
@@ -180,6 +190,7 @@ export class UsersStore {
       clientEventTypes: user.clientEventTypes,
       clientBudgetMin: user.clientBudgetMin?.toString() ?? null,
       clientBudgetMax: user.clientBudgetMax?.toString() ?? null,
+      notificationPreferences: this.toNotificationPreferences(user.notificationPreferences),
       onboardingCompletedAt: user.onboardingCompletedAt ? user.onboardingCompletedAt.toISOString() : null,
       isEmailVerified: user.isEmailVerified,
       isActive: user.isActive,
@@ -204,5 +215,21 @@ export class UsersStore {
     }
     const out = value.filter((item): item is string => typeof item === 'string');
     return out.length ? out : [];
+  }
+
+  private toNotificationPreferences(
+    value: Prisma.JsonValue | null | undefined,
+  ): UserNotificationPreferences | null {
+    if (!value || Array.isArray(value) || typeof value !== 'object') {
+      return null;
+    }
+
+    const record = value as Record<string, unknown>;
+    return {
+      email: record.email !== false,
+      bookingUpdates: record.bookingUpdates !== false,
+      newMessages: record.newMessages !== false,
+      marketing: record.marketing === true,
+    };
   }
 }

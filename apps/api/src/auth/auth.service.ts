@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   HttpStatus,
@@ -611,6 +612,64 @@ export class AuthService {
     });
   }
 
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    context?: RequestContext,
+  ): Promise<{ token: string }> {
+    const user = await this.usersStore.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found for token');
+    }
+    if (user.isActive === false) {
+      throw new UnauthorizedException('This account is inactive');
+    }
+
+    const expectedHash = this.hashPassword(currentPassword, user.passwordSalt);
+    if (!this.constantTimeEquals(expectedHash, user.passwordHash)) {
+      await this.audit('change_password_failed', false, {
+        userId: user.id,
+        emailNormalized: user.emailNormalized,
+        ipAddress: context?.ipAddress,
+        requestId: context?.requestId,
+        metadata: { reason: 'current_password_mismatch' },
+      });
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('New password must be different from the current password');
+    }
+
+    const passwordSalt = randomBytes(16).toString('hex');
+    const passwordHash = this.hashPassword(newPassword, passwordSalt);
+    const nextTokenVersion = this.getTokenVersion(user) + 1;
+
+    await this.usersStore.updateAuthFields(user.id, {
+      passwordSalt,
+      passwordHash,
+      failedLoginAttempts: 0,
+      lockoutUntil: null,
+      tokenVersion: nextTokenVersion,
+    });
+
+    await this.audit('change_password_success', true, {
+      userId: user.id,
+      emailNormalized: user.emailNormalized,
+      ipAddress: context?.ipAddress,
+      requestId: context?.requestId,
+    });
+
+    return {
+      token: this.tokenService.sign({
+        sub: user.id,
+        email: user.email,
+        ver: nextTokenVersion,
+      }),
+    };
+  }
+
   async verifyEmail(token: string, context?: RequestContext): Promise<{ email: string }> {
     const payload = this.tokenService.verifyPayload<EmailVerificationTokenPayload>(token);
     if (payload.purpose !== 'email_verification') {
@@ -1097,6 +1156,12 @@ export class AuthService {
       clientEventTypes: user.clientEventTypes ?? [],
       clientBudgetMin: user.clientBudgetMin ? Number(user.clientBudgetMin) : null,
       clientBudgetMax: user.clientBudgetMax ? Number(user.clientBudgetMax) : null,
+      notificationPreferences: user.notificationPreferences ?? {
+        email: true,
+        bookingUpdates: true,
+        newMessages: true,
+        marketing: false,
+      },
       isEmailVerified: user.isEmailVerified ?? false,
       isActive: user.isActive ?? true,
       onboardingCompleted: await this.isOnboardingComplete(user),

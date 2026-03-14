@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { AuthResponse, User } from '@vendorapp/shared';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { GoogleOauthStartDto } from './dto/google-oauth-start.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MfaDisableDto } from './dto/mfa-disable.dto';
 import { MfaEnableDto } from './dto/mfa-enable.dto';
@@ -168,6 +169,26 @@ export class AuthController {
       ipAddress: req.ip,
       requestId: req.headers['x-request-id'],
     });
+    return { success: true };
+  }
+
+  @Patch('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Req() req: AuthRequest,
+    @Body() input: ChangePasswordDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ success: true }> {
+    const result = await this.authService.changePassword(
+      req.auth.userId,
+      input.currentPassword,
+      input.newPassword,
+      {
+        ipAddress: req.ip,
+        requestId: req.headers['x-request-id'],
+      },
+    );
+    this.setAuthCookie(response, result.token);
     return { success: true };
   }
 

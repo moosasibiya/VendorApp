@@ -1,4 +1,5 @@
 import type { AccountType, UserRoleValue } from '../enums';
+import type { UserNotificationPreferences } from './users';
 
 export interface User {
   id: string;
@@ -12,6 +13,7 @@ export interface User {
   clientEventTypes?: string[];
   clientBudgetMin?: number | null;
   clientBudgetMax?: number | null;
+  notificationPreferences?: UserNotificationPreferences | null;
   isEmailVerified?: boolean;
   isActive?: boolean;
   onboardingCompleted?: boolean;

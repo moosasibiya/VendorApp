@@ -9,19 +9,26 @@ import type {
   AuthResponse,
   BookingAction,
   Booking,
+  ChangePasswordInput,
   ConversationMessage,
   ConversationSummary,
   CreateConversationInput,
   CreateBookingInput,
+  CreateReviewInput,
   CursorApiResponse,
+  DashboardStats,
   LoginRequest,
   MessageTypeValue,
+  MyReviewsOverview,
   NotificationFeed,
   NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
+  ReviewItem,
   SignupRequest,
+  UpcomingBookingItem,
+  UpdateUserProfileInput,
   User,
 } from "@vendorapp/shared";
 export type {
@@ -31,17 +38,24 @@ export type {
   ArtistProfileInput,
   ArtistSearchParams,
   Booking,
+  ChangePasswordInput,
   ConversationMessage,
   ConversationSummary,
   CreateConversationInput,
   CreateBookingInput,
+  CreateReviewInput,
   CursorApiResponse,
+  DashboardStats,
   MessageTypeValue,
+  MyReviewsOverview,
   NotificationFeed,
   NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
+  ReviewItem,
+  UpcomingBookingItem,
+  UpdateUserProfileInput,
 } from "@vendorapp/shared";
 
 export class ApiError extends Error {
@@ -253,6 +267,36 @@ export async function fetchBooking(id: string): Promise<Booking> {
   return response.data;
 }
 
+export async function fetchArtistReviews(
+  slug: string,
+  query?: { page?: number; limit?: number },
+): Promise<ApiEnvelope<ReviewItem[]>> {
+  const params = new URLSearchParams();
+  if (query?.page) {
+    params.set("page", String(query.page));
+  }
+  if (query?.limit) {
+    params.set("limit", String(query.limit));
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return getJson<ApiEnvelope<ReviewItem[]>>(
+    `/artists/${encodeURIComponent(slug)}/reviews${suffix}`,
+  );
+}
+
+export async function createReview(input: CreateReviewInput): Promise<ReviewItem> {
+  const response = await getJson<ApiEnvelope<ReviewItem>>("/reviews", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return response.data;
+}
+
+export async function fetchMyReviews(): Promise<MyReviewsOverview> {
+  return getJson<MyReviewsOverview>("/reviews/me");
+}
+
 export async function createConversation(
   input: CreateConversationInput,
 ): Promise<ConversationSummary> {
@@ -392,6 +436,36 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
 
 export async function fetchMe(): Promise<User> {
   return getJson<User>("/auth/me");
+}
+
+export async function changePassword(
+  input: ChangePasswordInput,
+): Promise<{ success: true }> {
+  return getJson<{ success: true }>("/auth/change-password", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function fetchMyStats(): Promise<DashboardStats> {
+  return getJson<DashboardStats>("/users/me/stats");
+}
+
+export async function fetchMyUpcomingBookings(): Promise<UpcomingBookingItem[]> {
+  return getJson<UpcomingBookingItem[]>("/users/me/upcoming-bookings");
+}
+
+export async function updateCurrentUser(input: UpdateUserProfileInput): Promise<User> {
+  return getJson<User>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteCurrentUser(): Promise<{ success: true }> {
+  return getJson<{ success: true }>("/users/me", {
+    method: "DELETE",
+  });
 }
 
 export async function requestPasswordReset(email: string): Promise<{ success: true; resetToken?: string }> {

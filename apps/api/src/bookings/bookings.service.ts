@@ -80,6 +80,15 @@ const bookingSelect = {
       logoUrl: true,
     },
   },
+  review: {
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      isPublic: true,
+      createdAt: true,
+    },
+  },
   statusHistory: {
     orderBy: {
       createdAt: 'asc',
@@ -760,6 +769,20 @@ export class BookingsService {
             logoUrl: booking.agency.logoUrl,
           }
         : null,
+      review: booking.review
+        ? {
+            id: booking.review.id,
+            rating: booking.review.rating,
+            comment: booking.review.comment,
+            isPublic: booking.review.isPublic,
+            createdAt: booking.review.createdAt.toISOString(),
+          }
+        : null,
+      canReview:
+        actor.role === UserRole.CLIENT &&
+        booking.clientId === actor.userId &&
+        booking.status === PrismaBookingStatus.COMPLETED &&
+        !booking.review,
       timeline: booking.statusHistory.map((event) => ({
         id: event.id,
         fromStatus: event.fromStatus,
