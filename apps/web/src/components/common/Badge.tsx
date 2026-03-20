@@ -12,11 +12,11 @@ export type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
 };
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-gray-100 text-gray-700",
+  default: "bg-[var(--panel3)] text-[var(--muted-strong)]",
   success: "bg-emerald-100 text-emerald-700",
   warning: "bg-orange-100 text-orange-700",
   error: "bg-red-100 text-red-700",
-  info: "bg-blue-100 text-blue-700",
+  info: "[background:var(--brand-surface)] text-[var(--brand-solid)]",
 };
 
 const sizeClasses: Record<BadgeSize, string> = {

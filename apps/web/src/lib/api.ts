@@ -1,4 +1,5 @@
 import type {
+  AdminDashboardData,
   AccountType,
   ApiResponse as ApiEnvelope,
   Agency,
@@ -9,12 +10,14 @@ import type {
   AuthResponse,
   BookingAction,
   Booking,
+  BookingVerificationStatusValue,
   ChangePasswordInput,
   ConversationMessage,
   ConversationSummary,
   CreateConversationInput,
   CreateBookingInput,
   CreateReviewInput,
+  CreateSupportThreadInput,
   CursorApiResponse,
   DashboardStats,
   LoginRequest,
@@ -25,25 +28,31 @@ import type {
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
+  PlatformSettings,
+  PayoutStatusValue,
   ReviewItem,
   SignupRequest,
   UpcomingBookingItem,
+  UpdateSupportThreadInput,
   UpdateUserProfileInput,
   User,
 } from "@vendorapp/shared";
 export type {
+  AdminDashboardData,
   Agency,
   Artist,
   ArtistCategory,
   ArtistProfileInput,
   ArtistSearchParams,
   Booking,
+  BookingVerificationStatusValue,
   ChangePasswordInput,
   ConversationMessage,
   ConversationSummary,
   CreateConversationInput,
   CreateBookingInput,
   CreateReviewInput,
+  CreateSupportThreadInput,
   CursorApiResponse,
   DashboardStats,
   MessageTypeValue,
@@ -53,8 +62,11 @@ export type {
   OnboardingAgencyInput,
   OnboardingClientInput,
   PaymentCheckoutSession,
+  PlatformSettings,
+  PayoutStatusValue,
   ReviewItem,
   UpcomingBookingItem,
+  UpdateSupportThreadInput,
   UpdateUserProfileInput,
 } from "@vendorapp/shared";
 
@@ -228,6 +240,8 @@ export async function updateMyArtistProfile(
 
 export async function fetchBookings(query?: {
   status?: Booking["status"];
+  payoutStatus?: PayoutStatusValue;
+  verificationStatus?: BookingVerificationStatusValue;
   page?: number;
   limit?: number;
   startDate?: string;
@@ -236,6 +250,12 @@ export async function fetchBookings(query?: {
   const params = new URLSearchParams();
   if (query?.status) {
     params.set("status", query.status);
+  }
+  if (query?.payoutStatus) {
+    params.set("payoutStatus", query.payoutStatus);
+  }
+  if (query?.verificationStatus) {
+    params.set("verificationStatus", query.verificationStatus);
   }
   if (query?.page) {
     params.set("page", String(query.page));
@@ -312,6 +332,38 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
   return response.data;
 }
 
+export async function createSupportThread(
+  input: CreateSupportThreadInput,
+): Promise<ConversationSummary> {
+  const response = await getJson<ApiEnvelope<ConversationSummary>>("/support/threads", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return response.data;
+}
+
+export async function updateSupportThread(input: {
+  conversationId: string;
+  status?: UpdateSupportThreadInput["status"];
+  assignedAdminUserId?: string | null;
+  internalNote?: string | null;
+}): Promise<ConversationSummary> {
+  const response = await getJson<ApiEnvelope<ConversationSummary>>(
+    `/support/threads/${encodeURIComponent(input.conversationId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.assignedAdminUserId !== undefined
+          ? { assignedAdminUserId: input.assignedAdminUserId }
+          : {}),
+        ...(input.internalNote !== undefined ? { internalNote: input.internalNote } : {}),
+      }),
+    },
+  );
+  return response.data;
+}
+
 export async function fetchConversationMessages(input: {
   conversationId: string;
   cursor?: string | null;
@@ -369,6 +421,38 @@ export async function updateBookingStatus(input: {
 }): Promise<Booking> {
   const response = await getJson<ApiEnvelope<Booking>>(
     `/bookings/${encodeURIComponent(input.bookingId)}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: input.action,
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    },
+  );
+  return response.data;
+}
+
+export async function verifyBookingStartCode(input: {
+  bookingId: string;
+  code: string;
+}): Promise<Booking> {
+  const response = await getJson<ApiEnvelope<Booking>>(
+    `/bookings/${encodeURIComponent(input.bookingId)}/start-code/verify`,
+    {
+      method: "POST",
+      body: JSON.stringify({ code: input.code }),
+    },
+  );
+  return response.data;
+}
+
+export async function applyAdminBookingOverride(input: {
+  bookingId: string;
+  action: "verify_without_code" | "hold_payout" | "release_payout" | "resolve_dispute";
+  reason?: string;
+}): Promise<Booking> {
+  const response = await getJson<ApiEnvelope<Booking>>(
+    `/bookings/${encodeURIComponent(input.bookingId)}/admin-override`,
     {
       method: "PATCH",
       body: JSON.stringify({
@@ -516,6 +600,75 @@ export async function createAgency(input: OnboardingAgencyInput): Promise<Agency
   });
 }
 
+export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
+  return getJson<AdminDashboardData>("/admin/dashboard");
+}
+
+export async function updatePlatformSettings(
+  input: Partial<PlatformSettings>,
+): Promise<PlatformSettings> {
+  return getJson<PlatformSettings>("/admin/settings", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateArtistApplication(input: {
+  artistId: string;
+  action: "under_review" | "approve" | "reject" | "go_live";
+  note?: string;
+}): Promise<AdminDashboardData> {
+  return getJson<AdminDashboardData>(
+    `/admin/artists/${encodeURIComponent(input.artistId)}/application`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: input.action,
+        ...(input.note ? { note: input.note } : {}),
+      }),
+    },
+  );
+}
+
+export async function updateArtistTier(input: {
+  artistId: string;
+  tierId?: string | null;
+  reason?: string | null;
+}): Promise<AdminDashboardData> {
+  return getJson<AdminDashboardData>(
+    `/admin/artists/${encodeURIComponent(input.artistId)}/tier`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        ...(input.tierId !== undefined ? { tierId: input.tierId } : {}),
+        ...(input.reason !== undefined ? { reason: input.reason } : {}),
+      }),
+    },
+  );
+}
+
+export async function updateTierDefinition(input: {
+  tierId: string;
+  name?: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+  thresholds?: Record<string, unknown>;
+  benefits?: Record<string, unknown>;
+}): Promise<AdminDashboardData> {
+  return getJson<AdminDashboardData>(`/admin/tiers/${encodeURIComponent(input.tierId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.description !== undefined ? { description: input.description } : {}),
+      ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      ...(input.thresholds !== undefined ? { thresholds: input.thresholds } : {}),
+      ...(input.benefits !== undefined ? { benefits: input.benefits } : {}),
+    }),
+  });
+}
+
 export async function logout(): Promise<void> {
   try {
     await getJson<{ success: boolean }>("/auth/logout", {
@@ -554,6 +707,7 @@ export function defaultAppPathForUser(user: User): string {
       return "/explore";
     case "AGENCY":
       return "/agency/dashboard";
+    case "SUB_ADMIN":
     case "ADMIN":
       return "/admin";
     case "ARTIST":

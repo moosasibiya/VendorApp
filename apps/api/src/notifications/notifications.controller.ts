@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Patch, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { NotificationFeed, NotificationItem } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { NotificationIdParamDto } from './dto/notification-id-param.dto';
 import { ListNotificationsQueryDto } from './dto/list-notifications-query.dto';
 import { NotificationsService } from './notifications.service';
@@ -12,7 +13,7 @@ type AuthenticatedRequest = {
 };
 
 @Controller('notifications')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OnboardingCompleteGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

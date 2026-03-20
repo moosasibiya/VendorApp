@@ -29,6 +29,10 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
     title: "Messages",
     subtitle: "Conversations, delivery updates, and client notes.",
   },
+  "/support": {
+    title: "Support",
+    subtitle: "Guided help, escalations, and support thread routing.",
+  },
   "/calendar": {
     title: "Calendar",
     subtitle: "Availability, upcoming shoots, and blocked time.",
@@ -48,6 +52,10 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
   "/onboarding": {
     title: "Onboarding",
     subtitle: "Complete your artist setup and verification.",
+  },
+  "/admin": {
+    title: "Admin",
+    subtitle: "Applications, rollout settings, support, and tier controls.",
   },
 };
 

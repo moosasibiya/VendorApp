@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const googleAuthUrl = useMemo(
@@ -31,6 +32,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+
+    if (params.get("verified") === "1") {
+      setSuccess("Email verified. You can sign in now.");
+      setError(null);
+    }
+
     const next = params.get("next");
     if (next && next.startsWith("/") && !next.startsWith("//")) {
       setNextPath(next);
@@ -64,6 +75,7 @@ export default function LoginPage() {
         onSubmit={async (event) => {
           event.preventDefault();
           setError(null);
+          setSuccess(null);
 
           if (!email.trim() || !password.trim()) {
             setError("Email and password are required.");
@@ -98,6 +110,7 @@ export default function LoginPage() {
           }
         }}
       >
+        {success ? <div className={styles.success}>{success}</div> : null}
         {error ? <div className={styles.error}>{error}</div> : null}
 
         <div className={styles.field}>

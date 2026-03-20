@@ -27,9 +27,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              "h-11 w-full appearance-none rounded-btn border bg-white px-4 pr-10 text-base text-gray-900 shadow-sm transition duration-fast ease-smooth",
-              "focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200",
-              error ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-gray-300",
+              "h-11 w-full appearance-none rounded-btn border bg-[var(--panel)] px-4 pr-10 text-base text-[var(--text)] shadow-sm transition duration-fast ease-smooth",
+              "focus:border-[var(--brand-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-focus-ring)]",
+              error
+                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                : "border-[var(--border)]",
               className,
             )}
             {...props}
@@ -40,14 +42,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-            ▾
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+            &#9662;
           </span>
         </div>
         {error ? (
           <span className="text-xs text-red-500">{error}</span>
         ) : helperText ? (
-          <span className="text-xs text-gray-500">{helperText}</span>
+          <span className="text-xs text-[var(--muted)]">{helperText}</span>
         ) : null}
       </label>
     );

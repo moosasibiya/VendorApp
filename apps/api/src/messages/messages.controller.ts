@@ -16,7 +16,9 @@ import type {
   ConversationSummary,
   CursorApiResponse,
 } from '@vendorapp/shared';
+import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { ConversationIdParamDto } from './dto/conversation-id-param.dto';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { ListConversationMessagesQueryDto } from './dto/list-conversation-messages-query.dto';
@@ -30,7 +32,8 @@ type AuthenticatedRequest = {
 };
 
 @Controller('conversations')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OnboardingCompleteGuard)
+@AllowIncompleteOnboarding()
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 

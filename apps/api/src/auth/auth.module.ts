@@ -3,6 +3,7 @@ import { MailerModule } from '../mailer/mailer.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
+import { OnboardingCompleteGuard } from './onboarding-complete.guard';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
 import { UsersStore } from './users.store';
@@ -11,7 +12,21 @@ import { AuthAuditService } from './auth-audit.service';
 @Module({
   imports: [PrismaModule, MailerModule],
   controllers: [AuthController],
-  providers: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],
-  exports: [AuthService, AuthTokenService, UsersStore, AuthGuard, AuthAuditService],
+  providers: [
+    AuthService,
+    AuthTokenService,
+    UsersStore,
+    AuthGuard,
+    AuthAuditService,
+    OnboardingCompleteGuard,
+  ],
+  exports: [
+    AuthService,
+    AuthTokenService,
+    UsersStore,
+    AuthGuard,
+    AuthAuditService,
+    OnboardingCompleteGuard,
+  ],
 })
 export class AuthModule {}

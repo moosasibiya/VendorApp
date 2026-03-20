@@ -50,14 +50,14 @@ export const Avatar = ({
         src={src}
         alt={alt ?? name ?? "Avatar"}
         className={cn(
-          "rounded-full object-cover ring-2 ring-white",
+          "rounded-full object-cover ring-2 ring-[var(--panel)]",
           sizeClasses[size],
         )}
       />
     ) : (
       <div
         className={cn(
-          "flex items-center justify-center rounded-full bg-gray-100 font-semibold text-gray-600 ring-2 ring-white",
+          "flex items-center justify-center rounded-full [background:var(--brand-surface-gradient)] font-semibold text-[var(--brand-solid)] ring-2 ring-[var(--panel)]",
           sizeClasses[size],
         )}
       >
@@ -67,7 +67,7 @@ export const Avatar = ({
     {status ? (
       <span
         className={cn(
-          "absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-white",
+          "absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-[var(--panel)]",
           statusClasses[status],
         )}
       />

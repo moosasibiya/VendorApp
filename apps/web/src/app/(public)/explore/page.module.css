@@ -21,7 +21,7 @@
   border-radius: 26px;
   padding: 28px;
   background:
-    radial-gradient(circle at top left, rgba(209, 67, 67, 0.14), transparent 40%),
+    radial-gradient(circle at top left, var(--brand-surface-strong), transparent 40%),
     var(--panel2);
   box-shadow: var(--shadow-card);
 }
@@ -78,7 +78,7 @@
   color: #fff;
   text-decoration: none;
   font-weight: 700;
-  background: linear-gradient(135deg, #d14343, #9f2b2b);
+  background: var(--brand-gradient);
 }
 
 .section {

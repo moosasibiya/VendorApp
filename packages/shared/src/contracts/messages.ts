@@ -1,7 +1,10 @@
 import type {
   BookingStatusValue,
+  ConversationKindValue,
   MessageTypeValue,
   NotificationTypeValue,
+  SupportCategoryValue,
+  SupportThreadStatusValue,
   UserRoleValue,
 } from '../enums';
 
@@ -39,6 +42,13 @@ export interface ConversationSummary {
   bookingId?: string | null;
   participantIds: string[];
   participants: ConversationParticipant[];
+  kind: ConversationKindValue;
+  subject?: string | null;
+  supportCategory?: SupportCategoryValue | null;
+  supportStatus?: SupportThreadStatusValue | null;
+  supportTicketNumber?: string | null;
+  assignedAdminUserId?: string | null;
+  resolvedAt?: string | null;
   lastMessageAt: string;
   unreadCount: number;
   lastMessage?: ConversationMessage | null;

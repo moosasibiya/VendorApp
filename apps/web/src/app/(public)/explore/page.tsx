@@ -20,10 +20,10 @@ function formatCurrency(amount: number | undefined): string {
 
 function buildPreviewStyle(seed: string): { backgroundImage: string } {
   const palettes = [
-    "linear-gradient(135deg, rgba(209, 67, 67, 0.84), rgba(159, 43, 43, 0.74))",
-    "linear-gradient(135deg, rgba(15, 118, 110, 0.82), rgba(8, 145, 178, 0.74))",
-    "linear-gradient(135deg, rgba(37, 99, 235, 0.82), rgba(14, 165, 233, 0.74))",
-    "linear-gradient(135deg, rgba(234, 88, 12, 0.82), rgba(202, 138, 4, 0.72))",
+    "linear-gradient(135deg, rgba(111, 67, 245, 0.88), rgba(109, 96, 244, 0.72))",
+    "linear-gradient(135deg, rgba(111, 67, 245, 0.82), rgba(87, 210, 247, 0.72))",
+    "linear-gradient(135deg, rgba(109, 96, 244, 0.84), rgba(87, 210, 247, 0.78))",
+    "linear-gradient(135deg, rgba(124, 96, 248, 0.84), rgba(115, 175, 255, 0.74))",
   ];
   return { backgroundImage: palettes[seed.length % palettes.length] };
 }

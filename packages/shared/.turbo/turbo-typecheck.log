@@ -1,0 +1,4 @@
+
+> @vendorapp/shared@0.0.1 typecheck C:\Users\moosa\Desktop\Dev\VendorApp\packages\shared
+> tsc -p tsconfig.json --noEmit
+

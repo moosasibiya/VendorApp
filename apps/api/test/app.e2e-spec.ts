@@ -4,12 +4,14 @@ import { PrismaClient } from '@prisma/client';
 import { authenticator } from 'otplib';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { AuthTokenService } from '../src/auth/auth-token.service';
 import { loadEnvironment } from '../src/env';
 import { configureApp } from '../src/main';
 
 describe('API Security Flows (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
+  let authTokenService: AuthTokenService;
 
   beforeAll(async () => {
     loadEnvironment();
@@ -24,7 +26,8 @@ describe('API Security Flows (e2e)', () => {
     process.env.AUTH_COOKIE_SAME_SITE ??= 'lax';
     process.env.CSRF_COOKIE_NAME ??= 'vendrman_csrf';
     process.env.AUTH_MFA_ISSUER ??= 'VendorApp';
-
+    process.env.RESEND_API_KEY = '';
+    process.env.EMAIL_FROM = '';
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -32,6 +35,7 @@ describe('API Security Flows (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
+    authTokenService = moduleFixture.get(AuthTokenService);
     app = moduleFixture.createNestApplication();
     await configureApp(app);
     await app.init();
@@ -133,6 +137,64 @@ describe('API Security Flows (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({ email, password: newPassword })
+      .expect(201);
+  });
+
+  it('verifies email links and allows login afterwards', async () => {
+    const email = `verify.${Date.now()}@example.com`;
+    const password = 'simple123';
+
+    await request(app.getHttpServer())
+      .post('/api/auth/signup')
+      .send({
+        fullName: 'Verify Test User',
+        username: `verify_${Date.now()}`,
+        email,
+        password,
+        accountType: 'CLIENT',
+      })
+      .expect(201);
+
+    const createdUser = await prisma.user.findUnique({
+      where: { emailNormalized: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        isEmailVerified: true,
+      },
+    });
+
+    expect(createdUser?.isEmailVerified).toBe(false);
+
+    const verificationToken = authTokenService.signPayload({
+      sub: createdUser!.id,
+      email: createdUser!.email,
+      purpose: 'email_verification' as const,
+    });
+
+    const verifyResponse = await request(app.getHttpServer())
+      .get(`/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`)
+      .expect(200);
+
+    expect(verifyResponse.body.success).toBe(true);
+    expect(verifyResponse.body.email).toBe(email);
+
+    const redirectResponse = await request(app.getHttpServer())
+      .get(`/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}&redirect=1`)
+      .expect(302);
+
+    expect(redirectResponse.headers.location).toContain('/login?verified=1');
+
+    const verifiedUser = await prisma.user.findUnique({
+      where: { id: createdUser!.id },
+      select: { isEmailVerified: true },
+    });
+
+    expect(verifiedUser?.isEmailVerified).toBe(true);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ email, password })
       .expect(201);
   });
 

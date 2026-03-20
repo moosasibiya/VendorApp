@@ -60,7 +60,14 @@ export class UsersService {
                 gte: new Date(),
               },
               status: {
-                in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+                in: [
+                  BookingStatus.PENDING,
+                  BookingStatus.CONFIRMED,
+                  BookingStatus.BOOKED,
+                  BookingStatus.AWAITING_START_CODE,
+                  BookingStatus.IN_PROGRESS,
+                  BookingStatus.AWAITING_CLIENT_APPROVAL,
+                ],
               },
             },
           }),
@@ -154,7 +161,14 @@ export class UsersService {
             where: {
               agencyId,
               status: {
-                in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+                in: [
+                  BookingStatus.PENDING,
+                  BookingStatus.CONFIRMED,
+                  BookingStatus.BOOKED,
+                  BookingStatus.AWAITING_START_CODE,
+                  BookingStatus.IN_PROGRESS,
+                  BookingStatus.AWAITING_CLIENT_APPROVAL,
+                ],
               },
             },
           }),
@@ -173,6 +187,7 @@ export class UsersService {
           totalRevenue: Number(revenueAggregate._sum.totalAmount?.toString() ?? '0'),
         };
       }
+      case UserRole.SUB_ADMIN:
       case UserRole.ADMIN:
       default: {
         const [totalUsers, totalBookings, revenueAggregate] = await Promise.all([
@@ -186,7 +201,7 @@ export class UsersService {
         ]);
 
         return {
-          role: 'ADMIN',
+          role: user.role,
           totalUsers,
           totalBookings,
           totalRevenue: Number(revenueAggregate._sum.totalAmount?.toString() ?? '0'),
@@ -217,7 +232,14 @@ export class UsersService {
           gte: new Date(),
         },
         status: {
-          in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+          in: [
+            BookingStatus.PENDING,
+            BookingStatus.CONFIRMED,
+            BookingStatus.BOOKED,
+            BookingStatus.AWAITING_START_CODE,
+            BookingStatus.IN_PROGRESS,
+            BookingStatus.AWAITING_CLIENT_APPROVAL,
+          ],
         },
       },
       orderBy: [{ eventDate: 'asc' }, { createdAt: 'asc' }],

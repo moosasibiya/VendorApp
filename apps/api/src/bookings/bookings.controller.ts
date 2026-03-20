@@ -10,14 +10,16 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import type { ApiResponse, Booking, PaymentCheckoutSession } from '@vendorapp/shared';
+import type { ApiResponse, Booking } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
-import { PayfastService } from '../payfast/payfast.service';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { BookingsService } from './bookings.service';
+import { AdminBookingOverrideDto } from './dto/admin-booking-override.dto';
 import { BookingIdParamDto } from './dto/booking-id-param.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ListBookingsQueryDto } from './dto/list-bookings-query.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { VerifyBookingStartCodeDto } from './dto/verify-booking-start-code.dto';
 
 type AuthenticatedRequest = {
   auth?: {
@@ -26,12 +28,9 @@ type AuthenticatedRequest = {
 };
 
 @Controller('bookings')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OnboardingCompleteGuard)
 export class BookingsController {
-  constructor(
-    private readonly bookingsService: BookingsService,
-    private readonly payfastService: PayfastService,
-  ) {}
+  constructor(private readonly bookingsService: BookingsService) {}
 
   @Get()
   async findAll(
@@ -66,12 +65,22 @@ export class BookingsController {
     return this.bookingsService.updateStatus(this.getUserId(request), params.id, input);
   }
 
-  @Post(':id/payment/initiate')
-  async initiatePayment(
+  @Post(':id/start-code/verify')
+  async verifyStartCode(
     @Req() request: AuthenticatedRequest,
     @Param() params: BookingIdParamDto,
-  ): Promise<ApiResponse<PaymentCheckoutSession>> {
-    return this.payfastService.initiateBookingPayment(this.getUserId(request), params.id);
+    @Body() input: VerifyBookingStartCodeDto,
+  ): Promise<ApiResponse<Booking>> {
+    return this.bookingsService.verifyStartCode(this.getUserId(request), params.id, input.code);
+  }
+
+  @Patch(':id/admin-override')
+  async applyAdminOverride(
+    @Req() request: AuthenticatedRequest,
+    @Param() params: BookingIdParamDto,
+    @Body() input: AdminBookingOverrideDto,
+  ): Promise<ApiResponse<Booking>> {
+    return this.bookingsService.applyAdminOverride(this.getUserId(request), params.id, input);
   }
 
   private getUserId(request: AuthenticatedRequest): string {

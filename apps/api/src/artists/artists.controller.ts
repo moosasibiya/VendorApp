@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ArtistsService } from './artists.service';
 import type { ApiResponse, Artist } from '@vendorapp/shared';
+import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { UpsertArtistProfileDto } from './dto/upsert-artist-profile.dto';
 import { ListArtistsQueryDto } from './dto/list-artists-query.dto';
 
@@ -27,7 +29,8 @@ export class ArtistsController {
   }
 
   @Put('me/profile')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, OnboardingCompleteGuard)
+  @AllowIncompleteOnboarding()
   async upsertMyProfile(
     @Req() req: AuthRequest,
     @Body() input: UpsertArtistProfileDto,

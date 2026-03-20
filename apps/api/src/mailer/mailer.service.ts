@@ -10,6 +10,20 @@ type BookingEmailInput = {
   location: string;
 };
 
+type BookingStartCodeEmailInput = {
+  recipientEmail: string;
+  recipientName?: string | null;
+  title: string;
+  eventDate: string;
+  location: string;
+  verificationCode: string;
+};
+
+type ArtistApprovedLiveEmailInput = {
+  recipientName?: string | null;
+  artistName: string;
+};
+
 @Injectable()
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
@@ -35,7 +49,7 @@ export class MailerService {
   }
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {
-    const verifyUrl = `${this.getWebOrigin()}/verify-email?token=${encodeURIComponent(token)}`;
+    const verifyUrl = `${this.getApiBaseUrl()}/auth/verify-email?token=${encodeURIComponent(token)}&redirect=1`;
 
     await this.sendEmail({
       to,
@@ -68,6 +82,55 @@ export class MailerService {
         `<p>${greeting}</p>`,
         `<p><strong>${booking.counterpartName}</strong> confirmed the booking "<strong>${booking.title}</strong>".</p>`,
         `<p>Event date: ${booking.eventDate}<br/>Location: ${booking.location}</p>`,
+      ].join(''),
+    });
+  }
+
+  async sendBookingStartCode(
+    to: string,
+    booking: BookingStartCodeEmailInput,
+  ): Promise<void> {
+    const greeting = booking.recipientName ? `Hi ${booking.recipientName},` : 'Hello,';
+    await this.sendEmail({
+      to,
+      subject: `Your VendorApp safety code for ${booking.title}`,
+      text: [
+        greeting,
+        `Your booking "${booking.title}" is confirmed and paid.`,
+        `Safety code: ${booking.verificationCode}`,
+        'Share this code with the artist when the job is ready to begin.',
+        `Event date: ${booking.eventDate}`,
+        `Location: ${booking.location}`,
+      ].join('\n\n'),
+      html: [
+        `<p>${greeting}</p>`,
+        `<p>Your booking "<strong>${booking.title}</strong>" is confirmed and paid.</p>`,
+        `<p><strong>Safety code:</strong> ${booking.verificationCode}</p>`,
+        '<p>Share this code with the artist when the job is ready to begin.</p>',
+        `<p>Event date: ${booking.eventDate}<br/>Location: ${booking.location}</p>`,
+      ].join(''),
+    });
+  }
+
+  async sendArtistApprovedLive(
+    to: string,
+    input: ArtistApprovedLiveEmailInput,
+  ): Promise<void> {
+    const greeting = input.recipientName ? `Hi ${input.recipientName},` : 'Hello,';
+    const dashboardUrl = `${this.getWebOrigin()}/dashboard`;
+
+    await this.sendEmail({
+      to,
+      subject: 'Your VendorApp artist profile is live',
+      text: [
+        greeting,
+        `${input.artistName} has been approved and is now live on VendorApp.`,
+        `Open your dashboard: ${dashboardUrl}`,
+      ].join('\n\n'),
+      html: [
+        `<p>${greeting}</p>`,
+        `<p><strong>${input.artistName}</strong> has been approved and is now live on VendorApp.</p>`,
+        `<p><a href="${dashboardUrl}">Open your dashboard</a></p>`,
       ].join(''),
     });
   }
@@ -117,5 +180,18 @@ export class MailerService {
       process.env.NEXT_PUBLIC_WEB_ORIGIN?.trim() ||
       'http://localhost:3000'
     ).replace(/\/+$/, '');
+  }
+
+  private getApiBaseUrl(): string {
+    const explicit =
+      process.env.API_PUBLIC_URL?.trim() ||
+      process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+
+    if (explicit) {
+      return explicit.replace(/\/+$/, '');
+    }
+
+    const port = process.env.API_PORT?.trim() || process.env.PORT?.trim() || '4000';
+    return `http://localhost:${port}/api`;
   }
 }

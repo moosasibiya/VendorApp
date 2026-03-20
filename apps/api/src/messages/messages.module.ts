@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PlatformModule } from '../platform/platform.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
+import { SupportController } from './support.controller';
 
 @Module({
-  imports: [AuthModule, NotificationsModule, RealtimeModule],
-  controllers: [MessagesController],
+  imports: [AuthModule, NotificationsModule, RealtimeModule, PlatformModule],
+  controllers: [MessagesController, SupportController],
   providers: [MessagesService],
   exports: [MessagesService],
 })

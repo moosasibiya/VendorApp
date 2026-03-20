@@ -12,6 +12,7 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ConversationMessage, ConversationSummary, User } from "@vendorapp/shared";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   ApiError,
   fetchConversationMessages,
@@ -50,6 +51,18 @@ function formatMoney(amount: number): string {
     currency: "ZAR",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function humanize(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function compareMessages(a: UiMessage, b: UiMessage): number {
@@ -92,6 +105,7 @@ function isNearBottom(element: HTMLDivElement | null): boolean {
 }
 
 export default function MessagesPage() {
+  const { onboardingLocked } = useAppSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -390,6 +404,8 @@ export default function MessagesPage() {
   const activeCounterparty = activeConversation
     ? getCounterparty(activeConversation, viewer?.id ?? null)
     : null;
+  const canSendInConversation =
+    !onboardingLocked || activeConversation?.kind === "SUPPORT";
 
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
@@ -398,6 +414,10 @@ export default function MessagesPage() {
 
   const handleSend = async () => {
     if (!activeConversationId || !viewer || sending) {
+      return;
+    }
+    if (!canSendInConversation) {
+      setError("Complete onboarding before sending non-support messages.");
       return;
     }
 
@@ -509,6 +529,18 @@ export default function MessagesPage() {
                       <span>{formatRelative(conversation.lastMessageAt)}</span>
                     </div>
                     <p>{conversation.lastMessage?.content ?? "No messages yet"}</p>
+                    <div className={styles.conversationTags}>
+                      {conversation.kind === "SUPPORT" ? (
+                        <span className={styles.threadTag} data-tone="support">
+                          {conversation.supportTicketNumber ?? "Support"}
+                        </span>
+                      ) : null}
+                      {conversation.supportStatus ? (
+                        <span className={styles.threadTag} data-tone="neutral">
+                          {humanize(conversation.supportStatus)}
+                        </span>
+                      ) : null}
+                    </div>
                     {conversation.booking ? (
                       <small>{conversation.booking.title}</small>
                     ) : null}
@@ -536,21 +568,31 @@ export default function MessagesPage() {
                 <div>
                   <h2>{activeCounterparty?.name ?? "Conversation"}</h2>
                   <p>
-                    {activeConversation.booking
-                      ? `Booking: ${activeConversation.booking.title}`
-                      : "Direct conversation"}
+                    {activeConversation.kind === "SUPPORT"
+                      ? `${humanize(activeConversation.supportCategory)} · ${humanize(
+                          activeConversation.supportStatus,
+                        ) || "Open"}`
+                      : activeConversation.booking
+                        ? `Booking: ${activeConversation.booking.title}`
+                        : "Direct conversation"}
                   </p>
                 </div>
-                {activeConversation.booking ? (
-                  <Link
-                    href={`/bookings/${activeConversation.booking.id}`}
-                    className={styles.threadLink}
-                  >
-                    View booking
-                  </Link>
-                ) : null}
+                <div className={styles.threadHeaderActions}>
+                  {activeConversation.kind === "SUPPORT" ? (
+                    <span className={styles.threadTag} data-tone="support">
+                      {activeConversation.supportTicketNumber ?? "Support thread"}
+                    </span>
+                  ) : null}
+                  {activeConversation.booking ? (
+                    <Link
+                      href={`/bookings/${activeConversation.booking.id}`}
+                      className={styles.threadLink}
+                    >
+                      View booking
+                    </Link>
+                  ) : null}
+                </div>
               </div>
-
               {error ? <div className={styles.error}>{error}</div> : null}
 
               <div className={styles.messages} ref={listRef}>
@@ -589,6 +631,7 @@ export default function MessagesPage() {
                   placeholder="Write a message..."
                   value={composer}
                   onChange={(event) => setComposer(event.target.value)}
+                  disabled={!canSendInConversation}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                       event.preventDefault();
@@ -597,14 +640,22 @@ export default function MessagesPage() {
                   }}
                 />
                 <div className={styles.composeActions}>
-                  <button type="button" disabled title="File attachments arrive in Phase 7">
+                  <button
+                    type="button"
+                    disabled
+                    title={
+                      !canSendInConversation
+                        ? "Finish onboarding before sending non-support attachments."
+                        : "File attachments arrive in Phase 7"
+                    }
+                  >
                     <span className="material-symbols-outlined">attach_file</span>
                   </button>
                   <button
                     type="button"
                     className={styles.sendBtn}
                     onClick={() => void handleSend()}
-                    disabled={sending || !composer.trim()}
+                    disabled={sending || !composer.trim() || !canSendInConversation}
                   >
                     <span className="material-symbols-outlined">send</span>
                   </button>
@@ -616,7 +667,27 @@ export default function MessagesPage() {
 
         <aside className={styles.details}>
           <h3>Conversation details</h3>
-          {activeConversation?.booking ? (
+          {activeConversation?.kind === "SUPPORT" ? (
+            <div className={styles.detailCard}>
+              <p className={styles.detailLabel}>Thread</p>
+              <p>{activeConversation.supportTicketNumber ?? "Support thread"}</p>
+              <p className={styles.detailLabel}>Category</p>
+              <p>{humanize(activeConversation.supportCategory)}</p>
+              <p className={styles.detailLabel}>Status</p>
+              <p>{humanize(activeConversation.supportStatus) || "Open"}</p>
+              {activeConversation.booking ? (
+                <>
+                  <p className={styles.detailLabel}>Linked booking</p>
+                  <Link
+                    href={`/bookings/${activeConversation.booking.id}`}
+                    className={styles.detailLink}
+                  >
+                    {activeConversation.booking.title}
+                  </Link>
+                </>
+              ) : null}
+            </div>
+          ) : activeConversation?.booking ? (
             <div className={styles.detailCard}>
               <p className={styles.detailLabel}>Event</p>
               <p>{activeConversation.booking.title}</p>

@@ -1,3 +1,9 @@
+import type {
+  ArtistApplicationStatusValue,
+  OnboardingFeeModelValue,
+} from '../enums';
+import type { ArtistTierDefinition, ArtistTierProgress } from './tiers';
+
 export interface ArtistCategory {
   id: string;
   name: string;
@@ -29,6 +35,22 @@ export interface Artist {
   profileViews?: number;
   category?: ArtistCategory | null;
   onboardingCompleted?: boolean;
+  applicationStatus?: ArtistApplicationStatusValue;
+  applicationSequence?: number | null;
+  applicationSubmittedAt?: string | null;
+  applicationReviewedAt?: string | null;
+  applicationReviewNotes?: string | null;
+  approvedAt?: string | null;
+  isLive?: boolean;
+  wentLiveAt?: string | null;
+  onboardingFeeModel?: OnboardingFeeModelValue;
+  firstBookingOnboardingDeductionApplied?: boolean;
+  firstBookingOnboardingDeductionAt?: string | null;
+  normalCommissionRate?: number;
+  temporaryFirstBookingCommissionRate?: number;
+  applicationMessage?: string | null;
+  tier?: ArtistTierDefinition | null;
+  tierProgress?: ArtistTierProgress | null;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -4,11 +4,37 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import type { ApiResponse, Artist, ArtistCategory } from '@vendorapp/shared';
+import {
+  ArtistApplicationStatus,
+  OnboardingFeeModel,
+  Prisma,
+} from '@prisma/client';
+import type {
+  ApiResponse,
+  Artist,
+  ArtistCategory,
+  ArtistTierDefinition,
+  ArtistTierProgress,
+} from '@vendorapp/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlatformConfigService } from '../platform/platform-config.service';
+import { PLATFORM_COUNTER_KEYS } from '../platform/platform-settings';
 import type { UpsertArtistProfileDto } from './dto/upsert-artist-profile.dto';
 import { ListArtistsQueryDto } from './dto/list-artists-query.dto';
+import { ArtistTierService } from './artist-tier.service';
+
+const tierDefinitionSelect = {
+  id: true,
+  key: true,
+  name: true,
+  description: true,
+  sortOrder: true,
+  isActive: true,
+  thresholds: true,
+  benefits: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ArtistTierDefinitionSelect;
 
 const artistSelect = {
   id: true,
@@ -34,6 +60,19 @@ const artistSelect = {
   profileViews: true,
   slug: true,
   onboardingCompleted: true,
+  applicationStatus: true,
+  applicationSequence: true,
+  applicationSubmittedAt: true,
+  applicationReviewedAt: true,
+  applicationReviewNotes: true,
+  approvedAt: true,
+  isLive: true,
+  wentLiveAt: true,
+  onboardingFeeModel: true,
+  firstBookingOnboardingDeductionApplied: true,
+  firstBookingOnboardingDeductionAt: true,
+  normalCommissionRate: true,
+  temporaryFirstBookingCommissionRate: true,
   createdAt: true,
   updatedAt: true,
   category: {
@@ -44,34 +83,71 @@ const artistSelect = {
       iconUrl: true,
     },
   },
+  tierSnapshot: {
+    select: {
+      completedPlatformBookings: true,
+      verifiedPlatformBookings: true,
+      platformRevenue: true,
+      averageRating: true,
+      cancellationCount: true,
+      reliabilityScore: true,
+      responseTimeMinutes: true,
+      disputeCount: true,
+      disputeRate: true,
+      profileCompleteness: true,
+      repeatBookings: true,
+      evaluationDetails: true,
+      lastEvaluatedAt: true,
+      currentTier: {
+        select: tierDefinitionSelect,
+      },
+      evaluatedTier: {
+        select: tierDefinitionSelect,
+      },
+      manualTier: {
+        select: tierDefinitionSelect,
+      },
+    },
+  },
 } satisfies Prisma.ArtistSelect;
 
 type ArtistRecord = Prisma.ArtistGetPayload<{
   select: typeof artistSelect;
 }>;
 
+type ArtistTierDefinitionRecord = NonNullable<
+  NonNullable<ArtistRecord['tierSnapshot']>['currentTier']
+>;
+
 @Injectable()
 export class ArtistsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly platformConfigService: PlatformConfigService,
+    private readonly artistTierService: ArtistTierService,
+  ) {}
 
   async findAll(query: ListArtistsQueryDto): Promise<ApiResponse<Artist[]>> {
     const where = this.buildListWhere(query);
-    const total = await this.prisma.artist.count({ where });
     const artists = await this.prisma.artist.findMany({
       where,
-      orderBy: this.getOrderBy(query.sortBy),
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
       select: artistSelect,
     });
 
+    const sorted = this.sortArtists(artists, query.sortBy);
+    const page = query.page;
+    const limit = query.limit;
+    const total = sorted.length;
+    const paged = sorted.slice((page - 1) * limit, page * limit);
+    const settings = await this.platformConfigService.getSettings();
+
     return {
-      data: artists.map((artist) => this.toArtist(artist)),
+      data: paged.map((artist) => this.toArtist(artist, settings)),
       meta: {
-        page: query.page,
-        limit: query.limit,
+        page,
+        limit,
         total,
-        totalPages: total === 0 ? 0 : Math.ceil(total / query.limit),
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
       },
     };
   }
@@ -100,31 +176,35 @@ export class ArtistsService {
   }
 
   async findBySlug(slug: string): Promise<Artist> {
-    let artist: ArtistRecord;
-    try {
-      artist = await this.prisma.artist.update({
-        where: { slug },
-        data: {
-          profileViews: {
-            increment: 1,
-          },
-        },
-        select: artistSelect,
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Artist not found: ${slug}`);
-      }
-      throw error;
-    }
+    const artist = await this.prisma.artist.findUnique({
+      where: { slug },
+      select: artistSelect,
+    });
 
-    if (!artist) {
+    if (!artist || !artist.isLive) {
       throw new NotFoundException(`Artist not found: ${slug}`);
     }
-    return this.toArtist(artist);
+
+    await this.prisma.artist.update({
+      where: { id: artist.id },
+      data: {
+        profileViews: {
+          increment: 1,
+        },
+      },
+    });
+
+    const refreshed = await this.prisma.artist.findUnique({
+      where: { id: artist.id },
+      select: artistSelect,
+    });
+
+    if (!refreshed) {
+      throw new NotFoundException(`Artist not found: ${slug}`);
+    }
+
+    const settings = await this.platformConfigService.getSettings();
+    return this.toArtist(refreshed, settings);
   }
 
   async findByUserId(userId: string): Promise<Artist | null> {
@@ -132,7 +212,16 @@ export class ArtistsService {
       where: { userId },
       select: artistSelect,
     });
-    return artist ? this.toArtist(artist) : null;
+    if (!artist) {
+      return null;
+    }
+
+    const [settings, tierProgress] = await Promise.all([
+      this.platformConfigService.getSettings(),
+      this.artistTierService.refreshArtistTier(artist.id),
+    ]);
+
+    return this.toArtist(artist, settings, tierProgress);
   }
 
   async upsertForUser(userId: string, input: UpsertArtistProfileDto): Promise<Artist> {
@@ -153,59 +242,112 @@ export class ArtistsService {
     }
 
     const normalized = this.normalizeProfileInput(input);
+    const settings = await this.platformConfigService.getSettings();
     const existing = await this.prisma.artist.findFirst({
       where: { userId },
+      select: {
+        id: true,
+        slug: true,
+        applicationSequence: true,
+        applicationStatus: true,
+      },
     });
 
-    if (existing) {
-      const updated = await this.prisma.artist.update({
-        where: { slug: existing.slug },
+    const artist = await this.prisma.$transaction(async (tx) => {
+      if (existing) {
+        const nextApplicationSequence =
+          existing.applicationSequence === null
+            ? await this.platformConfigService.nextCounterValue(
+                PLATFORM_COUNTER_KEYS.artistApplications,
+                tx,
+              )
+            : null;
+
+        return tx.artist.update({
+          where: { id: existing.id },
+          data: {
+            displayName: normalized.displayName,
+            name: normalized.displayName,
+            role: normalized.role,
+            location: normalized.location,
+            bio: normalized.bio,
+            hourlyRate: normalized.hourlyRate.toFixed(2),
+            services: normalized.services,
+            specialties: normalized.specialties,
+            pricingSummary: normalized.pricingSummary,
+            availabilitySummary: normalized.availabilitySummary,
+            portfolioLinks: normalized.portfolioLinks,
+            onboardingCompleted: true,
+            onboardingFeeModel: settings.onboardingFeeModel as OnboardingFeeModel,
+            normalCommissionRate: settings.normalCommissionRate.toFixed(2),
+            temporaryFirstBookingCommissionRate:
+              settings.temporaryFirstBookingCommissionRate.toFixed(2),
+            applicationSubmittedAt:
+              existing.applicationSequence === null ? new Date() : undefined,
+            applicationStatus:
+              nextApplicationSequence !== null
+                ? this.resolveAutoApplicationStatus(
+                    nextApplicationSequence,
+                    settings.maxPrelaunchPoolSize,
+                  )
+                : undefined,
+            applicationSequence:
+              nextApplicationSequence ?? undefined,
+          },
+          select: artistSelect,
+        });
+      }
+
+      const applicationSequence = await this.platformConfigService.nextCounterValue(
+        PLATFORM_COUNTER_KEYS.artistApplications,
+        tx,
+      );
+      const slug = await this.createUniqueSlug(
+        user.usernameNormalized || user.username,
+        tx,
+      );
+      return tx.artist.create({
         data: {
+          slug,
+          userId: user.id,
           displayName: normalized.displayName,
           name: normalized.displayName,
           role: normalized.role,
           location: normalized.location,
-          bio: normalized.bio,
           hourlyRate: normalized.hourlyRate.toFixed(2),
+          rating: 'New',
+          bio: normalized.bio,
           services: normalized.services,
           specialties: normalized.specialties,
           pricingSummary: normalized.pricingSummary,
           availabilitySummary: normalized.availabilitySummary,
           portfolioLinks: normalized.portfolioLinks,
           onboardingCompleted: true,
+          applicationStatus: this.resolveAutoApplicationStatus(
+            applicationSequence,
+            settings.maxPrelaunchPoolSize,
+          ),
+          applicationSequence,
+          applicationSubmittedAt: new Date(),
+          onboardingFeeModel: settings.onboardingFeeModel as OnboardingFeeModel,
+          normalCommissionRate: settings.normalCommissionRate.toFixed(2),
+          temporaryFirstBookingCommissionRate:
+            settings.temporaryFirstBookingCommissionRate.toFixed(2),
         },
         select: artistSelect,
       });
-      return this.toArtist(updated);
-    }
-
-    const slug = await this.createUniqueSlug(user.usernameNormalized || user.username);
-    const created = await this.prisma.artist.create({
-      data: {
-        slug,
-        userId: user.id,
-        displayName: normalized.displayName,
-        name: normalized.displayName,
-        role: normalized.role,
-        location: normalized.location,
-        hourlyRate: normalized.hourlyRate.toFixed(2),
-        rating: 'New',
-        bio: normalized.bio,
-        services: normalized.services,
-        specialties: normalized.specialties,
-        pricingSummary: normalized.pricingSummary,
-        availabilitySummary: normalized.availabilitySummary,
-        portfolioLinks: normalized.portfolioLinks,
-        onboardingCompleted: true,
-      },
-      select: artistSelect,
     });
 
-    return this.toArtist(created);
+    const tierProgress = await this.artistTierService.refreshArtistTier(artist.id);
+    return this.toArtist(artist, settings, tierProgress);
   }
 
   private buildListWhere(query: ListArtistsQueryDto): Prisma.ArtistWhereInput {
-    const conditions: Prisma.ArtistWhereInput[] = [];
+    const conditions: Prisma.ArtistWhereInput[] = [
+      {
+        isLive: true,
+      },
+    ];
 
     if (query.category) {
       conditions.push({
@@ -291,27 +433,48 @@ export class ArtistsService {
       }
     }
 
-    if (conditions.length === 0) {
-      return {};
-    }
-
-    return {
-      AND: conditions,
-    };
+    return conditions.length === 1 ? conditions[0] : { AND: conditions };
   }
 
-  private getOrderBy(sortBy: ListArtistsQueryDto['sortBy']): Prisma.ArtistOrderByWithRelationInput[] {
-    switch (sortBy) {
-      case 'rate_asc':
-        return [{ hourlyRate: 'asc' }, { createdAt: 'desc' }];
-      case 'rate_desc':
-        return [{ hourlyRate: 'desc' }, { createdAt: 'desc' }];
-      case 'newest':
-        return [{ createdAt: 'desc' }];
-      case 'rating':
-      default:
-        return [{ averageRating: 'desc' }, { totalReviews: 'desc' }, { createdAt: 'desc' }];
-    }
+  private sortArtists(
+    artists: ArtistRecord[],
+    sortBy: ListArtistsQueryDto['sortBy'],
+  ): ArtistRecord[] {
+    const cloned = [...artists];
+    const tierOrder = (artist: ArtistRecord) => artist.tierSnapshot?.currentTier?.sortOrder ?? 0;
+
+    cloned.sort((left, right) => {
+      switch (sortBy) {
+        case 'rate_asc':
+          return this.compareNumbers(left.hourlyRate, right.hourlyRate);
+        case 'rate_desc':
+          return this.compareNumbers(right.hourlyRate, left.hourlyRate);
+        case 'newest':
+          return right.createdAt.getTime() - left.createdAt.getTime();
+        case 'rating':
+        default: {
+          const tierDelta = tierOrder(right) - tierOrder(left);
+          if (tierDelta !== 0) {
+            return tierDelta;
+          }
+          const ratingDelta = right.averageRating - left.averageRating;
+          if (ratingDelta !== 0) {
+            return ratingDelta;
+          }
+          const reviewDelta = right.totalReviews - left.totalReviews;
+          if (reviewDelta !== 0) {
+            return reviewDelta;
+          }
+          return right.createdAt.getTime() - left.createdAt.getTime();
+        }
+      }
+    });
+
+    return cloned;
+  }
+
+  private compareNumbers(left: Prisma.Decimal, right: Prisma.Decimal): number {
+    return Number(left.toString()) - Number(right.toString());
   }
 
   private normalizeProfileInput(input: UpsertArtistProfileDto) {
@@ -366,11 +529,14 @@ export class ArtistsService {
     return Number(parsed.toFixed(2));
   }
 
-  private async createUniqueSlug(baseValue: string): Promise<string> {
+  private async createUniqueSlug(
+    baseValue: string,
+    db: PrismaService | Prisma.TransactionClient = this.prisma,
+  ): Promise<string> {
     const base = this.slugify(baseValue || 'artist');
     for (let index = 0; index < 100; index += 1) {
       const candidate = index === 0 ? base : `${base}-${index + 1}`;
-      const existing = await this.prisma.artist.findUnique({
+      const existing = await db.artist.findUnique({
         where: { slug: candidate },
         select: { slug: true },
       });
@@ -391,7 +557,20 @@ export class ArtistsService {
     return normalized || 'artist';
   }
 
-  private toArtist(artist: ArtistRecord): Artist {
+  private resolveAutoApplicationStatus(
+    applicationSequence: number,
+    maxPrelaunchPoolSize: number,
+  ): ArtistApplicationStatus {
+    return applicationSequence <= maxPrelaunchPoolSize
+      ? ArtistApplicationStatus.PRELAUNCH_POOL
+      : ArtistApplicationStatus.WAITLISTED;
+  }
+
+  private toArtist(
+    artist: ArtistRecord,
+    settings: Awaited<ReturnType<PlatformConfigService['getSettings']>>,
+    tierProgress?: ArtistTierProgress,
+  ): Artist {
     return {
       id: artist.id,
       userId: artist.userId,
@@ -426,8 +605,111 @@ export class ArtistsService {
           }
         : null,
       onboardingCompleted: artist.onboardingCompleted,
+      applicationStatus: artist.applicationStatus,
+      applicationSequence: artist.applicationSequence,
+      applicationSubmittedAt: artist.applicationSubmittedAt?.toISOString() ?? null,
+      applicationReviewedAt: artist.applicationReviewedAt?.toISOString() ?? null,
+      applicationReviewNotes: artist.applicationReviewNotes,
+      approvedAt: artist.approvedAt?.toISOString() ?? null,
+      isLive: artist.isLive,
+      wentLiveAt: artist.wentLiveAt?.toISOString() ?? null,
+      onboardingFeeModel: artist.onboardingFeeModel,
+      firstBookingOnboardingDeductionApplied:
+        artist.firstBookingOnboardingDeductionApplied,
+      firstBookingOnboardingDeductionAt:
+        artist.firstBookingOnboardingDeductionAt?.toISOString() ?? null,
+      normalCommissionRate: Number(artist.normalCommissionRate.toString()),
+      temporaryFirstBookingCommissionRate: Number(
+        artist.temporaryFirstBookingCommissionRate.toString(),
+      ),
+      applicationMessage: this.buildApplicationMessage(artist.applicationStatus, settings),
+      tier: this.toTierDefinition(artist.tierSnapshot?.currentTier ?? null),
+      tierProgress:
+        tierProgress ??
+        (artist.tierSnapshot
+          ? this.snapshotToTierProgress(artist.tierSnapshot)
+          : undefined),
       createdAt: artist.createdAt.toISOString(),
       updatedAt: artist.updatedAt.toISOString(),
     };
+  }
+
+  private buildApplicationMessage(
+    status: ArtistApplicationStatus,
+    settings: Awaited<ReturnType<PlatformConfigService['getSettings']>>,
+  ): string {
+    switch (status) {
+      case ArtistApplicationStatus.PRELAUNCH_POOL:
+        return `You are in the prelaunch pool. We are reviewing the first ${settings.maxPrelaunchPoolSize} artist applications and gradually opening ${settings.liveArtistSlotLimit} live slots.`;
+      case ArtistApplicationStatus.WAITLISTED:
+        return `The first ${settings.maxPrelaunchPoolSize} artist applications are currently full. Your profile is on the waitlist and will be reviewed as more rollout capacity opens in the coming months.`;
+      case ArtistApplicationStatus.UNDER_REVIEW:
+        return 'Your application is under manual review. We will notify you as soon as a decision is made.';
+      case ArtistApplicationStatus.APPROVED:
+        return 'Your application has been approved and is queued for a live slot. We will notify you the moment your public profile goes live.';
+      case ArtistApplicationStatus.REJECTED:
+        return 'Your application was not approved in its current form. An admin note will appear if more information is needed.';
+      case ArtistApplicationStatus.LIVE:
+        return 'Your artist profile is live and available for bookings on the platform.';
+      case ArtistApplicationStatus.SUBMITTED:
+      default:
+        return 'Your artist application has been submitted and is waiting for routing into the rollout queue.';
+    }
+  }
+
+  private toTierDefinition(
+    definition: ArtistTierDefinitionRecord | null,
+  ): ArtistTierDefinition | null {
+    if (!definition) {
+      return null;
+    }
+
+    return {
+      id: definition.id,
+      key: definition.key,
+      name: definition.name,
+      description: definition.description,
+      sortOrder: definition.sortOrder,
+      isActive: definition.isActive,
+      thresholds: this.normalizeJsonObject(definition.thresholds),
+      benefits: this.normalizeJsonObject(definition.benefits),
+      createdAt: definition.createdAt.toISOString(),
+      updatedAt: definition.updatedAt.toISOString(),
+    };
+  }
+
+  private snapshotToTierProgress(
+    snapshot: NonNullable<ArtistRecord['tierSnapshot']>,
+  ): ArtistTierProgress {
+    const details = this.normalizeJsonObject<{ reasons?: string[] }>(snapshot.evaluationDetails);
+    return {
+      currentTier: this.toTierDefinition(snapshot.currentTier),
+      evaluatedTier: this.toTierDefinition(snapshot.evaluatedTier),
+      manualTier: this.toTierDefinition(snapshot.manualTier),
+      nextTier: null,
+      progressPercent: 0,
+      metrics: {
+        completedPlatformBookings: snapshot.completedPlatformBookings,
+        verifiedPlatformBookings: snapshot.verifiedPlatformBookings,
+        platformRevenue: Number(snapshot.platformRevenue.toString()),
+        averageRating: snapshot.averageRating,
+        cancellationCount: snapshot.cancellationCount,
+        reliabilityScore: snapshot.reliabilityScore,
+        responseTimeMinutes: snapshot.responseTimeMinutes,
+        disputeCount: snapshot.disputeCount,
+        disputeRate: snapshot.disputeRate,
+        profileCompleteness: snapshot.profileCompleteness,
+        repeatBookings: snapshot.repeatBookings,
+      },
+      reasons: details.reasons ?? [],
+      lastEvaluatedAt: snapshot.lastEvaluatedAt?.toISOString() ?? null,
+    };
+  }
+
+  private normalizeJsonObject<T extends object>(value: Prisma.JsonValue | null): T {
+    if (!value || Array.isArray(value) || typeof value !== 'object') {
+      return {} as T;
+    }
+    return value as T;
   }
 }

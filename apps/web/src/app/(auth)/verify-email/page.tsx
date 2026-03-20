@@ -18,30 +18,53 @@ export default function VerifyEmailPage() {
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
-  const [email, setEmail] = useState(searchParams.get("email")?.trim() ?? "");
+  const emailQuery = useMemo(() => searchParams.get("email")?.trim() ?? "", [searchParams]);
+  const redirectVerified = useMemo(() => searchParams.get("verified") === "1", [searchParams]);
+  const redirectError = useMemo(() => searchParams.get("error")?.trim() ?? "", [searchParams]);
+  const [email, setEmail] = useState(emailQuery);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(redirectVerified);
   const [isVerifying, setIsVerifying] = useState(Boolean(token));
   const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    setEmail(emailQuery);
+  }, [emailQuery]);
+
+  useEffect(() => {
+    if (redirectVerified) {
+      setIsVerified(true);
       setIsVerifying(false);
+      setError(null);
+      setSuccess("Email verified. You can sign in now.");
+      return;
+    }
+
+    if (!token) {
+      setIsVerified(false);
+      setIsVerifying(false);
+      setSuccess(null);
+      setError(redirectError ? getVerifyEmailErrorMessage(redirectError) : null);
       return;
     }
 
     let cancelled = false;
     void (async () => {
+      setIsVerified(false);
+      setIsVerifying(true);
       setError(null);
       setSuccess(null);
       try {
         const result = await verifyEmail(token);
         if (!cancelled) {
           setEmail(result.email);
+          setIsVerified(true);
           setSuccess("Email verified. You can sign in now.");
         }
       } catch (err) {
         if (!cancelled) {
+          setIsVerified(false);
           setError(err instanceof ApiError ? err.message : "Unable to verify your email right now.");
         }
       } finally {
@@ -54,7 +77,7 @@ function VerifyEmailContent() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [redirectError, redirectVerified, token]);
 
   return (
     <div className={styles.stack}>
@@ -104,9 +127,18 @@ function VerifyEmailContent() {
           />
         </label>
 
-        <button className={styles.primary} type="submit" disabled={isResending || isVerifying}>
-          {isResending ? "Sending..." : "Resend verification email"}
-        </button>
+        {isVerified ? (
+          <Link
+            className={styles.secondary}
+            href={email ? `/login?email=${encodeURIComponent(email)}` : "/login"}
+          >
+            Continue to login
+          </Link>
+        ) : (
+          <button className={styles.primary} type="submit" disabled={isResending || isVerifying}>
+            {isResending ? "Sending..." : "Resend verification email"}
+          </button>
+        )}
 
         <div className={styles.row}>
           <Link href="/login" className={styles.link}>
@@ -116,4 +148,15 @@ function VerifyEmailContent() {
       </form>
     </div>
   );
+}
+
+function getVerifyEmailErrorMessage(code: string): string {
+  switch (code) {
+    case "missing_token":
+      return "The verification link is missing a token.";
+    case "invalid_or_expired":
+      return "This verification link is invalid or has expired. Request a new one below.";
+    default:
+      return "Unable to verify your email right now.";
+  }
 }

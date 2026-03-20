@@ -1,22 +1,28 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
+  BookingStatus as PrismaBookingStatus,
+  BookingVerificationStatus,
   NotificationType,
   PaymentProvider,
   PaymentStatus,
+  PayoutStatus,
   Prisma,
   UserRole,
 } from '@prisma/client';
 import type { ApiResponse, PaymentCheckoutSession } from '@vendorapp/shared';
 import { createHash, timingSafeEqual } from 'crypto';
+import { BookingsService } from '../bookings/bookings.service';
 import { MailerService } from '../mailer/mailer.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PlatformConfigService } from '../platform/platform-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { PayfastItnDto } from './dto/payfast-itn.dto';
@@ -41,6 +47,7 @@ const paymentBookingSelect = {
   paymentInitiatedAt: true,
   paymentPaidAt: true,
   paymentFailedAt: true,
+  payoutStatus: true,
   totalAmount: true,
   platformFee: true,
   artistPayout: true,
@@ -86,6 +93,9 @@ export class PayfastService {
     private readonly rateLimitService: RateLimitService,
     private readonly mailerService: MailerService,
     private readonly notificationsService: NotificationsService,
+    private readonly platformConfigService: PlatformConfigService,
+    @Inject(BookingsService)
+    private readonly bookingsService: BookingsService,
   ) {}
 
   async initiateBookingPayment(
@@ -210,6 +220,31 @@ export class PayfastService {
     }
 
     const paidAt = new Date();
+    const settings = await this.platformConfigService.getSettings();
+    const shouldActivateBooking = booking.status === PrismaBookingStatus.CONFIRMED;
+    const shouldGenerateVerificationCode =
+      shouldActivateBooking ||
+      booking.status === PrismaBookingStatus.BOOKED ||
+      booking.status === PrismaBookingStatus.AWAITING_START_CODE;
+    const verificationCode = shouldGenerateVerificationCode
+      ? this.bookingsService.generateVerificationCode(settings.bookingStartCodeLength)
+      : null;
+    const verificationCodeCiphertext =
+      verificationCode !== null
+        ? this.bookingsService.encryptVerificationCode(verificationCode)
+        : null;
+    const verificationCodeExpiresAt = shouldGenerateVerificationCode
+      ? booking.eventDate
+      ? new Date(
+          (booking.eventDate.getTime() > paidAt.getTime()
+            ? booking.eventDate.getTime()
+            : paidAt.getTime()) +
+            24 * 60 * 60 * 1000,
+        )
+      : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000)
+      : null;
+    const needsManualReview = booking.status === PrismaBookingStatus.CANCELLED;
+
     const createdNotifications = await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id: booking.id },
@@ -220,13 +255,65 @@ export class PayfastService {
           paymentGatewayReference: payload.pf_payment_id ?? booking.paymentGatewayReference,
           paymentPaidAt: paidAt,
           paymentFailedAt: null,
+          status: shouldActivateBooking ? PrismaBookingStatus.BOOKED : booking.status,
+          verificationCodeCiphertext,
+          verificationCodeSentAt: shouldGenerateVerificationCode ? paidAt : null,
+          verificationCodeExpiresAt,
+          verificationStatus: shouldGenerateVerificationCode
+            ? BookingVerificationStatus.PENDING
+            : BookingVerificationStatus.NOT_REQUIRED,
+          verificationAttempts: 0,
+          verificationEnteredAt: null,
+          verificationEnteredByUserId: null,
+          verificationOverrideByUserId: null,
+          verificationOverrideReason: null,
+          payoutStatus: needsManualReview ? PayoutStatus.MANUAL_REVIEW : PayoutStatus.NOT_READY,
+          payoutHoldReason: needsManualReview
+            ? 'Payment completed after booking was cancelled. Manual review is required.'
+            : null,
+          payoutPendingAt: null,
+          estimatedPayoutReleaseAt: null,
+          payoutReleasedAt: null,
+          payoutOverrideByUserId: null,
+          payoutOverrideReason: null,
+        },
+      });
+
+      if (shouldActivateBooking) {
+        await tx.bookingStatusHistory.create({
+          data: {
+            bookingId: booking.id,
+            fromStatus: booking.status,
+            toStatus: PrismaBookingStatus.BOOKED,
+            action: 'payment_paid',
+            reason: 'Payfast payment completed and booking was activated.',
+            actorUserId: booking.clientId,
+            actorName: booking.client.fullName,
+            actorRole: booking.client.role,
+          },
+        });
+      }
+
+      await tx.bookingAuditEvent.create({
+        data: {
+          bookingId: booking.id,
+          actorUserId: booking.clientId,
+          eventType: 'payment_paid',
+          message: shouldActivateBooking
+            ? 'Payment received and booking moved into the booked state.'
+            : 'Payment received for booking.',
+          metadata: {
+            provider: PaymentProvider.PAYFAST,
+            verificationCodeSentAt: paidAt.toISOString(),
+            payoutStatus: needsManualReview ? PayoutStatus.MANUAL_REVIEW : PayoutStatus.NOT_READY,
+            pfPaymentId: payload.pf_payment_id ?? null,
+          },
         },
       });
 
       const recipients = this.getPaymentNotificationRecipients(booking);
-      return this.notificationsService.createMany(
-        tx,
-        recipients.map((userId) => ({
+      return this.notificationsService.createMany(tx, [
+        ...recipients.map((userId) => ({
           userId,
           type: NotificationType.PAYMENT_RECEIVED,
           title: 'Payment received',
@@ -237,7 +324,22 @@ export class PayfastService {
             provider: PaymentProvider.PAYFAST,
           },
         })),
-      );
+        ...(shouldGenerateVerificationCode && verificationCodeExpiresAt
+          ? [
+              {
+                userId: booking.clientId,
+                type: NotificationType.BOOKING_CONFIRMED,
+                title: 'Safety code ready',
+                body: `The safety code for "${booking.title}" is ready and has been emailed to you.`,
+                metadata: {
+                  bookingId: booking.id,
+                  verificationStatus: BookingVerificationStatus.PENDING,
+                  verificationCodeExpiresAt: verificationCodeExpiresAt.toISOString(),
+                },
+              },
+            ]
+          : []),
+      ]);
     });
 
     this.notificationsService.emitMany(createdNotifications);
@@ -251,6 +353,16 @@ export class PayfastService {
         eventDate: booking.eventDate.toISOString(),
         location: booking.location,
       }),
+      verificationCode
+        ? this.mailerService.sendBookingStartCode(booking.client.email, {
+            recipientEmail: booking.client.email,
+            recipientName: booking.client.fullName,
+            title: booking.title,
+            eventDate: booking.eventDate.toISOString(),
+            location: booking.location,
+            verificationCode,
+          })
+        : Promise.resolve(),
       booking.artist.user?.email
         ? this.mailerService.sendBookingConfirmation(booking.artist.user.email, {
             recipientEmail: booking.artist.user.email,

@@ -19,15 +19,21 @@ enum UserRole {
   ARTIST
   AGENCY
   ADMIN
+  SUB_ADMIN
 }
 
 enum BookingStatus {
-  PENDING     @map("Pending")
-  CONFIRMED   @map("Confirmed")
-  IN_PROGRESS @map("InProgress")
-  COMPLETED   @map("Completed")
-  CANCELLED   @map("Cancelled")
-  DISPUTED    @map("Disputed")
+  PENDING                  @map("Pending")
+  CONFIRMED                @map("Confirmed")
+  BOOKED
+  AWAITING_START_CODE
+  IN_PROGRESS              @map("InProgress")
+  AWAITING_CLIENT_APPROVAL
+  COMPLETED                @map("Completed")
+  DISPUTED                 @map("Disputed")
+  PAYOUT_PENDING
+  PAYOUT_RELEASED
+  CANCELLED                @map("Cancelled")
 }
 
 enum PaymentStatus {
@@ -56,6 +62,63 @@ enum NotificationType {
   PAYMENT_RECEIVED
   PAYMENT_FAILED
   REVIEW_RECEIVED
+  SUPPORT_THREAD_CREATED
+  SUPPORT_THREAD_UPDATED
+  ARTIST_APPLICATION_UPDATED
+  PAYOUT_STATUS_UPDATED
+}
+
+enum ArtistApplicationStatus {
+  SUBMITTED
+  PRELAUNCH_POOL
+  WAITLISTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  LIVE
+}
+
+enum OnboardingFeeModel {
+  UPFRONT
+  FIRST_BOOKING_DEDUCTION
+}
+
+enum ConversationKind {
+  DIRECT
+  BOOKING
+  SUPPORT
+}
+
+enum SupportCategory {
+  BOOKING_HELP
+  PAYMENT_ISSUE
+  PROFILE_ISSUE
+  DISPUTE_HELP
+  REFUND_HELP
+  OTHER
+}
+
+enum SupportThreadStatus {
+  OPEN
+  AWAITING_USER
+  ESCALATED
+  RESOLVED
+}
+
+enum BookingVerificationStatus {
+  NOT_REQUIRED
+  PENDING
+  VERIFIED
+  FAILED
+  MANUAL_OVERRIDE
+}
+
+enum PayoutStatus {
+  NOT_READY
+  PENDING
+  ON_HOLD
+  RELEASED
+  MANUAL_REVIEW
 }
 
 model User {
@@ -101,6 +164,12 @@ model User {
   passwordResetTokens PasswordResetToken[]
   mediaUploads        MediaUpload[]
   bookingStatusEvents BookingStatusHistory[] @relation("BookingStatusHistoryActor")
+  reviewedArtistApplications Artist[]        @relation("ArtistApplicationReviewedBy")
+  approvedArtists            Artist[]        @relation("ArtistApprovedBy")
+  liveEnabledArtists         Artist[]        @relation("ArtistLiveEnabledBy")
+  supportAssignedConversations Conversation[] @relation("SupportConversationAssignee")
+  updatedSystemSettings      SystemSetting[] @relation("SystemSettingUpdatedBy")
+  bookingAuditEvents         BookingAuditEvent[] @relation("BookingAuditActor")
 
   @@index([emailNormalized])
   @@index([usernameNormalized])
@@ -133,15 +202,38 @@ model Artist {
   rating              String    @default("0.0") @db.VarChar(8)
   isVerified          Boolean   @default(false)
   onboardingCompleted Boolean   @default(false)
+  applicationStatus   ArtistApplicationStatus @default(SUBMITTED)
+  applicationSequence Int?      @unique
+  applicationSubmittedAt DateTime?
+  applicationReviewedAt DateTime?
+  applicationReviewedByUserId String? @db.VarChar(64)
+  applicationReviewNotes String?
+  approvedAt          DateTime?
+  approvedByUserId    String?   @db.VarChar(64)
+  isLive              Boolean   @default(false)
+  wentLiveAt          DateTime?
+  liveEnabledByUserId String?   @db.VarChar(64)
+  onboardingFeeModel  OnboardingFeeModel @default(FIRST_BOOKING_DEDUCTION)
+  firstBookingOnboardingDeductionApplied Boolean @default(false)
+  firstBookingOnboardingDeductionAt DateTime?
+  normalCommissionRate Decimal  @default(15) @db.Decimal(5, 2)
+  temporaryFirstBookingCommissionRate Decimal @default(25) @db.Decimal(5, 2)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   user                User?     @relation("ArtistUserProfile", fields: [userId], references: [id], onDelete: SetNull)
   category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  applicationReviewedBy User?   @relation("ArtistApplicationReviewedBy", fields: [applicationReviewedByUserId], references: [id], onDelete: SetNull)
+  approvedBy          User?     @relation("ArtistApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  liveEnabledBy       User?     @relation("ArtistLiveEnabledBy", fields: [liveEnabledByUserId], references: [id], onDelete: SetNull)
   bookings            Booking[] @relation("ArtistBookings")
   reviews             Review[]  @relation("ArtistReviews")
+  tierSnapshot        ArtistTierSnapshot?
 
   @@index([categoryId])
   @@index([isAvailable])
+  @@index([applicationStatus])
+  @@index([isLive])
+  @@index([applicationSubmittedAt])
   @@map("artists")
 }
 
@@ -211,8 +303,35 @@ model Booking {
   artist                Artist         @relation("ArtistBookings", fields: [artistId], references: [id], onDelete: Restrict)
   agency                Agency?        @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   review                Review?
-  conversation          Conversation?
+  conversations         Conversation[]
   statusHistory         BookingStatusHistory[]
+  verificationCodeCiphertext String?
+  verificationCodeSentAt DateTime?
+  verificationCodeExpiresAt DateTime?
+  verificationStatus   BookingVerificationStatus @default(NOT_REQUIRED)
+  verificationAttempts Int @default(0)
+  verificationEnteredAt DateTime?
+  verificationEnteredByUserId String? @db.VarChar(64)
+  verificationOverrideByUserId String? @db.VarChar(64)
+  verificationOverrideReason String?
+  jobStartedAt         DateTime?
+  jobCompletedAt       DateTime?
+  clientApprovedAt     DateTime?
+  disputeOpenedAt      DateTime?
+  disputeWindowEndsAt  DateTime?
+  disputeWindowDays    Int @default(3)
+  payoutStatus         PayoutStatus @default(NOT_READY)
+  payoutPendingAt      DateTime?
+  estimatedPayoutReleaseAt DateTime?
+  payoutReleasedAt     DateTime?
+  payoutHoldReason     String?
+  payoutDelayDaysSnapshot Int @default(0)
+  payoutOverrideByUserId String? @db.VarChar(64)
+  payoutOverrideReason String?
+  normalCommissionRate Decimal @default(15) @db.Decimal(5, 2)
+  appliedCommissionRate Decimal @default(15) @db.Decimal(5, 2)
+  onboardingExtraCutAmount Decimal @default(0) @db.Decimal(10, 2)
+  auditEvents          BookingAuditEvent[]
 
   @@index([clientId])
   @@index([artistId])
@@ -222,6 +341,10 @@ model Booking {
   @@index([eventDate])
   @@index([agencyId])
   @@index([createdAt])
+  @@index([verificationStatus])
+  @@index([payoutStatus])
+  @@index([disputeWindowEndsAt])
+  @@index([estimatedPayoutReleaseAt])
   @@map("bookings")
 }
 
@@ -266,13 +389,26 @@ model BookingStatusHistory {
 
 model Conversation {
   id            String    @id @default(cuid()) @db.VarChar(64)
-  bookingId     String?   @unique @db.VarChar(64)
+  bookingId     String?   @db.VarChar(64)
   participantIds String[] @default([])
+  kind          ConversationKind @default(DIRECT)
+  subject       String?
+  supportCategory SupportCategory?
+  supportStatus SupportThreadStatus?
+  supportTicketNumber String? @unique
+  assignedAdminUserId String? @db.VarChar(64)
+  resolvedAt    DateTime?
   lastMessageAt DateTime  @default(now())
   createdAt     DateTime  @default(now())
   booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  assignedAdmin User?     @relation("SupportConversationAssignee", fields: [assignedAdminUserId], references: [id], onDelete: SetNull)
   messages      Message[]
 
+  @@index([bookingId])
+  @@index([kind])
+  @@index([supportStatus])
+  @@index([supportCategory])
+  @@index([assignedAdminUserId])
   @@index([lastMessageAt])
   @@map("conversations")
 }
@@ -357,4 +493,96 @@ model AuthAuditEvent {
   @@index([eventType])
   @@index([createdAt])
   @@map("auth_audit_events")
+}
+
+model SequenceCounter {
+  key       String   @id @db.VarChar(64)
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("sequence_counters")
+}
+
+model SystemSetting {
+  key             String   @id @db.VarChar(120)
+  value           Json
+  description     String?
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?  @db.VarChar(64)
+  updatedBy       User?    @relation("SystemSettingUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([updatedAt])
+  @@map("system_settings")
+}
+
+model BookingAuditEvent {
+  id          String   @id @default(cuid()) @db.VarChar(64)
+  bookingId   String   @db.VarChar(64)
+  actorUserId String?  @db.VarChar(64)
+  eventType   String   @db.VarChar(64)
+  message     String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor       User?    @relation("BookingAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([actorUserId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("booking_audit_events")
+}
+
+model ArtistTierDefinition {
+  id          String   @id @default(cuid()) @db.VarChar(64)
+  key         String   @unique @db.VarChar(64)
+  name        String
+  description String?
+  sortOrder   Int
+  isActive    Boolean  @default(true)
+  thresholds  Json?
+  benefits    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  currentSnapshots  ArtistTierSnapshot[] @relation("ArtistTierSnapshotCurrent")
+  evaluatedSnapshots ArtistTierSnapshot[] @relation("ArtistTierSnapshotEvaluated")
+  manualSnapshots   ArtistTierSnapshot[] @relation("ArtistTierSnapshotManual")
+
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("artist_tier_definitions")
+}
+
+model ArtistTierSnapshot {
+  id                       String   @id @default(cuid()) @db.VarChar(64)
+  artistId                 String   @unique @db.VarChar(64)
+  currentTierId            String?  @db.VarChar(64)
+  evaluatedTierId          String?  @db.VarChar(64)
+  manualTierId             String?  @db.VarChar(64)
+  manualOverrideReason     String?
+  completedPlatformBookings Int     @default(0)
+  verifiedPlatformBookings Int      @default(0)
+  platformRevenue          Decimal  @default(0) @db.Decimal(12, 2)
+  averageRating            Float    @default(0)
+  cancellationCount        Int      @default(0)
+  reliabilityScore         Float    @default(100)
+  responseTimeMinutes      Int?
+  disputeCount             Int      @default(0)
+  disputeRate              Float    @default(0)
+  profileCompleteness      Int      @default(0)
+  repeatBookings           Int      @default(0)
+  evaluationDetails        Json?
+  lastEvaluatedAt          DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  artist                   Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  currentTier              ArtistTierDefinition? @relation("ArtistTierSnapshotCurrent", fields: [currentTierId], references: [id], onDelete: SetNull)
+  evaluatedTier            ArtistTierDefinition? @relation("ArtistTierSnapshotEvaluated", fields: [evaluatedTierId], references: [id], onDelete: SetNull)
+  manualTier               ArtistTierDefinition? @relation("ArtistTierSnapshotManual", fields: [manualTierId], references: [id], onDelete: SetNull)
+
+  @@index([currentTierId])
+  @@index([evaluatedTierId])
+  @@index([manualTierId])
+  @@index([lastEvaluatedAt])
+  @@map("artist_tier_snapshots")
 }

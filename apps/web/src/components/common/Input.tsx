@@ -20,9 +20,11 @@ export const TextInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "h-11 w-full rounded-btn border px-4 text-base text-gray-900 shadow-sm transition duration-fast ease-smooth",
-            "placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200",
-            error ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-gray-300",
+            "h-11 w-full rounded-btn border bg-[var(--panel)] px-4 text-base text-[var(--text)] shadow-sm transition duration-fast ease-smooth",
+            "placeholder:text-[var(--muted)] focus:border-[var(--brand-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-focus-ring)]",
+            error
+              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+              : "border-[var(--border)]",
             className,
           )}
           {...props}
@@ -30,7 +32,7 @@ export const TextInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
         {error ? (
           <span className="text-xs text-red-500">{error}</span>
         ) : helperText ? (
-          <span className="text-xs text-gray-500">{helperText}</span>
+          <span className="text-xs text-[var(--muted)]">{helperText}</span>
         ) : null}
       </label>
     );
@@ -56,9 +58,11 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           id={textareaId}
           className={cn(
-            "min-h-[120px] w-full resize-y rounded-btn border px-4 py-3 text-base text-gray-900 shadow-sm transition duration-fast ease-smooth",
-            "placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200",
-            error ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-gray-300",
+            "min-h-[120px] w-full resize-y rounded-btn border bg-[var(--panel)] px-4 py-3 text-base text-[var(--text)] shadow-sm transition duration-fast ease-smooth",
+            "placeholder:text-[var(--muted)] focus:border-[var(--brand-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-focus-ring)]",
+            error
+              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+              : "border-[var(--border)]",
             className,
           )}
           {...props}
@@ -66,7 +70,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
         {error ? (
           <span className="text-xs text-red-500">{error}</span>
         ) : helperText ? (
-          <span className="text-xs text-gray-500">{helperText}</span>
+          <span className="text-xs text-[var(--muted)]">{helperText}</span>
         ) : null}
       </label>
     );

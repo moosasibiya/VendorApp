@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Booking, User } from "@vendorapp/shared";
 import { PaymentForm } from "@/components/PaymentForm";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import { ApiError, fetchBookings, fetchMe } from "@/lib/api";
 import styles from "./page.module.css";
 
@@ -30,7 +31,36 @@ function humanize(value: string): string {
     .join(" ");
 }
 
+function payoutTone(status: Booking["payoutStatus"]): "released" | "pending" | "hold" | "neutral" {
+  if (status === "RELEASED") {
+    return "released";
+  }
+  if (status === "PENDING") {
+    return "pending";
+  }
+  if (status === "ON_HOLD" || status === "MANUAL_REVIEW") {
+    return "hold";
+  }
+  return "neutral";
+}
+
+function verificationTone(
+  status: Booking["verificationStatus"],
+): "released" | "pending" | "hold" | "neutral" {
+  if (status === "VERIFIED" || status === "MANUAL_OVERRIDE") {
+    return "released";
+  }
+  if (status === "PENDING") {
+    return "pending";
+  }
+  if (status === "FAILED") {
+    return "hold";
+  }
+  return "neutral";
+}
+
 export default function PaymentsPage() {
+  const { onboardingLocked } = useAppSession();
   const [viewer, setViewer] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,11 +83,9 @@ export default function PaymentsPage() {
         if (cancelled) {
           return;
         }
-        if (err instanceof ApiError) {
-          setError(err.message);
-          return;
-        }
-        setError("Unable to load payments right now.");
+        setError(
+          err instanceof ApiError ? err.message : "Unable to load payments right now.",
+        );
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -72,59 +100,84 @@ export default function PaymentsPage() {
     };
   }, []);
 
-  const summary = useMemo(() => {
-    const paidBookings = bookings.filter((booking) => booking.paymentStatus === "PAID");
-    const unpaidBookings = bookings.filter(
+  const isArtistWorkspace = viewer?.role === "ARTIST" || viewer?.role === "AGENCY";
+
+  const paymentSummary = useMemo(() => {
+    const released = bookings.filter((booking) => booking.payoutStatus === "RELEASED");
+    const pending = bookings.filter(
+      (booking) => booking.payoutStatus === "PENDING" || booking.payoutStatus === "NOT_READY",
+    );
+    const holds = bookings.filter(
+      (booking) =>
+        booking.payoutStatus === "ON_HOLD" ||
+        booking.payoutStatus === "MANUAL_REVIEW" ||
+        booking.status === "DISPUTED",
+    );
+    const verified = bookings.filter(
+      (booking) =>
+        booking.verificationStatus === "VERIFIED" ||
+        booking.verificationStatus === "MANUAL_OVERRIDE",
+    );
+    const unpaid = bookings.filter(
       (booking) =>
         booking.status === "CONFIRMED" &&
         (booking.paymentStatus === "UNPAID" || booking.paymentStatus === "FAILED"),
     );
 
-    if (viewer?.role === "ARTIST" || viewer?.role === "AGENCY") {
-      return {
-        heroTitle: "Earnings",
-        heroValue: formatCurrency(
-          paidBookings.reduce((total, booking) => total + booking.artistPayout, 0),
-        ),
-        statOneLabel: "Paid bookings",
-        statOneValue: String(paidBookings.length),
-        statTwoLabel: "Outstanding payouts",
-        statTwoValue: formatCurrency(
-          unpaidBookings.reduce((total, booking) => total + booking.artistPayout, 0),
-        ),
-        statThreeLabel: "Platform fees",
-        statThreeValue: formatCurrency(
-          paidBookings.reduce((total, booking) => total + booking.platformFee, 0),
-        ),
-      };
-    }
-
     return {
-      heroTitle: "Payments",
-      heroValue: formatCurrency(
-        paidBookings.reduce((total, booking) => total + booking.totalAmount, 0),
+      releasedValue: released.reduce((total, booking) => total + booking.artistPayout, 0),
+      pendingValue: pending.reduce((total, booking) => total + booking.artistPayout, 0),
+      holdValue: holds.reduce((total, booking) => total + booking.artistPayout, 0),
+      platformFees: bookings.reduce((total, booking) => total + booking.platformFee, 0),
+      onboardingRecovery: bookings.reduce(
+        (total, booking) => total + (booking.onboardingExtraCutAmount ?? 0),
+        0,
       ),
-      statOneLabel: "Confirmed unpaid",
-      statOneValue: String(unpaidBookings.length),
-      statTwoLabel: "Outstanding total",
-      statTwoValue: formatCurrency(
-        unpaidBookings.reduce((total, booking) => total + booking.totalAmount, 0),
-      ),
-      statThreeLabel: "Paid bookings",
-      statThreeValue: String(paidBookings.length),
+      verifiedCount: verified.length,
+      unpaidCount: unpaid.length,
+      unpaidValue: unpaid.reduce((total, booking) => total + booking.totalAmount, 0),
+      releasedCount: released.length,
+      pendingCount: pending.length,
+      holdCount: holds.length,
     };
-  }, [bookings, viewer?.role]);
+  }, [bookings]);
+
+  const priorityRows = useMemo(
+    () =>
+      bookings
+        .filter(
+          (booking) =>
+            booking.payoutStatus === "PENDING" ||
+            booking.payoutStatus === "ON_HOLD" ||
+            booking.payoutStatus === "MANUAL_REVIEW" ||
+            booking.status === "DISPUTED" ||
+            (booking.paymentStatus === "PAID" &&
+              booking.verificationStatus !== "VERIFIED" &&
+              booking.verificationStatus !== "MANUAL_OVERRIDE"),
+        )
+        .sort((left, right) => {
+          const leftTime = new Date(left.updatedAt).getTime();
+          const rightTime = new Date(right.updatedAt).getTime();
+          return rightTime - leftTime;
+        }),
+    [bookings],
+  );
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Payfast payments</p>
-          <h1>{viewer?.role === "ARTIST" ? "Earnings & payouts" : "Wallet & payments"}</h1>
+          <p className={styles.kicker}>Payments and release tracking</p>
+          <h1>{isArtistWorkspace ? "Payout dashboard" : "Payments dashboard"}</h1>
           <p className={styles.subtle}>
-            Track live booking payments, outstanding balances, and Payfast checkout actions.
+            {isArtistWorkspace
+              ? "Track verification, dispute windows, onboarding recovery, and payout release timing from one place."
+              : "Review booking payments, outstanding checkout actions, and job verification progress before work begins."}
           </p>
         </div>
+        <Link href="/support" className={styles.ghostBtn}>
+          Open support
+        </Link>
       </header>
 
       {loading ? <p className={styles.subtle}>Loading payment data...</p> : null}
@@ -134,46 +187,141 @@ export default function PaymentsPage() {
         <>
           <section className={styles.wallet}>
             <div>
-              <h2>{summary.heroTitle}</h2>
-              <p>{viewer?.role === "ARTIST" ? "Paid artist payouts" : "Total settled value"}</p>
-              <div className={styles.balance}>{summary.heroValue}</div>
+              <p className={styles.walletLabel}>
+                {isArtistWorkspace ? "Released payouts" : "Settled booking value"}
+              </p>
+              <div className={styles.balance}>
+                {formatCurrency(
+                  isArtistWorkspace
+                    ? paymentSummary.releasedValue
+                    : bookings
+                        .filter((booking) => booking.paymentStatus === "PAID")
+                        .reduce((total, booking) => total + booking.totalAmount, 0),
+                )}
+              </div>
+              <p className={styles.walletHint}>
+                {isArtistWorkspace
+                  ? `${paymentSummary.releasedCount} bookings have cleared the release flow.`
+                  : "Completed payment records appear here after Payfast confirms the booking."}
+              </p>
             </div>
             <div className={styles.walletStats}>
               <div>
-                <span>{summary.statOneLabel}</span>
-                <strong>{summary.statOneValue}</strong>
+                <span>{isArtistWorkspace ? "Pending payouts" : "Unpaid confirmed bookings"}</span>
+                <strong>
+                  {isArtistWorkspace
+                    ? formatCurrency(paymentSummary.pendingValue)
+                    : formatCurrency(paymentSummary.unpaidValue)}
+                </strong>
               </div>
               <div>
-                <span>{summary.statTwoLabel}</span>
-                <strong>{summary.statTwoValue}</strong>
+                <span>{isArtistWorkspace ? "On hold / review" : "Paid bookings"}</span>
+                <strong>
+                  {isArtistWorkspace
+                    ? formatCurrency(paymentSummary.holdValue)
+                    : String(bookings.filter((booking) => booking.paymentStatus === "PAID").length)}
+                </strong>
               </div>
               <div>
-                <span>{summary.statThreeLabel}</span>
-                <strong>{summary.statThreeValue}</strong>
+                <span>{isArtistWorkspace ? "Platform fees" : "Verification complete"}</span>
+                <strong>
+                  {isArtistWorkspace
+                    ? formatCurrency(paymentSummary.platformFees)
+                    : String(paymentSummary.verifiedCount)}
+                </strong>
+              </div>
+              <div>
+                <span>
+                  {isArtistWorkspace ? "Onboarding recovery applied" : "Need attention"}
+                </span>
+                <strong>
+                  {isArtistWorkspace
+                    ? formatCurrency(paymentSummary.onboardingRecovery)
+                    : String(
+                        priorityRows.filter(
+                          (booking) =>
+                            booking.paymentStatus === "PAID" &&
+                            booking.verificationStatus !== "VERIFIED" &&
+                            booking.verificationStatus !== "MANUAL_OVERRIDE",
+                        ).length,
+                      )}
+                </strong>
               </div>
             </div>
           </section>
 
+          {isArtistWorkspace ? (
+            <section className={styles.insightGrid}>
+              <article className={styles.insightCard}>
+                <p className={styles.cardEyebrow}>Release states</p>
+                <h2>What is moving now</h2>
+                <div className={styles.statRows}>
+                  <div className={styles.statRow}>
+                    <span>Payout pending</span>
+                    <strong>
+                      {paymentSummary.pendingCount} bookings /{" "}
+                      {formatCurrency(paymentSummary.pendingValue)}
+                    </strong>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span>Held or manual review</span>
+                    <strong>
+                      {paymentSummary.holdCount} bookings / {formatCurrency(paymentSummary.holdValue)}
+                    </strong>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span>Code verified jobs</span>
+                    <strong>{paymentSummary.verifiedCount}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article className={styles.insightCard}>
+                <p className={styles.cardEyebrow}>Policy note</p>
+                <h2>Temporary onboarding recovery</h2>
+                <p className={styles.subtle}>
+                  There is no upfront onboarding payment in the current rollout. If your
+                  account uses the temporary first-booking model, the extra onboarding cut is
+                  visible below and only applied once.
+                </p>
+                <div className={styles.policyCard}>
+                  <div className={styles.statRow}>
+                    <span>Applied so far</span>
+                    <strong>{formatCurrency(paymentSummary.onboardingRecovery)}</strong>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span>Future bookings after deduction</span>
+                    <strong>Normal commission resumes automatically</strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+          ) : null}
+
           <section className={styles.listCard}>
             <div className={styles.cardHeader}>
               <div>
-                <h2>{viewer?.role === "ARTIST" ? "Booking earnings" : "Booking payments"}</h2>
+                <h2>{isArtistWorkspace ? "Priority payout items" : "Checkout and payment actions"}</h2>
                 <p className={styles.subtle}>
-                  {viewer?.role === "ARTIST"
-                    ? "Paid bookings contribute to your earnings once Payfast settles the booking."
-                    : "Confirmed bookings can be paid through Payfast hosted checkout."}
+                  {isArtistWorkspace
+                    ? "These bookings are waiting on verification, dispute expiry, or manual intervention before release."
+                    : "Confirmed bookings can be paid through hosted checkout. Safety-code and payout status appear once payment clears."}
                 </p>
               </div>
             </div>
 
-            {bookings.length === 0 ? (
+            {priorityRows.length === 0 ? (
               <div className={styles.emptyState}>
-                <h3>No payment activity yet</h3>
-                <p className={styles.subtle}>Booking payments will appear here as your marketplace activity grows.</p>
+                <h3>{isArtistWorkspace ? "No blocked payouts right now" : "No checkout actions right now"}</h3>
+                <p className={styles.subtle}>
+                  {isArtistWorkspace
+                    ? "Priority payout work will appear here when a booking needs action, review, or dispute handling."
+                    : "New confirmed bookings that need payment will appear here."}
+                </p>
               </div>
             ) : (
               <div className={styles.table}>
-                {bookings.map((booking) => {
+                {priorityRows.map((booking) => {
                   const canPay =
                     viewer?.id === booking.client.id &&
                     booking.status === "CONFIRMED" &&
@@ -185,33 +333,61 @@ export default function PaymentsPage() {
                         <div>
                           <h3>{booking.title}</h3>
                           <p className={styles.subtle}>
-                            {viewer?.role === "ARTIST" ? booking.client.name : booking.artist.name}
+                            {isArtistWorkspace ? booking.client.name : booking.artist.name}
                           </p>
                         </div>
                         <div className={styles.rowMeta}>
                           <span>{formatDate(booking.eventDate)}</span>
                           <span>{formatCurrency(booking.totalAmount)}</span>
-                          <span className={styles.statusBadge}>
-                            {humanize(booking.paymentStatus)}
+                          <span
+                            className={styles.pill}
+                            data-tone={payoutTone(booking.payoutStatus)}
+                          >
+                            {humanize(booking.payoutStatus)}
                           </span>
-                          {booking.paymentProvider ? (
-                            <span className={styles.providerBadge}>
-                              {humanize(booking.paymentProvider)}
-                            </span>
-                          ) : null}
+                          <span
+                            className={styles.pill}
+                            data-tone={verificationTone(booking.verificationStatus)}
+                          >
+                            {humanize(booking.verificationStatus)}
+                          </span>
                         </div>
-                      </div>
-
-                      <div className={styles.rowActions}>
-                        {viewer?.role === "ARTIST" || viewer?.role === "AGENCY" ? (
-                          <div className={styles.artistStats}>
+                        <div className={styles.breakdown}>
+                          <div>
                             <span>Artist payout</span>
                             <strong>{formatCurrency(booking.artistPayout)}</strong>
                           </div>
+                          <div>
+                            <span>Platform fee</span>
+                            <strong>{formatCurrency(booking.platformFee)}</strong>
+                          </div>
+                          <div>
+                            <span>Onboarding recovery</span>
+                            <strong>
+                              {formatCurrency(booking.onboardingExtraCutAmount ?? 0)}
+                            </strong>
+                          </div>
+                          <div>
+                            <span>Estimated release</span>
+                            <strong>
+                              {booking.estimatedPayoutReleaseAt
+                                ? formatDate(booking.estimatedPayoutReleaseAt)
+                                : "Waiting on next step"}
+                            </strong>
+                          </div>
+                        </div>
+                        {booking.payoutHoldReason ? (
+                          <div className={styles.noteCard}>{booking.payoutHoldReason}</div>
                         ) : null}
+                      </div>
 
+                      <div className={styles.rowActions}>
                         {canPay ? (
-                          <PaymentForm bookingId={booking.id} className={styles.primaryBtn} />
+                          <PaymentForm
+                            bookingId={booking.id}
+                            className={styles.primaryBtn}
+                            disabled={onboardingLocked}
+                          />
                         ) : null}
 
                         <Link href={`/bookings/${booking.id}`} className={styles.ghostBtn}>
@@ -221,6 +397,86 @@ export default function PaymentsPage() {
                     </article>
                   );
                 })}
+              </div>
+            )}
+          </section>
+
+          <section className={styles.listCard}>
+            <div className={styles.cardHeader}>
+              <div>
+                <h2>{isArtistWorkspace ? "All booking payouts" : "Booking payment history"}</h2>
+                <p className={styles.subtle}>
+                  {isArtistWorkspace
+                    ? "Every booking shows verification, dispute timing, and release visibility."
+                    : "Review payment state and continue to booking detail for client approval or support escalation."}
+                </p>
+              </div>
+            </div>
+
+            {bookings.length === 0 ? (
+              <div className={styles.emptyState}>
+                <h3>No payment activity yet</h3>
+                <p className={styles.subtle}>
+                  Booking payments and payouts will appear here once your first booking enters the flow.
+                </p>
+              </div>
+            ) : (
+              <div className={styles.table}>
+                {bookings.map((booking) => (
+                  <article key={booking.id} className={styles.row}>
+                    <div className={styles.rowMain}>
+                      <div>
+                        <h3>{booking.title}</h3>
+                        <p className={styles.subtle}>
+                          {isArtistWorkspace ? booking.client.name : booking.artist.name}
+                        </p>
+                      </div>
+                      <div className={styles.rowMeta}>
+                        <span>{formatDate(booking.eventDate)}</span>
+                        <span>{formatCurrency(booking.totalAmount)}</span>
+                        <span className={styles.pill} data-tone={payoutTone(booking.payoutStatus)}>
+                          {humanize(booking.payoutStatus)}
+                        </span>
+                        <span
+                          className={styles.pill}
+                          data-tone={verificationTone(booking.verificationStatus)}
+                        >
+                          {humanize(booking.verificationStatus)}
+                        </span>
+                        <span className={styles.pill} data-tone="neutral">
+                          {humanize(booking.paymentStatus)}
+                        </span>
+                      </div>
+                      <div className={styles.breakdown}>
+                        <div>
+                          <span>Artist payout</span>
+                          <strong>{formatCurrency(booking.artistPayout)}</strong>
+                        </div>
+                        <div>
+                          <span>Dispute window</span>
+                          <strong>
+                            {booking.disputeWindowEndsAt
+                              ? formatDate(booking.disputeWindowEndsAt)
+                              : "Not open"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Reference</span>
+                          <strong>{booking.paymentReference ?? "Pending"}</strong>
+                        </div>
+                        <div>
+                          <span>Provider</span>
+                          <strong>{booking.paymentProvider ? humanize(booking.paymentProvider) : "Pending"}</strong>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <Link href={`/bookings/${booking.id}`} className={styles.ghostBtn}>
+                        View booking
+                      </Link>
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
           </section>

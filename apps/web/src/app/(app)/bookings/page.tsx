@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Booking, User } from "@vendorapp/shared";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   ApiError,
   fetchBookings,
@@ -64,6 +65,7 @@ function getCounterpart(booking: Booking, viewer: User | null): { name: string; 
 }
 
 export default function BookingsPage() {
+  const { onboardingLocked } = useAppSession();
   const [viewer, setViewer] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeStatus, setActiveStatus] = useState<Booking["status"] | undefined>();
@@ -221,7 +223,8 @@ export default function BookingsPage() {
                         setActingId(null);
                       }
                     }}
-                    disabled={actingId === booking.id}
+                    disabled={actingId === booking.id || onboardingLocked}
+                    title={onboardingLocked ? "Finish onboarding to confirm bookings." : undefined}
                     className={styles.actionPrimary}
                   >
                     Confirm
@@ -251,7 +254,8 @@ export default function BookingsPage() {
                         setActingId(null);
                       }
                     }}
-                    disabled={actingId === booking.id}
+                    disabled={actingId === booking.id || onboardingLocked}
+                    title={onboardingLocked ? "Finish onboarding to cancel bookings." : undefined}
                     className={styles.actionGhost}
                   >
                     Cancel
@@ -281,7 +285,8 @@ export default function BookingsPage() {
                         setActingId(null);
                       }
                     }}
-                    disabled={actingId === booking.id}
+                    disabled={actingId === booking.id || onboardingLocked}
+                    title={onboardingLocked ? "Finish onboarding to complete bookings." : undefined}
                     className={styles.actionPrimary}
                   >
                     Complete

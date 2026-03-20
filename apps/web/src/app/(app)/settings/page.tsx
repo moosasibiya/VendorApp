@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   ApiError,
   changePassword,
@@ -16,6 +17,7 @@ function clearAuthCookies() {
 }
 
 export default function SettingsPage() {
+  const { onboardingLocked } = useAppSession();
   const [loading, setLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -79,6 +81,10 @@ export default function SettingsPage() {
   }, []);
 
   const saveProfile = async () => {
+    if (onboardingLocked) {
+      setError("Complete onboarding before changing your settings.");
+      return;
+    }
     setProfileSaving(true);
     setError(null);
     setMessage(null);
@@ -105,6 +111,10 @@ export default function SettingsPage() {
   };
 
   const savePassword = async () => {
+    if (onboardingLocked) {
+      setError("Complete onboarding before changing your password here.");
+      return;
+    }
     if (!currentPassword.trim() || !newPassword.trim()) {
       setError("Current password and new password are required.");
       return;
@@ -131,6 +141,10 @@ export default function SettingsPage() {
   };
 
   const deleteAccount = async () => {
+    if (onboardingLocked) {
+      setError("Complete onboarding before using account management actions here.");
+      return;
+    }
     if (!window.confirm("Delete this account? This will deactivate your profile.")) {
       return;
     }
@@ -176,6 +190,7 @@ export default function SettingsPage() {
                   value={loading ? "" : fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   placeholder="Your full name"
+                  disabled={onboardingLocked}
                 />
               </label>
               <label>
@@ -188,6 +203,7 @@ export default function SettingsPage() {
                   value={loading ? "" : location}
                   onChange={(event) => setLocation(event.target.value)}
                   placeholder="Johannesburg"
+                  disabled={onboardingLocked}
                 />
               </label>
               <label>
@@ -200,6 +216,7 @@ export default function SettingsPage() {
                   value={loading ? "" : avatarUrl}
                   onChange={(event) => setAvatarUrl(event.target.value)}
                   placeholder="Phase 7 adds upload support; URL works for now"
+                  disabled={onboardingLocked}
                 />
               </label>
             </div>
@@ -208,7 +225,7 @@ export default function SettingsPage() {
                 className={styles.primaryBtn}
                 type="button"
                 onClick={() => void saveProfile()}
-                disabled={profileSaving || loading}
+                disabled={profileSaving || loading || onboardingLocked}
               >
                 {profileSaving ? "Saving..." : "Save profile"}
               </button>
@@ -223,6 +240,7 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={emailNotifications}
                   onChange={(event) => setEmailNotifications(event.target.checked)}
+                  disabled={onboardingLocked}
                 />
                 Email notifications
               </label>
@@ -231,6 +249,7 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={bookingNotifications}
                   onChange={(event) => setBookingNotifications(event.target.checked)}
+                  disabled={onboardingLocked}
                 />
                 Booking updates
               </label>
@@ -239,6 +258,7 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={messageNotifications}
                   onChange={(event) => setMessageNotifications(event.target.checked)}
+                  disabled={onboardingLocked}
                 />
                 New messages
               </label>
@@ -247,6 +267,7 @@ export default function SettingsPage() {
                   type="checkbox"
                   checked={marketingNotifications}
                   onChange={(event) => setMarketingNotifications(event.target.checked)}
+                  disabled={onboardingLocked}
                 />
                 Marketing email
               </label>
@@ -262,6 +283,7 @@ export default function SettingsPage() {
                   type="password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
+                  disabled={onboardingLocked}
                 />
               </label>
               <label>
@@ -270,6 +292,7 @@ export default function SettingsPage() {
                   type="password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
+                  disabled={onboardingLocked}
                 />
               </label>
             </div>
@@ -278,7 +301,7 @@ export default function SettingsPage() {
                 className={styles.ghostBtn}
                 type="button"
                 onClick={() => void savePassword()}
-                disabled={passwordSaving || loading}
+                disabled={passwordSaving || loading || onboardingLocked}
               >
                 {passwordSaving ? "Updating..." : "Change password"}
               </button>
@@ -295,7 +318,7 @@ export default function SettingsPage() {
                 className={styles.dangerBtn}
                 type="button"
                 onClick={() => void deleteAccount()}
-                disabled={deleting || loading}
+                disabled={deleting || loading || onboardingLocked}
               >
                 {deleting ? "Deleting..." : "Delete account"}
               </button>

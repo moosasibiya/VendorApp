@@ -10,7 +10,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        "rounded-card border border-gray-200 bg-white shadow-md",
+        "rounded-card border border-[var(--border)] bg-[var(--panel)] [box-shadow:var(--shadow-card)]",
         className,
       )}
       {...props}
@@ -26,7 +26,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardSectionProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("border-b border-gray-200 px-6 py-4", className)}
+      className={cn("border-b border-[var(--border)] px-6 py-4", className)}
       {...props}
     />
   ),
@@ -46,7 +46,7 @@ export const CardFooter = React.forwardRef<HTMLDivElement, CardSectionProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("border-t border-gray-200 px-6 py-4", className)}
+      className={cn("border-t border-[var(--border)] px-6 py-4", className)}
       {...props}
     />
   ),

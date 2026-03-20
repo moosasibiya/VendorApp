@@ -1,392 +1,294 @@
-"use client";
-
-import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
-const locations = ["Cape Town", "Johannesburg", "Pretoria", "Durban", "All"];
-const services = ["Photography", "Videography", "Design", "Content", "Events"];
-const STAR_COLORS = [
-  "#2563eb",
-  "#3b82f6",
-  "#1d4ed8",
-  "#60a5fa",
-  "#93c5fd",
-  "#5f6ef0",
+const clientSteps = [
+  {
+    number: "1",
+    title: "Browse verified creatives",
+    copy: "Explore portfolios from identity-checked artists and teams.",
+  },
+  {
+    number: "2",
+    title: "Book and pay securely",
+    copy: "Payment is tracked through the platform with clear status updates.",
+  },
+  {
+    number: "3",
+    title: "Approve completion or escalate support",
+    copy: "Safety checks, disputes, and support all stay in one place.",
+  },
 ];
 
-type Star = {
-  color: string;
-  pz: number;
-  x: number;
-  y: number;
-  z: number;
-};
+const artistSteps = [
+  {
+    number: "1",
+    title: "Create your profile and apply",
+    copy: "Submit your artist profile for manual review before launch access opens.",
+  },
+  {
+    number: "2",
+    title: "Join the prelaunch pool or waitlist",
+    copy: "The first 100 valid applications enter the initial rollout pool.",
+  },
+  {
+    number: "3",
+    title: "Go live and level up through bookings",
+    copy: "Verified on-platform work unlocks visibility, payout speed, and trust rewards.",
+  },
+];
 
-const buildArtists = () =>
-  Array.from({ length: 12 }).map((_, i) => ({
-    name: `Artist ${i + 1}`,
-    role: i % 2 === 0 ? "Photographer" : "Videographer",
-    rating: (4.7 + (i % 3) * 0.1).toFixed(1),
-    location: locations[i % locations.length],
-  }));
+const safetyCards = [
+  {
+    title: "Identity verification (KYC)",
+    copy: "Artists are reviewed before they can go live and accept work on the platform.",
+  },
+  {
+    title: "Secure payment tracking",
+    copy: "Payment, dispute windows, and payout release states stay visible to both sides.",
+  },
+  {
+    title: "Booking start verification",
+    copy: "A client safety code confirms the job start before normal payout release can proceed.",
+  },
+  {
+    title: "Internal support and disputes",
+    copy: "Support conversations and escalations stay inside platform messaging for full context.",
+  },
+  {
+    title: "Tiered trust framework",
+    copy: "Verified platform performance powers progression instead of off-platform claims.",
+  },
+  {
+    title: "Admin review tools",
+    copy: "Application vetting, payout overrides, and manual support triage remain auditable.",
+  },
+];
 
-function FeaturedRow({ title }: { title: string }) {
-  const items = useMemo(() => buildArtists(), []);
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const [index, setIndex] = useState(0);
+const pricingCards = [
+  {
+    title: "Artists",
+    items: [
+      "No upfront onboarding payment during the current rollout.",
+      "Normal commission stays configurable and visible in the dashboard.",
+      "If onboarding recovery applies, it is taken once from the first completed booking only.",
+    ],
+  },
+  {
+    title: "Clients",
+    items: [
+      "Browse and message artists inside the platform.",
+      "Booking payment and approval flow remain visible from start to payout release.",
+      "Support, disputes, and refunds route into the centralized messaging area.",
+    ],
+  },
+];
 
-  useEffect(() => {
-    const node = trackRef.current;
-    if (!node) return;
+const tierSteps = [
+  {
+    label: "Tier 1",
+    hint: "Launch entry",
+    detail: "Start here while you build verified booking history and profile quality.",
+  },
+  {
+    label: "Tier 2",
+    hint: "Consistency",
+    detail: "Reliable platform activity can unlock stronger visibility and ranking boosts.",
+  },
+  {
+    label: "Tier 3",
+    hint: "Performance",
+    detail: "Higher-quality verified work can reduce payout delays and open more opportunities.",
+  },
+  {
+    label: "Tier 4",
+    hint: "Priority",
+    detail: "Top performers can receive the strongest trust signals and platform access benefits.",
+  },
+];
 
-    const handler = () => {
-      const cardWidth = node.firstElementChild
-        ? (node.firstElementChild as HTMLElement).offsetWidth + 16
-        : 300;
-      const nextIndex = Math.round(node.scrollLeft / (cardWidth * 3));
-      setIndex(Math.max(0, Math.min(3, nextIndex)));
-    };
-
-    node.addEventListener("scroll", handler, { passive: true });
-    return () => node.removeEventListener("scroll", handler);
-  }, []);
-
-  const scrollBy = (direction: number) => {
-    const node = trackRef.current;
-    if (!node) return;
-    const cardWidth = node.firstElementChild
-      ? (node.firstElementChild as HTMLElement).offsetWidth + 16
-      : 300;
-    node.scrollBy({ left: direction * cardWidth * 3, behavior: "smooth" });
-  };
-
-  return (
-    <section className={styles.featureSection}>
-      <div className={styles.featureHeader}>
-        <h2>{title}</h2>
-        <div className={styles.featureControls}>
-          <button type="button" onClick={() => scrollBy(-1)}>
-            <span className="material-symbols-outlined">chevron_left</span>
-          </button>
-          <button type="button" onClick={() => scrollBy(1)}>
-            <span className="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
-      </div>
-      <div className={styles.featureTrack} ref={trackRef}>
-        {items.map((artist) => (
-          <article key={artist.name} className={styles.featureCard}>
-            <button
-              type="button"
-              className={styles.featureFavBtn}
-              aria-label="Add to favourites"
-              title="Favourites"
-            >
-              <span className="material-symbols-outlined">favorite</span>
-            </button>
-            <div
-              className={styles.featurePreview}
-              style={{
-                backgroundImage:
-                  "url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80)",
-              }}
-            />
-            <div className={styles.featureBadge}>{artist.role}</div>
-            <h3>{artist.name}</h3>
-            <p>{artist.location}</p>
-            <div className={styles.featureMeta}>{"\u2605"} {artist.rating}</div>
-            <button type="button" className={styles.profileBtn}>
-              View profile
-            </button>
-          </article>
-        ))}
-      </div>
-      <div className={styles.dots}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <span
-            key={i}
-            className={i == index ? styles.dotActive : styles.dot}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
+const artistNotes = [
+  "The first 100 valid artists enter the prelaunch pool automatically.",
+  "Applications submitted after that join the waitlist for later review waves.",
+  "Only a limited number of approved artists go live in the initial three-month rollout.",
+  "There is no upfront onboarding payment right now.",
+  "If onboarding recovery is enabled, it is handled through the first completed booking only.",
+];
 
 export default function PublicHomePage() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [compact, setCompact] = useState(false);
-  const [query, setQuery] = useState("");
-  const [location, setLocation] = useState(locations[0]);
-  const [service, setService] = useState(services[0]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = 0;
-    let height = 0;
-    let centerX = 0;
-    let centerY = 0;
-    let rafId = 0;
-    let stars: Star[] = [];
-    const motionReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    const depthMax = () => Math.max(width, height);
-    const starCount = () =>
-      Math.max(90, Math.min(220, Math.round((width * height) / 11000)));
-
-    const resetStar = (star: Star, initial: boolean) => {
-      star.x = (Math.random() - 0.5) * width;
-      star.y = (Math.random() - 0.5) * height;
-      star.z = initial ? Math.random() * depthMax() : depthMax();
-      star.pz = star.z;
-      star.color = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
-    };
-
-    const rebuildStars = () => {
-      stars = Array.from({ length: starCount() }, () => {
-        const star: Star = {
-          color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
-          pz: 0,
-          x: 0,
-          y: 0,
-          z: 0,
-        };
-        resetStar(star, true);
-        return star;
-      });
-    };
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
-      centerX = width / 2;
-      centerY = height / 2;
-      canvas.width = Math.max(1, Math.floor(width * dpr));
-      canvas.height = Math.max(1, Math.floor(height * dpr));
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      rebuildStars();
-    };
-
-    const drawStatic = () => {
-      ctx.clearRect(0, 0, width, height);
-      for (const star of stars) {
-        const sx = (star.x / star.z) * width + centerX;
-        const sy = (star.y / star.z) * height + centerY;
-        const radius = Math.max(0.4, (1 - star.z / depthMax()) * 1.8);
-        const alpha = Math.max(0.1, (1 - star.z / depthMax()) * 0.32);
-
-        if (!Number.isFinite(sx) || !Number.isFinite(sy)) continue;
-
-        ctx.beginPath();
-        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-        ctx.fillStyle = star.color;
-        ctx.globalAlpha = alpha;
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    };
-
-    const drawAnimated = () => {
-      ctx.clearRect(0, 0, width, height);
-      const speed = 18;
-
-      for (const star of stars) {
-        star.pz = star.z;
-        star.z -= speed;
-        if (star.z <= 1) resetStar(star, false);
-
-        const sx = (star.x / star.z) * width + centerX;
-        const sy = (star.y / star.z) * height + centerY;
-        const px = (star.x / star.pz) * width + centerX;
-        const py = (star.y / star.pz) * height + centerY;
-        const size = Math.max(0.1, (1 - star.z / depthMax()) * 2.4);
-        const alpha = Math.max(0.04, (1 - star.z / depthMax()) * 0.48);
-
-        if (
-          !Number.isFinite(sx) ||
-          !Number.isFinite(sy) ||
-          !Number.isFinite(px) ||
-          !Number.isFinite(py)
-        ) {
-          continue;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(sx, sy);
-        ctx.strokeStyle = star.color;
-        ctx.lineWidth = size;
-        ctx.globalAlpha = alpha;
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      rafId = window.requestAnimationFrame(drawAnimated);
-    };
-
-    const handleResize = () => {
-      resize();
-      if (motionReduced) drawStatic();
-    };
-
-    resize();
-    if (motionReduced) {
-      drawStatic();
-    } else {
-      drawAnimated();
-    }
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (rafId) window.cancelAnimationFrame(rafId);
-    };
-  }, []);
-
-  useEffect(() => {
-    let frame = 0;
-    const compactTrigger = 40;
-
-    const updateCompact = () => {
-      const shouldCompact = window.scrollY > compactTrigger;
-      setCompact((current) =>
-        current === shouldCompact ? current : shouldCompact,
-      );
-    };
-
-    const handleScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        updateCompact();
-      });
-    };
-
-    updateCompact();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", updateCompact);
-
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateCompact);
-    };
-  }, []);
-
   return (
     <main className={styles.page}>
-      <canvas ref={canvasRef} className={styles.warpCanvas} aria-hidden="true" />
       <section className={styles.hero}>
-        <h1 className={styles.title}>
-          Find your perfect <span className={styles.grad}>Photographer</span>,
-          <span className={styles.grad}> Videographer</span> & more.
-        </h1>
-
-        <p className={styles.subtitle}>
-          Discover trusted creatives across South Africa with curated profiles,
-          real reviews, and fast booking.
-        </p>
-        <div className={styles.searchSlot} data-compact={compact}>
-          <div className={styles.searchWrap} data-compact={compact}>
-            {compact ? (
-              <div className={styles.compactSummary}>
-                <span className="material-symbols-outlined">search</span>
-                <div className={styles.compactText}>
-                  <strong>{query.trim() || "Search creatives"}</strong>
-                  <span>
-                    {location} . {service}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={styles.searchItem}>
-                  <span className="material-symbols-outlined">search</span>
-                  <input
-                    placeholder="Search by artist or service"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                  />
-                </div>
-                <div className={styles.searchItem}>
-                  <span className="material-symbols-outlined">location_on</span>
-                  <select
-                    value={location}
-                    onChange={(event) => setLocation(event.target.value)}
-                  >
-                    {locations.map((loc) => (
-                      <option key={loc}>{loc}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.searchItem}>
-                  <span className="material-symbols-outlined">category</span>
-                  <select
-                    value={service}
-                    onChange={(event) => setService(event.target.value)}
-                  >
-                    {services.map((serviceOption) => (
-                      <option key={serviceOption}>{serviceOption}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-            <button className={styles.searchBtn} type="button">
-              <span className="material-symbols-outlined">search</span>
-            </button>
+        <div className={styles.heroInner}>
+          <div className={styles.badge}>Launching soon</div>
+          <h1>A safer way to book trusted photographers and videographers</h1>
+          <p className={styles.heroCopy}>
+            We are building a secure marketplace for booking photographers,
+            videographers, and creative talent. The platform is in final
+            rollout preparation with controlled artist onboarding and
+            centralized support.
+          </p>
+          <div className={styles.heroActions}>
+            <Link href="/signup?accountType=CREATIVE" className={styles.primaryBtn}>
+              Join as an artist
+            </Link>
+            <a href="#launch-updates" className={styles.secondaryBtn}>
+              Get launch updates
+            </a>
           </div>
         </div>
+      </section>
 
-        <div className={styles.actions} data-compact={compact}>
-          <Link className={styles.primary} href="/artists">
-            <span className="material-symbols-outlined">person_search</span>
-            Browse Artists
-          </Link>
-          <Link className={styles.secondary} href="/explore">
-            <span className="material-symbols-outlined">explore</span>
-            Explore
-          </Link>
-          <Link className={styles.secondary} href="/dashboard">
-            <span className="material-symbols-outlined">dashboard</span>
-            Client Dashboard
+      <section className={styles.noticeWrap}>
+        <article className={styles.noticeCard}>
+          <strong>We are in the final preparation phase.</strong>
+          <p>
+            Clients can explore what is coming. Artists can create profiles and
+            submit applications now, then move through review, approval, and
+            staged live access as rollout capacity opens.
+          </p>
+        </article>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>How it works</h2>
+          <p>Simple, secure, and transparent for both sides of the marketplace.</p>
+        </div>
+        <div className={styles.dualGrid}>
+          <article className={styles.stepCard}>
+            <h3>For clients</h3>
+            <div className={styles.stepList}>
+              {clientSteps.map((step) => (
+                <div key={step.number} className={styles.stepItem}>
+                  <span>{step.number}</span>
+                  <div>
+                    <strong>{step.title}</strong>
+                    <p>{step.copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className={styles.stepCard}>
+            <h3>For artists</h3>
+            <div className={styles.stepList}>
+              {artistSteps.map((step) => (
+                <div key={step.number} className={styles.stepItem}>
+                  <span>{step.number}</span>
+                  <div>
+                    <strong>{step.title}</strong>
+                    <p>{step.copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className={styles.safetySection}>
+        <div className={styles.sectionHeader}>
+          <h2>Trust, safety and compliance</h2>
+          <p>
+            The platform is built around verification, transparent payout logic,
+            and internal support tooling instead of fragmented communication.
+          </p>
+        </div>
+        <div className={styles.cardGrid}>
+          {safetyCards.map((card) => (
+            <article key={card.title} className={styles.infoCard}>
+              <h3>{card.title}</h3>
+              <p>{card.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Clear and fair pricing</h2>
+          <p>No surprises. No hidden steps. Commission and recovery logic stay visible.</p>
+        </div>
+        <div className={styles.dualGrid}>
+          {pricingCards.map((card) => (
+            <article key={card.title} className={styles.pricingCard}>
+              <h3>{card.title}</h3>
+              <ul className={styles.bulletList}>
+                {card.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <p className={styles.centerNote}>
+          No subscriptions are required to start the current rollout.
+        </p>
+      </section>
+
+      <section className={styles.growthSection}>
+        <div className={styles.sectionHeader}>
+          <h2>Grow as you work</h2>
+          <p>
+            Artists progress through four configurable performance tiers based on
+            verified on-platform bookings, revenue, ratings, reliability, and
+            repeat work.
+          </p>
+        </div>
+        <div className={styles.tierTrack}>
+          {tierSteps.map((tier) => (
+            <article key={tier.label} className={styles.tierCard}>
+              <div className={styles.tierDot} />
+              <strong>{tier.label}</strong>
+              <span>{tier.hint}</span>
+              <p>{tier.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.artistSection}>
+        <div className={styles.artistInner}>
+          <h2>Artists: join early</h2>
+          <p>
+            Creatives can apply before public launch and start building their
+            profiles while rollout capacity opens in controlled phases.
+          </p>
+          <div className={styles.artistCard}>
+            <ul className={styles.bulletList}>
+              {artistNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </div>
+          <Link href="/signup?accountType=CREATIVE" className={styles.primaryBtn}>
+            Create artist profile
           </Link>
         </div>
       </section>
 
-      <FeaturedRow title="POPULAR ARTISTS" />
-      <FeaturedRow title="NEAR YOU" />
-      <FeaturedRow title="RECENTLY VIEWED" />
-
-      <section className={styles.howSection} id="how-it-works">
-        <div className={styles.howHeader}>
-          <h2>How it works</h2>
-          <p>Four simple steps to book your creative.</p>
+      <section className={styles.section} id="launch-updates">
+        <div className={styles.sectionHeader}>
+          <h2>Be first to know</h2>
+          <p>
+            Sign up to receive launch updates when rollout expands and booking
+            access opens more broadly.
+          </p>
         </div>
-        <div className={styles.howGrid}>
-          {[
-            ["Browse artists", "Explore specialties and portfolios."],
-            ["Discover hidden gems", "Filter by location and style."],
-            ["Make a booking", "Share your event details."],
-            ["Await your creation", "Relax while we deliver."],
-          ].map(([title, text], index) => (
-            <article key={title} className={styles.howCard}>
-              <div className={styles.howBadge}>{index + 1}</div>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
+        <form className={styles.signupCard} action="/signup" method="get">
+          <input type="hidden" name="accountType" value="CLIENT" />
+          <input
+            className={styles.emailInput}
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            aria-label="Email"
+          />
+          <button type="submit" className={styles.primaryBtn}>
+            Notify me
+          </button>
+        </form>
       </section>
     </main>
   );

@@ -78,6 +78,22 @@
   gap: 8px;
 }
 
+.inlineForm {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.inlineInput {
+  flex: 1;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0 14px;
+}
+
 .reviewForm {
   display: grid;
   gap: 12px;
@@ -150,8 +166,13 @@
 }
 
 .statusCONFIRMED,
+.statusBOOKED,
+.statusAWAITING_START_CODE,
 .statusIN_PROGRESS,
-.statusCOMPLETED {
+.statusAWAITING_CLIENT_APPROVAL,
+.statusCOMPLETED,
+.statusPAYOUT_PENDING,
+.statusPAYOUT_RELEASED {
   background: rgba(34, 197, 94, 0.16);
   color: #86efac;
 }
@@ -166,6 +187,30 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+.noteCard {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  color: var(--muted);
+}
+
+.codeValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(108, 76, 246, 0.12);
+  color: var(--text);
+  font-size: 1.15rem;
+  letter-spacing: 0.3em;
 }
 
 .timeline {
@@ -188,17 +233,17 @@
 }
 
 .error {
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  background: rgba(248, 113, 113, 0.12);
-  color: #fca5a5;
+  border: 1px solid var(--alert-error-border);
+  background: var(--alert-error-bg);
+  color: var(--alert-error-text);
   border-radius: 14px;
   padding: 12px 14px;
 }
 
 .infoBanner {
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  background: rgba(14, 165, 233, 0.12);
-  color: #bae6fd;
+  border: 1px solid var(--alert-info-border);
+  background: var(--alert-info-bg);
+  color: var(--alert-info-text);
   border-radius: 14px;
   padding: 12px 14px;
 }
@@ -221,5 +266,10 @@
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .inlineForm {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

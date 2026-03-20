@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Patch, Req, UseGuards } from '@nestjs/common';
 import type { DashboardStats, UpcomingBookingItem, User } from '@vendorapp/shared';
+import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { UpdateClientOnboardingDto } from './dto/update-client-onboarding.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -12,7 +14,7 @@ type AuthRequest = {
 };
 
 @Controller('users')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OnboardingCompleteGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -35,6 +37,7 @@ export class UsersController {
   }
 
   @Patch('me/onboarding/client')
+  @AllowIncompleteOnboarding()
   async updateClientOnboarding(
     @Req() request: AuthRequest,
     @Body() input: UpdateClientOnboardingDto,

@@ -47,12 +47,21 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       authClient.data.userId = userId;
       authClient.join(this.getUserRoom(userId));
 
+      const user = await this.usersStore.findById(userId);
       const conversations = await this.prisma.conversation.findMany({
-        where: {
-          participantIds: {
-            has: userId,
-          },
-        },
+        where:
+          user?.role === 'ADMIN' || user?.role === 'SUB_ADMIN'
+            ? {
+                OR: [
+                  { participantIds: { has: userId } },
+                  { kind: 'SUPPORT' },
+                ],
+              }
+            : {
+                participantIds: {
+                  has: userId,
+                },
+              },
         select: {
           id: true,
         },
@@ -94,10 +103,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   joinConversationForUsers(userIds: string[], conversationId: string): void {
-    if (!this.server) {
-      return;
-    }
-
+    if (!this.server) return;
     const conversationRoom = this.getConversationRoom(conversationId);
     for (const userId of userIds) {
       this.server.in(this.getUserRoom(userId)).socketsJoin(conversationRoom);
@@ -113,10 +119,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   emitConversationUpdated(userIds: string[], conversationId: string): void {
-    if (!this.server) {
-      return;
-    }
-
+    if (!this.server) return;
     for (const userId of userIds) {
       this.server.to(this.getUserRoom(userId)).emit('conversation:updated', { conversationId });
     }
@@ -134,10 +137,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       throw new Error('User not found');
     }
 
-    const tokenVersion =
-      Number.isInteger(user.tokenVersion) && user.tokenVersion !== undefined && user.tokenVersion >= 0
-        ? user.tokenVersion
-        : 0;
+    const tokenVersion = Number.isInteger(user.tokenVersion) && user.tokenVersion !== undefined && user.tokenVersion >= 0 ? user.tokenVersion : 0;
     if (tokenVersion !== payload.ver) {
       throw new Error('Token revoked');
     }
@@ -152,9 +152,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const authorizationHeader = client.handshake.headers.authorization;
-    const authorization = Array.isArray(authorizationHeader)
-      ? authorizationHeader[0]
-      : authorizationHeader;
+    const authorization = Array.isArray(authorizationHeader) ? authorizationHeader[0] : authorizationHeader;
     if (authorization) {
       const [scheme, token] = authorization.split(' ');
       if (scheme === 'Bearer' && token) {

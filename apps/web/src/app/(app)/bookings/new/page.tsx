@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import { ApiError, Artist, createBooking, fetchArtists } from "@/lib/api";
 import styles from "./page.module.css";
 
@@ -38,6 +39,7 @@ function estimateTotal(hourlyRate: number | undefined, start: string, end: strin
 }
 
 export default function NewBookingPage() {
+  const { onboardingLocked } = useAppSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedArtistId = searchParams.get("artistId") ?? "";
@@ -121,7 +123,6 @@ export default function NewBookingPage() {
         </div>
 
         {error ? <div className={styles.error}>{error}</div> : null}
-
         <div className={styles.layout}>
           <form
             className={styles.form}
@@ -131,6 +132,10 @@ export default function NewBookingPage() {
 
               if (!selectedArtistId) {
                 setError("Select an artist before sending the request.");
+                return;
+              }
+              if (onboardingLocked) {
+                setError("Complete onboarding before sending booking requests.");
                 return;
               }
               if (!title.trim() || !description.trim() || !location.trim() || !eventDate) {
@@ -185,7 +190,7 @@ export default function NewBookingPage() {
               <select
                 value={selectedArtistId}
                 onChange={(event) => setSelectedArtistId(event.target.value)}
-                disabled={loadingArtists || isSubmitting}
+                disabled={loadingArtists || isSubmitting || onboardingLocked}
               >
                 <option value="">Select an artist</option>
                 {artists.map((artist) => (
@@ -206,7 +211,7 @@ export default function NewBookingPage() {
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Editorial campaign, wedding, launch event..."
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -216,7 +221,7 @@ export default function NewBookingPage() {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Describe the event, deliverables, and any creative direction."
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -226,7 +231,7 @@ export default function NewBookingPage() {
                 type="datetime-local"
                 value={eventDate}
                 onChange={(event) => setEventDate(event.target.value)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -236,7 +241,7 @@ export default function NewBookingPage() {
                 type="datetime-local"
                 value={eventEndDate}
                 onChange={(event) => setEventEndDate(event.target.value)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -246,7 +251,7 @@ export default function NewBookingPage() {
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
                 placeholder="Johannesburg, Cape Town, virtual..."
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -256,7 +261,7 @@ export default function NewBookingPage() {
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Optional timing, access, wardrobe, or vendor notes."
-                disabled={isSubmitting}
+                disabled={isSubmitting || onboardingLocked}
               />
             </label>
 
@@ -264,8 +269,16 @@ export default function NewBookingPage() {
               <Link href="/artists" className={styles.ghostLink}>
                 Browse artists
               </Link>
-              <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
-                {isSubmitting ? "Sending request..." : "Send booking request"}
+              <button
+                type="submit"
+                className={styles.primaryBtn}
+                disabled={isSubmitting || onboardingLocked}
+              >
+                {onboardingLocked
+                  ? "Finish onboarding to book"
+                  : isSubmitting
+                    ? "Sending request..."
+                    : "Send booking request"}
               </button>
             </div>
           </form>

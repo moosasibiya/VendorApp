@@ -164,7 +164,7 @@
 
 .actionFeedback {
   flex-basis: 100%;
-  color: #d14343;
+  color: var(--alert-error-text);
   font-size: 13px;
 }
 

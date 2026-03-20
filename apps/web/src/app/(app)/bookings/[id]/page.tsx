@@ -5,13 +5,16 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Booking, User } from "@vendorapp/shared";
 import { PaymentForm } from "@/components/PaymentForm";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import {
+  applyAdminBookingOverride,
   ApiError,
   createConversation,
   createReview,
   fetchBooking,
   fetchMe,
   updateBookingStatus,
+  verifyBookingStartCode,
 } from "@/lib/api";
 import styles from "./page.module.css";
 
@@ -39,6 +42,7 @@ function humanize(value: string): string {
 }
 
 export default function BookingDetailPage() {
+  const { onboardingLocked } = useAppSession();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,6 +56,9 @@ export default function BookingDetailPage() {
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [startCode, setStartCode] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [overrideBusy, setOverrideBusy] = useState(false);
 
   useEffect(() => {
     if (!bookingId) {
@@ -91,8 +98,14 @@ export default function BookingDetailPage() {
     };
   }, [bookingId]);
 
-  const runAction = async (action: "confirm" | "cancel" | "complete" | "dispute") => {
+  const runAction = async (
+    action: "confirm" | "cancel" | "complete" | "approve_completion" | "dispute",
+  ) => {
     if (!booking) {
+      return;
+    }
+    if (onboardingLocked) {
+      setError("Complete onboarding before updating booking status.");
       return;
     }
     setActing(true);
@@ -115,6 +128,10 @@ export default function BookingDetailPage() {
     if (!booking) {
       return;
     }
+    if (onboardingLocked) {
+      setError("Complete onboarding before opening booking messages.");
+      return;
+    }
 
     setError(null);
     try {
@@ -130,6 +147,16 @@ export default function BookingDetailPage() {
   };
 
   const paymentState = searchParams.get("payment");
+  const isAdmin = viewer?.role === "ADMIN" || viewer?.role === "SUB_ADMIN";
+  const canVerifyStartCode =
+    !!booking &&
+    !!viewer &&
+    (viewer.role === "ADMIN" ||
+      viewer.role === "SUB_ADMIN" ||
+      viewer.id === booking.artist.userId ||
+      viewer.id === booking.agency?.ownerId) &&
+    (booking.status === "BOOKED" || booking.status === "AWAITING_START_CODE") &&
+    booking.paymentStatus === "PAID";
   const canPay =
     !!booking &&
     !!viewer &&
@@ -137,8 +164,60 @@ export default function BookingDetailPage() {
     booking.status === "CONFIRMED" &&
     (booking.paymentStatus === "UNPAID" || booking.paymentStatus === "FAILED");
 
+  const submitStartCode = async () => {
+    if (!booking || !startCode.trim()) {
+      setError("Enter the safety code first.");
+      return;
+    }
+
+    setVerifyingCode(true);
+    setError(null);
+    try {
+      const updated = await verifyBookingStartCode({
+        bookingId: booking.id,
+        code: startCode.trim(),
+      });
+      setBooking(updated);
+      setStartCode("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Unable to verify the safety code.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  const runAdminOverride = async (
+    action: "verify_without_code" | "hold_payout" | "release_payout" | "resolve_dispute",
+  ) => {
+    if (!booking) {
+      return;
+    }
+
+    setOverrideBusy(true);
+    setError(null);
+    try {
+      const updated = await applyAdminBookingOverride({
+        bookingId: booking.id,
+        action,
+      });
+      setBooking(updated);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Unable to apply the admin override right now.",
+      );
+    } finally {
+      setOverrideBusy(false);
+    }
+  };
+
   const submitReview = async () => {
     if (!booking) {
+      return;
+    }
+    if (onboardingLocked) {
+      setError("Complete onboarding before submitting reviews.");
       return;
     }
 
@@ -190,8 +269,13 @@ export default function BookingDetailPage() {
           <h1>Booking detail</h1>
         </div>
         <div className={styles.topActions}>
-          <button type="button" className={styles.ghostBtn} onClick={() => void openConversation()}>
-            Open messages
+          <button
+            type="button"
+            className={styles.ghostBtn}
+            onClick={() => void openConversation()}
+            disabled={onboardingLocked}
+          >
+            {onboardingLocked ? "Finish onboarding to message" : "Open messages"}
           </button>
         </div>
       </div>
@@ -276,8 +360,35 @@ export default function BookingDetailPage() {
                 <PaymentForm
                   bookingId={booking.id}
                   className={styles.primaryBtn}
+                  disabled={onboardingLocked}
                   onError={(message) => setError(message)}
                 />
+              </div>
+            ) : null}
+
+            {canVerifyStartCode ? (
+              <div className={styles.section}>
+                <p className={styles.label}>Safety code</p>
+                <p className={styles.subtle}>
+                  The artist must enter the client safety code before the job
+                  can officially begin.
+                </p>
+                <div className={styles.inlineForm}>
+                  <input
+                    className={styles.inlineInput}
+                    value={startCode}
+                    onChange={(event) => setStartCode(event.target.value)}
+                    placeholder="Enter safety code"
+                  />
+                  <button
+                    type="button"
+                    className={styles.primaryBtn}
+                    onClick={() => void submitStartCode()}
+                    disabled={verifyingCode || !startCode.trim()}
+                  >
+                    {verifyingCode ? "Verifying..." : "Start booking"}
+                  </button>
+                </div>
               </div>
             ) : null}
 
@@ -307,6 +418,7 @@ export default function BookingDetailPage() {
                     <select
                       value={reviewRating}
                       onChange={(event) => setReviewRating(event.target.value)}
+                      disabled={onboardingLocked}
                     >
                       <option value="5">5 stars</option>
                       <option value="4">4 stars</option>
@@ -322,15 +434,20 @@ export default function BookingDetailPage() {
                       placeholder="How did the booking go?"
                       value={reviewComment}
                       onChange={(event) => setReviewComment(event.target.value)}
+                      disabled={onboardingLocked}
                     />
                   </label>
                   <button
                     type="button"
                     className={styles.primaryBtn}
                     onClick={() => void submitReview()}
-                    disabled={reviewSubmitting}
+                    disabled={reviewSubmitting || onboardingLocked}
                   >
-                    {reviewSubmitting ? "Submitting..." : "Submit review"}
+                    {onboardingLocked
+                      ? "Finish onboarding to review"
+                      : reviewSubmitting
+                        ? "Submitting..."
+                        : "Submit review"}
                   </button>
                 </div>
               </div>
@@ -353,7 +470,7 @@ export default function BookingDetailPage() {
                   type="button"
                   className={styles.primaryBtn}
                   onClick={() => void runAction("confirm")}
-                  disabled={acting}
+                  disabled={acting || onboardingLocked}
                 >
                   Confirm
                 </button>
@@ -364,7 +481,7 @@ export default function BookingDetailPage() {
                   type="button"
                   className={styles.ghostBtn}
                   onClick={() => void runAction("cancel")}
-                  disabled={acting}
+                  disabled={acting || onboardingLocked}
                 >
                   Cancel
                 </button>
@@ -375,9 +492,20 @@ export default function BookingDetailPage() {
                   type="button"
                   className={styles.primaryBtn}
                   onClick={() => void runAction("complete")}
-                  disabled={acting}
+                  disabled={acting || onboardingLocked}
                 >
                   Complete
+                </button>
+              ) : null}
+
+              {booking.availableActions?.includes("approve_completion") ? (
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  onClick={() => void runAction("approve_completion")}
+                  disabled={acting || onboardingLocked}
+                >
+                  Approve completion
                 </button>
               ) : null}
 
@@ -386,15 +514,105 @@ export default function BookingDetailPage() {
                   type="button"
                   className={styles.ghostBtn}
                   onClick={() => void runAction("dispute")}
-                  disabled={acting}
+                  disabled={acting || onboardingLocked}
                 >
                   Dispute
+                </button>
+              ) : null}
+
+              {isAdmin && booking.status !== "IN_PROGRESS" && canVerifyStartCode ? (
+                <button
+                  type="button"
+                  className={styles.ghostBtn}
+                  onClick={() => void runAdminOverride("verify_without_code")}
+                  disabled={overrideBusy}
+                >
+                  Admin verify without code
+                </button>
+              ) : null}
+
+              {isAdmin && booking.status === "DISPUTED" ? (
+                <button
+                  type="button"
+                  className={styles.ghostBtn}
+                  onClick={() => void runAdminOverride("resolve_dispute")}
+                  disabled={overrideBusy}
+                >
+                  Resolve dispute
+                </button>
+              ) : null}
+
+              {isAdmin && booking.payoutStatus === "PENDING" ? (
+                <button
+                  type="button"
+                  className={styles.ghostBtn}
+                  onClick={() => void runAdminOverride("hold_payout")}
+                  disabled={overrideBusy}
+                >
+                  Hold payout
+                </button>
+              ) : null}
+
+              {isAdmin &&
+              (booking.payoutStatus === "MANUAL_REVIEW" || booking.payoutStatus === "ON_HOLD") ? (
+                <button
+                  type="button"
+                  className={styles.ghostBtn}
+                  onClick={() => void runAdminOverride("release_payout")}
+                  disabled={overrideBusy}
+                >
+                  Release payout
                 </button>
               ) : null}
             </div>
           </div>
 
           <aside className={styles.sidebar}>
+            <div className={styles.sidebarCard}>
+              <p className={styles.kicker}>Verification & payout</p>
+              <div className={styles.totalRow}>
+                <span>Verification</span>
+                <strong>{humanize(booking.verificationStatus)}</strong>
+              </div>
+              {booking.verificationCodeSentAt ? (
+                <div className={styles.totalRow}>
+                  <span>Code sent</span>
+                  <strong>{formatDate(booking.verificationCodeSentAt)}</strong>
+                </div>
+              ) : null}
+              {booking.verificationCodeExpiresAt ? (
+                <div className={styles.totalRow}>
+                  <span>Code expires</span>
+                  <strong>{formatDate(booking.verificationCodeExpiresAt)}</strong>
+                </div>
+              ) : null}
+              {booking.disputeWindowEndsAt ? (
+                <div className={styles.totalRow}>
+                  <span>Dispute window</span>
+                  <strong>{formatDate(booking.disputeWindowEndsAt)}</strong>
+                </div>
+              ) : null}
+              <div className={styles.totalRow}>
+                <span>Payout state</span>
+                <strong>{humanize(booking.payoutStatus)}</strong>
+              </div>
+              {booking.estimatedPayoutReleaseAt ? (
+                <div className={styles.totalRow}>
+                  <span>Estimated release</span>
+                  <strong>{formatDate(booking.estimatedPayoutReleaseAt)}</strong>
+                </div>
+              ) : null}
+              {booking.payoutHoldReason ? (
+                <div className={styles.noteCard}>{booking.payoutHoldReason}</div>
+              ) : null}
+              {booking.verificationCode && booking.client.id === viewer?.id ? (
+                <div className={styles.noteCard}>
+                  Share this safety code with the artist at the start of the job:
+                  <strong className={styles.codeValue}>{booking.verificationCode}</strong>
+                </div>
+              ) : null}
+            </div>
+
             <div className={styles.sidebarCard}>
               <p className={styles.kicker}>Payment breakdown</p>
               <div className={styles.totalRow}>
@@ -405,6 +623,12 @@ export default function BookingDetailPage() {
                 <span>Platform fee</span>
                 <strong>{formatCurrency(booking.platformFee)}</strong>
               </div>
+              {booking.onboardingExtraCutAmount ? (
+                <div className={styles.totalRow}>
+                  <span>Onboarding recovery</span>
+                  <strong>{formatCurrency(booking.onboardingExtraCutAmount)}</strong>
+                </div>
+              ) : null}
               <div className={styles.totalRow}>
                 <span>Artist payout</span>
                 <strong>{formatCurrency(booking.artistPayout)}</strong>
@@ -445,6 +669,24 @@ export default function BookingDetailPage() {
                 ))}
               </div>
             </div>
+
+            {booking.auditEvents?.length ? (
+              <div className={styles.sidebarCard}>
+                <p className={styles.kicker}>Audit trail</p>
+                <div className={styles.timeline}>
+                  {booking.auditEvents.map((event) => (
+                    <div key={event.id} className={styles.timelineItem}>
+                      <div className={styles.timelineDot} />
+                      <div>
+                        <strong>{humanize(event.eventType)}</strong>
+                        {event.message ? <p>{event.message}</p> : null}
+                        <p className={styles.subtle}>{formatDate(event.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </aside>
         </section>
       ) : null}

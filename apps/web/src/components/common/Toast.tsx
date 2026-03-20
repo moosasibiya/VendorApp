@@ -14,7 +14,7 @@ export type ToastProps = {
 const typeClasses: Record<ToastType, string> = {
   success: "border-emerald-200 bg-emerald-50 text-emerald-700",
   error: "border-red-200 bg-red-50 text-red-700",
-  info: "border-blue-200 bg-blue-50 text-blue-700",
+  info: "border-[color:var(--brand-border)] [background:var(--brand-surface)] text-[var(--brand-solid)]",
   warning: "border-orange-200 bg-orange-50 text-orange-700",
 };
 

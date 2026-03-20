@@ -67,7 +67,7 @@
   background: var(--brand-gradient);
   color: #f8fbff !important;
   font-weight: 700;
-  box-shadow: 0 10px 24px rgba(15, 111, 255, 0.22);
+  box-shadow: var(--brand-shadow);
 }
 
 .menuBtn {

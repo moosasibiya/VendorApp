@@ -5,5 +5,9 @@
 
 .error {
   font-size: 12px;
-  color: #fca5a5;
+  color: var(--alert-error-text);
+  border: 1px solid var(--alert-error-border);
+  background: var(--alert-error-bg);
+  border-radius: 12px;
+  padding: 10px 12px;
 }

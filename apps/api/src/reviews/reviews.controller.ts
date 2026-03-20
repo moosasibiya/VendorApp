@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { ApiResponse, MyReviewsOverview, ReviewItem } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ListReviewsQueryDto } from './dto/list-reviews-query.dto';
 import { ReviewsService } from './reviews.service';
@@ -16,7 +17,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, OnboardingCompleteGuard)
   async create(
     @Req() request: AuthenticatedRequest,
     @Body() input: CreateReviewDto,
@@ -25,7 +26,7 @@ export class ReviewsController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, OnboardingCompleteGuard)
   async listMine(@Req() request: AuthenticatedRequest): Promise<MyReviewsOverview> {
     return this.reviewsService.listMine(this.getUserId(request));
   }

@@ -62,7 +62,7 @@
 
 .active {
   background: var(--panel3);
-  border-color: rgba(14, 165, 233, 0.45);
+  border-color: var(--brand-border);
 }
 
 .active .icon {

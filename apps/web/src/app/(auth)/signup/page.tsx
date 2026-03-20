@@ -20,6 +20,48 @@ const accountTypeLabels: Record<AccountType, string> = {
   AGENCY: "Agency",
 };
 
+const accountTypeHeadlines: Record<
+  AccountType,
+  { title: string; copy: string; button: string; notes: string[] }
+> = {
+  CREATIVE: {
+    title: "Apply as an artist",
+    copy:
+      "Create your account, submit your profile, and move through the controlled prelaunch review flow. There is no upfront onboarding payment in the current rollout.",
+    button: "Create account to start application",
+    notes: [
+      "The first 100 valid artist applications enter the prelaunch pool automatically.",
+      "Later applications are still accepted but join a waitlist for future rollout waves.",
+      "Approved artists go live gradually through limited launch slots.",
+      "If onboarding recovery applies, it is taken once from the first completed booking only.",
+    ],
+  },
+  CLIENT: {
+    title: "Create your client account",
+    copy:
+      "Set up the account you will use to discover artists, book securely, and keep support inside the platform messaging flow.",
+    button: "Create client account",
+    notes: [
+      "Browse artist profiles and send messages inside the platform.",
+      "Track payment, job approval, and support from one place.",
+      "Disputes and refunds route into the centralized support flow.",
+      "You will finish profile preferences during onboarding.",
+    ],
+  },
+  AGENCY: {
+    title: "Create your agency account",
+    copy:
+      "Launch the workspace your team will use to manage represented artists, bookings, and platform operations from one account.",
+    button: "Create agency account",
+    notes: [
+      "Set up your agency identity and contact details during onboarding.",
+      "Manage represented talent and booking activity in one place.",
+      "Use messaging and support without leaving the platform.",
+      "Agency configuration stays separate from artist application review.",
+    ],
+  },
+};
+
 type PasswordRule = {
   label: string;
   met: boolean;
@@ -49,7 +91,6 @@ function getPasswordFeedback(password: string): PasswordFeedback {
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
   const hasSymbol = /[^A-Za-z0-9]/.test(password);
-  const hasExtraLength = password.length >= 12;
 
   const rules: PasswordRule[] = [
     { label: "8+ characters", met: hasMinLength, required: true },
@@ -57,7 +98,6 @@ function getPasswordFeedback(password: string): PasswordFeedback {
     { label: "At least one number", met: hasNumber, required: true },
     { label: "Upper and lower case", met: hasUpper && hasLower },
     { label: "Special character", met: hasSymbol },
-    { label: "12+ characters", met: hasExtraLength },
   ];
 
   if (!password) {
@@ -89,13 +129,13 @@ function getPasswordFeedback(password: string): PasswordFeedback {
     };
   }
 
-  const bonusCount = [hasUpper && hasLower, hasSymbol, hasExtraLength].filter(Boolean).length;
+  const bonusCount = [hasUpper && hasLower, hasSymbol].filter(Boolean).length;
 
   if (bonusCount === 0) {
     return {
       badge: "Fair",
       headline: "Your password meets the minimum",
-      detail: "Add mixed case, a symbol, or more length to make it stronger.",
+      detail: "Add mixed case or a symbol to make it stronger.",
       tone: "fair",
       activeSegments: 2,
       rules,
@@ -116,7 +156,7 @@ function getPasswordFeedback(password: string): PasswordFeedback {
   return {
     badge: "Strong",
     headline: "This password looks strong",
-    detail: "Good length and variety. This should hold up well.",
+    detail: "Good variety. This should hold up well.",
     tone: "strong",
     activeSegments: 4,
     rules,
@@ -149,10 +189,25 @@ export default function SignupPage() {
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
   const confirmTone =
     confirmPassword.length === 0 ? "idle" : passwordsMatch ? "match" : "mismatch";
+  const selectedAccountTypeDetails = accountTypeHeadlines[accountType];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const requestedAccountType = params.get("accountType");
+    const requestedEmail = params.get("email");
     const oauthError = params.get("error");
+
+    if (
+      requestedAccountType &&
+      ACCOUNT_TYPE_VALUES.includes(requestedAccountType as AccountType)
+    ) {
+      setAccountType(requestedAccountType as AccountType);
+    }
+
+    if (requestedEmail && !email) {
+      setEmail(requestedEmail);
+    }
+
     if (!oauthError) return;
     if (oauthError === "google_auth") {
       setError("Google sign-up failed. Please try again.");
@@ -163,15 +218,15 @@ export default function SignupPage() {
       return;
     }
     setError("Unable to sign up with Google.");
-  }, []);
+  }, [email]);
 
   return (
     <div className={styles.stack}>
       <div className={styles.hero}>
         <p className={styles.kicker}>Create your profile</p>
-        <h1 className={styles.title}>Join VendrMan</h1>
+        <h1 className={styles.title}>{selectedAccountTypeDetails.title}</h1>
         <p className={styles.muted}>
-          Build a profile, showcase your work, and start accepting bookings.
+          {selectedAccountTypeDetails.copy}
         </p>
       </div>
 
@@ -353,6 +408,20 @@ export default function SignupPage() {
           </select>
         </label>
 
+        <div className={styles.accountPanel}>
+          <div className={styles.accountPanelHeader}>
+            <strong>
+              {accountType === "CREATIVE" ? "Artist rollout overview" : "What happens next"}
+            </strong>
+            <span>{accountTypeLabels[accountType]} account</span>
+          </div>
+          <ul className={styles.accountNotes}>
+            {selectedAccountTypeDetails.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+
         <label className={styles.checkbox}>
           <input
             type="checkbox"
@@ -364,7 +433,7 @@ export default function SignupPage() {
 
         <button className={styles.primary} type="submit" disabled={isSubmitting}>
           <span className="material-symbols-outlined">person_add</span>
-          {isSubmitting ? "Creating account..." : "Create account"}
+          {isSubmitting ? "Creating account..." : selectedAccountTypeDetails.button}
         </button>
 
         <div className={styles.divider}>

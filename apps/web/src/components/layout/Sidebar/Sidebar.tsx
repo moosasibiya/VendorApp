@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import { logout as logoutRequest } from "@/lib/api";
 import styles from "./Sidebar.module.css";
 
@@ -29,6 +30,8 @@ const NavItem = ({
 };
 
 export default function Sidebar() {
+  const { user } = useAppSession();
+
   const handleLogout = async () => {
     try {
       await logoutRequest();
@@ -48,12 +51,16 @@ export default function Sidebar() {
         <NavItem href="/dashboard" icon="dashboard" label="Dashboard" />
         <NavItem href="/bookings" icon="event" label="Bookings" />
         <NavItem href="/messages" icon="chat" label="Messages" />
+        <NavItem href="/support" icon="support_agent" label="Support" />
         <NavItem href="/calendar" icon="calendar_month" label="Calendar" />
         <NavItem href="/reviews" icon="star" label="Reviews" />
         <NavItem href="/creatives" icon="groups" label="Creatives" />
         <NavItem href="/payments" icon="payments" label="Payments" />
         <NavItem href="/settings" icon="settings" label="Settings" />
         <NavItem href="/onboarding" icon="checklist" label="Onboarding" />
+        {user.role === "ADMIN" || user.role === "SUB_ADMIN" ? (
+          <NavItem href="/admin" icon="shield_person" label="Admin" />
+        ) : null}
       </nav>
 
       <div className={styles.spacer} />

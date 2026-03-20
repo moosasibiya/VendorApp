@@ -59,7 +59,7 @@ export const Modal = ({
       />
       <div
         className={cn(
-          "relative z-10 w-full rounded-modal bg-white shadow-2xl",
+          "relative z-10 w-full rounded-modal border border-[var(--border)] bg-[var(--panel)] [box-shadow:var(--shadow-soft)]",
           "animate-scale-in",
           sizeClasses[size],
         )}
@@ -67,9 +67,9 @@ export const Modal = ({
         aria-modal="true"
         aria-label={title ?? "Dialog"}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
           {title ? (
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            <h2 className="text-lg font-semibold text-[var(--text)]">{title}</h2>
           ) : (
             <span />
           )}

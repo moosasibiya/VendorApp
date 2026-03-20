@@ -1,11 +1,19 @@
 import type {
   BookingStatusValue,
+  BookingVerificationStatusValue,
   PaymentProviderValue,
   PaymentStatusValue,
+  PayoutStatusValue,
   UserRoleValue,
 } from '../enums';
 
-export const BOOKING_ACTION_VALUES = ['confirm', 'cancel', 'complete', 'dispute'] as const;
+export const BOOKING_ACTION_VALUES = [
+  'confirm',
+  'cancel',
+  'complete',
+  'approve_completion',
+  'dispute',
+] as const;
 export type BookingAction = (typeof BOOKING_ACTION_VALUES)[number];
 
 export interface BookingClientSummary {
@@ -45,6 +53,15 @@ export interface BookingTimelineEvent {
   createdAt: string;
 }
 
+export interface BookingAuditEvent {
+  id: string;
+  eventType: string;
+  message?: string | null;
+  actorUserId?: string | null;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 export interface BookingReviewSummary {
   id: string;
   rating: number;
@@ -78,12 +95,34 @@ export interface Booking {
   notes?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  verificationStatus: BookingVerificationStatusValue;
+  verificationCode?: string | null;
+  verificationCodeSentAt?: string | null;
+  verificationCodeExpiresAt?: string | null;
+  verificationEnteredAt?: string | null;
+  verificationAttempts?: number;
+  jobStartedAt?: string | null;
+  jobCompletedAt?: string | null;
+  clientApprovedAt?: string | null;
+  disputeOpenedAt?: string | null;
+  disputeWindowDays?: number;
+  disputeWindowEndsAt?: string | null;
+  payoutStatus: PayoutStatusValue;
+  payoutPendingAt?: string | null;
+  estimatedPayoutReleaseAt?: string | null;
+  payoutReleasedAt?: string | null;
+  payoutHoldReason?: string | null;
+  payoutDelayDaysSnapshot?: number;
+  normalCommissionRate?: number;
+  appliedCommissionRate?: number;
+  onboardingExtraCutAmount?: number;
   createdAt: string;
   updatedAt: string;
   client: BookingClientSummary;
   artist: BookingArtistSummary;
   agency?: BookingAgencySummary | null;
   timeline?: BookingTimelineEvent[];
+  auditEvents?: BookingAuditEvent[];
   availableActions?: BookingAction[];
   review?: BookingReviewSummary | null;
   canReview?: boolean;

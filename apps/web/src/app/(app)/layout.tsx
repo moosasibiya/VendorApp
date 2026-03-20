@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppShell from "../../components/layout/AppShell/AppShell";
 import type { User } from "@vendorapp/shared";
+import { AppSessionProvider } from "@/components/session/AppSessionContext";
 import { defaultAppPathForUser, fetchMe } from "@/lib/api";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,11 +40,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!user.onboardingCompleted && pathname !== "/onboarding") {
-      router.replace("/onboarding");
-      return;
-    }
-
     if (user.onboardingCompleted && pathname === "/onboarding") {
       router.replace(defaultAppPathForUser(user));
     }
@@ -51,5 +47,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) return null;
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppSessionProvider user={user}>
+      <AppShell>{children}</AppShell>
+    </AppSessionProvider>
+  );
 }

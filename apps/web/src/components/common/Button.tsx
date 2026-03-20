@@ -14,12 +14,12 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-r from-purple-600 via-violet-500 to-cyan-400 text-white shadow-md hover:shadow-lg",
+    "[background:var(--brand-gradient)] text-white [box-shadow:var(--brand-shadow)] hover:[box-shadow:var(--brand-shadow-strong)]",
   secondary:
-    "bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200",
+    "border border-[var(--border)] bg-[var(--panel2)] text-[var(--text)] hover:bg-[var(--panel3)]",
   outline:
-    "border border-gray-300 text-gray-900 hover:border-violet-400 hover:text-violet-700",
-  danger: "bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg",
+    "border border-[var(--border)] text-[var(--text)] hover:border-[var(--brand-focus-border)] hover:text-[var(--brand-solid)]",
+  danger: "bg-[var(--bad)] text-white shadow-md hover:opacity-90 hover:shadow-lg",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -49,7 +49,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-btn font-semibold transition duration-fast ease-smooth",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus-border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]",
           "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
           variantClasses[variant],
           sizeClasses[size],

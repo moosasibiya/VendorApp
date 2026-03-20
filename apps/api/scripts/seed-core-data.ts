@@ -1,8 +1,12 @@
 import {
   AccountType,
+  ArtistApplicationStatus,
   BookingStatus,
+  BookingVerificationStatus,
+  OnboardingFeeModel,
   PaymentProvider,
   PaymentStatus,
+  PayoutStatus,
   PrismaClient,
   UserRole,
 } from '@prisma/client';
@@ -74,6 +78,7 @@ type ArtistSeed = {
   specialties: string[];
   pricingSummary: string;
   availabilitySummary: string;
+  applicationSubmittedAt: string;
 };
 
 type BookingSeed = {
@@ -104,6 +109,23 @@ type BookingSeed = {
   legacyDate: string;
   legacyAmount: string;
   applications: number;
+  verificationStatus?: BookingVerificationStatus;
+  verificationCodeSentAt?: string;
+  verificationCodeExpiresAt?: string;
+  jobStartedAt?: string;
+  jobCompletedAt?: string;
+  clientApprovedAt?: string;
+  disputeOpenedAt?: string;
+  disputeWindowEndsAt?: string;
+  payoutStatus?: PayoutStatus;
+  payoutPendingAt?: string;
+  estimatedPayoutReleaseAt?: string;
+  payoutReleasedAt?: string;
+  payoutHoldReason?: string;
+  payoutDelayDaysSnapshot?: number;
+  normalCommissionRate?: string;
+  appliedCommissionRate?: string;
+  onboardingExtraCutAmount?: string;
 };
 
 const seedPasswordSalt = 'seeded-password-salt';
@@ -214,6 +236,26 @@ const userSeeds: UserSeed[] = [
     clientBudgetMax: '40000.00',
     onboardingCompletedAt: '2026-01-17T09:00:00.000Z',
   },
+  {
+    fullName: 'Moosa Admin',
+    username: 'moosaadmin',
+    email: 'admin@vendorapp.dev',
+    role: UserRole.ADMIN,
+    accountType: AccountType.CLIENT,
+    avatarUrl: 'https://cdn.vendorapp.local/avatars/admin.webp',
+    location: 'Johannesburg',
+    onboardingCompletedAt: '2026-01-18T09:00:00.000Z',
+  },
+  {
+    fullName: 'Platform Ops',
+    username: 'platformops',
+    email: 'ops@vendorapp.dev',
+    role: UserRole.SUB_ADMIN,
+    accountType: AccountType.CLIENT,
+    avatarUrl: 'https://cdn.vendorapp.local/avatars/ops.webp',
+    location: 'Cape Town',
+    onboardingCompletedAt: '2026-01-19T09:00:00.000Z',
+  },
 ];
 
 const artistSeeds: ArtistSeed[] = [
@@ -240,6 +282,7 @@ const artistSeeds: ArtistSeed[] = [
     specialties: ['Natural light', 'Luxury weddings', 'Art direction'],
     pricingSummary: 'From R1,500 per hour, full-day packages available.',
     availabilitySummary: 'Available for weekend weddings and destination shoots.',
+    applicationSubmittedAt: '2026-01-10T09:00:00.000Z',
   },
   {
     slug: 'ayanda-khumalo',
@@ -264,6 +307,7 @@ const artistSeeds: ArtistSeed[] = [
     specialties: ['Product launches', 'Lifestyle campaigns', 'Drone footage'],
     pricingSummary: 'Campaign shoots from R1,850 per hour.',
     availabilitySummary: 'Booking 2 to 4 weeks in advance for commercial work.',
+    applicationSubmittedAt: '2026-01-11T09:00:00.000Z',
   },
   {
     slug: 'nandi-mokoena',
@@ -288,6 +332,7 @@ const artistSeeds: ArtistSeed[] = [
     specialties: ['Corporate galas', 'Luxury weddings', 'Cocktail sets'],
     pricingSummary: 'Performance bookings from R2,200 per hour.',
     availabilitySummary: 'Evening and weekend bookings available.',
+    applicationSubmittedAt: '2026-01-12T09:00:00.000Z',
   },
   {
     slug: 'themba-dlamini',
@@ -312,6 +357,7 @@ const artistSeeds: ArtistSeed[] = [
     specialties: ['Studio portraits', 'Executive headshots'],
     pricingSummary: 'Portrait sessions from R1,350 per hour.',
     availabilitySummary: 'Currently booking from next month onward.',
+    applicationSubmittedAt: '2026-01-13T09:00:00.000Z',
   },
   {
     slug: 'lindiwe-rossouw',
@@ -336,6 +382,7 @@ const artistSeeds: ArtistSeed[] = [
     specialties: ['Destination weddings', 'Story edits', 'Audio design'],
     pricingSummary: 'Wedding films from R2,100 per hour.',
     availabilitySummary: 'Open for destination work and multi-day bookings.',
+    applicationSubmittedAt: '2026-01-14T09:00:00.000Z',
   },
 ];
 
@@ -350,6 +397,160 @@ const agencySeed = {
   contactEmail: 'agency@vendorapp.dev',
   isVerified: true,
 };
+
+const platformSettingsSeed: Array<{
+  key: string;
+  value: number | string;
+  description: string;
+}> = [
+  {
+    key: 'maxPrelaunchPoolSize',
+    value: 100,
+    description:
+      'Maximum number of artist applications auto-routed into the prelaunch pool.',
+  },
+  {
+    key: 'liveArtistSlotLimit',
+    value: 20,
+    description:
+      'Maximum number of artist profiles allowed to be live in the current rollout wave.',
+  },
+  {
+    key: 'onboardingFeeModel',
+    value: OnboardingFeeModel.FIRST_BOOKING_DEDUCTION,
+    description: 'Switch between upfront onboarding fees and first-booking deduction.',
+  },
+  {
+    key: 'normalCommissionRate',
+    value: 15,
+    description: 'Base platform commission percentage for artists after onboarding recovery.',
+  },
+  {
+    key: 'temporaryFirstBookingCommissionRate',
+    value: 25,
+    description:
+      'Temporary commission percentage used to recover onboarding cost on the first completed booking.',
+  },
+  {
+    key: 'disputeWindowDays',
+    value: 3,
+    description:
+      'Default number of days clients can open a standard dispute after completion approval.',
+  },
+  {
+    key: 'bookingStartCodeLength',
+    value: 6,
+    description: 'Number of digits in the client safety verification code.',
+  },
+  {
+    key: 'startCodeActivationHours',
+    value: 24,
+    description:
+      'Hours before the booking start when the booking moves into the awaiting-start-code stage.',
+  },
+  {
+    key: 'clientApprovalGraceHours',
+    value: 24,
+    description:
+      'Hours after artist completion before the booking auto-moves into the completed state.',
+  },
+];
+
+const tierDefinitionSeed = [
+  {
+    id: 'tier_definition_1',
+    key: 'tier_1',
+    name: 'Tier 1',
+    description:
+      'Initial launch tier. Placeholder thresholds should be tuned by admins before wider rollout.',
+    sortOrder: 1,
+    thresholds: {
+      completedPlatformBookings: 0,
+      minProfileCompleteness: 40,
+    },
+    benefits: {
+      visibilityBoost: 1,
+      recommendedBoost: 1,
+      payoutDelayDays: 7,
+      badgeLabel: 'Tier 1',
+      trustIndicator: 'Emerging',
+      accessToSpecialOpportunities: false,
+    },
+  },
+  {
+    id: 'tier_definition_2',
+    key: 'tier_2',
+    name: 'Tier 2',
+    description:
+      'Placeholder mid-tier for dependable artists. Thresholds are configurable in admin.',
+    sortOrder: 2,
+    thresholds: {
+      completedPlatformBookings: 10,
+      platformRevenue: 25000,
+      averageRating: 4.4,
+      minProfileCompleteness: 70,
+      minReliabilityScore: 90,
+      maxDisputeRate: 15,
+    },
+    benefits: {
+      visibilityBoost: 1.08,
+      recommendedBoost: 1.1,
+      payoutDelayDays: 5,
+      badgeLabel: 'Tier 2',
+      trustIndicator: 'Established',
+      accessToSpecialOpportunities: false,
+    },
+  },
+  {
+    id: 'tier_definition_3',
+    key: 'tier_3',
+    name: 'Tier 3',
+    description: 'Placeholder high-performance tier. Tune before launch waves expand.',
+    sortOrder: 3,
+    thresholds: {
+      completedPlatformBookings: 25,
+      platformRevenue: 75000,
+      averageRating: 4.6,
+      minProfileCompleteness: 85,
+      minReliabilityScore: 94,
+      maxDisputeRate: 10,
+      minRepeatBookings: 3,
+    },
+    benefits: {
+      visibilityBoost: 1.16,
+      recommendedBoost: 1.2,
+      payoutDelayDays: 3,
+      badgeLabel: 'Tier 3',
+      trustIndicator: 'Trusted',
+      accessToSpecialOpportunities: true,
+    },
+  },
+  {
+    id: 'tier_definition_4',
+    key: 'tier_4',
+    name: 'Tier 4',
+    description: 'Placeholder top tier for launch-era routing and payout rewards.',
+    sortOrder: 4,
+    thresholds: {
+      completedPlatformBookings: 60,
+      platformRevenue: 180000,
+      averageRating: 4.8,
+      minProfileCompleteness: 95,
+      minReliabilityScore: 97,
+      maxDisputeRate: 6,
+      minRepeatBookings: 8,
+      maxResponseTimeMinutes: 240,
+    },
+    benefits: {
+      visibilityBoost: 1.28,
+      recommendedBoost: 1.35,
+      payoutDelayDays: 2,
+      badgeLabel: 'Tier 4',
+      trustIndicator: 'Priority',
+      accessToSpecialOpportunities: true,
+    },
+  },
+];
 
 const bookingSeeds: BookingSeed[] = [
   {
@@ -385,7 +586,7 @@ const bookingSeeds: BookingSeed[] = [
     eventDate: '2026-05-22T10:00:00.000Z',
     eventEndDate: '2026-05-22T16:00:00.000Z',
     location: 'Johannesburg, South Africa',
-    status: BookingStatus.CONFIRMED,
+    status: BookingStatus.BOOKED,
     totalAmount: '18500.00',
     platformFee: '1850.00',
     artistPayout: '16650.00',
@@ -402,6 +603,55 @@ const bookingSeeds: BookingSeed[] = [
     legacyDate: '22 May 2026',
     legacyAmount: 'R18,500',
     applications: 2,
+    verificationStatus: BookingVerificationStatus.PENDING,
+    verificationCodeSentAt: '2026-05-21T10:00:00.000Z',
+    verificationCodeExpiresAt: '2026-05-22T10:00:00.000Z',
+    disputeWindowEndsAt: '2026-05-25T16:00:00.000Z',
+    payoutStatus: PayoutStatus.NOT_READY,
+    normalCommissionRate: '15.00',
+    appliedCommissionRate: '15.00',
+    onboardingExtraCutAmount: '0.00',
+  },
+  {
+    id: 'booking-lindiwe-wedding-film',
+    clientEmail: 'sarah@vendorapp.dev',
+    artistSlug: 'lindiwe-rossouw',
+    title: 'Wedding Highlight Film',
+    description: 'Documentary-style wedding film with teaser delivery and final highlight edit.',
+    eventDate: '2026-02-14T09:00:00.000Z',
+    eventEndDate: '2026-02-14T18:00:00.000Z',
+    location: 'Franschhoek, South Africa',
+    status: BookingStatus.PAYOUT_RELEASED,
+    totalAmount: '21000.00',
+    platformFee: '3150.00',
+    artistPayout: '17850.00',
+    paymentProvider: PaymentProvider.PAYFAST,
+    paymentStatus: PaymentStatus.PAID,
+    paymentReference: 'booking-lindiwe-wedding-film',
+    paymentGatewayReference: 'pf_test_vendorapp_released',
+    paymentInitiatedAt: '2026-02-01T08:00:00.000Z',
+    paymentPaidAt: '2026-02-01T08:07:00.000Z',
+    notes: 'Client approved completion after final film delivery.',
+    artistName: 'Lindiwe Rossouw',
+    artistInitials: 'LR',
+    legacyDate: '14 Feb 2026',
+    legacyAmount: 'R21,000',
+    applications: 1,
+    verificationStatus: BookingVerificationStatus.VERIFIED,
+    verificationCodeSentAt: '2026-02-14T07:00:00.000Z',
+    verificationCodeExpiresAt: '2026-02-14T09:00:00.000Z',
+    jobStartedAt: '2026-02-14T09:05:00.000Z',
+    jobCompletedAt: '2026-02-14T18:10:00.000Z',
+    clientApprovedAt: '2026-02-15T09:00:00.000Z',
+    disputeWindowEndsAt: '2026-02-18T09:00:00.000Z',
+    payoutStatus: PayoutStatus.RELEASED,
+    payoutPendingAt: '2026-02-18T09:00:00.000Z',
+    estimatedPayoutReleaseAt: '2026-02-20T09:00:00.000Z',
+    payoutReleasedAt: '2026-02-20T09:00:00.000Z',
+    payoutDelayDaysSnapshot: 2,
+    normalCommissionRate: '15.00',
+    appliedCommissionRate: '15.00',
+    onboardingExtraCutAmount: '0.00',
   },
 ];
 
@@ -484,12 +734,14 @@ async function run(): Promise<void> {
   }
 
   const artists = new Map<string, { id: string; slug: string; displayName: string }>();
-  for (const artist of artistSeeds) {
+  for (const [artistIndex, artist] of artistSeeds.entries()) {
     const owner = users.get(artist.userEmail.toLowerCase());
     const category = categories.get(artist.categorySlug);
     if (!owner || !category) {
       throw new Error(`Missing dependency for artist seed ${artist.slug}`);
     }
+
+    const applicationSequence = artistIndex + 1;
 
     const upserted = await prisma.artist.upsert({
       where: { slug: artist.slug },
@@ -516,6 +768,17 @@ async function run(): Promise<void> {
         rating: artist.averageRating.toFixed(1),
         isVerified: artist.isVerified,
         onboardingCompleted: true,
+        applicationStatus: ArtistApplicationStatus.LIVE,
+        applicationSequence,
+        applicationSubmittedAt: new Date(artist.applicationSubmittedAt),
+        applicationReviewedAt: new Date(artist.applicationSubmittedAt),
+        approvedAt: new Date(artist.applicationSubmittedAt),
+        isLive: true,
+        wentLiveAt: new Date(artist.applicationSubmittedAt),
+        onboardingFeeModel: OnboardingFeeModel.FIRST_BOOKING_DEDUCTION,
+        firstBookingOnboardingDeductionApplied: false,
+        normalCommissionRate: '15.00',
+        temporaryFirstBookingCommissionRate: '25.00',
       },
       create: {
         userId: owner.id,
@@ -541,6 +804,17 @@ async function run(): Promise<void> {
         rating: artist.averageRating.toFixed(1),
         isVerified: artist.isVerified,
         onboardingCompleted: true,
+        applicationStatus: ArtistApplicationStatus.LIVE,
+        applicationSequence,
+        applicationSubmittedAt: new Date(artist.applicationSubmittedAt),
+        applicationReviewedAt: new Date(artist.applicationSubmittedAt),
+        approvedAt: new Date(artist.applicationSubmittedAt),
+        isLive: true,
+        wentLiveAt: new Date(artist.applicationSubmittedAt),
+        onboardingFeeModel: OnboardingFeeModel.FIRST_BOOKING_DEDUCTION,
+        firstBookingOnboardingDeductionApplied: false,
+        normalCommissionRate: '15.00',
+        temporaryFirstBookingCommissionRate: '25.00',
       },
       select: {
         id: true,
@@ -550,6 +824,67 @@ async function run(): Promise<void> {
     });
 
     artists.set(upserted.slug, upserted);
+  }
+
+  for (const setting of platformSettingsSeed) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {
+        value: setting.value,
+        description: setting.description,
+      },
+      create: {
+        key: setting.key,
+        value: setting.value,
+        description: setting.description,
+      },
+    });
+  }
+
+  await prisma.sequenceCounter.upsert({
+    where: { key: 'artistApplications' },
+    update: {
+      value: artistSeeds.length,
+    },
+    create: {
+      key: 'artistApplications',
+      value: artistSeeds.length,
+    },
+  });
+
+  await prisma.sequenceCounter.upsert({
+    where: { key: 'supportTickets' },
+    update: {
+      value: 0,
+    },
+    create: {
+      key: 'supportTickets',
+      value: 0,
+    },
+  });
+
+  for (const tier of tierDefinitionSeed) {
+    await prisma.artistTierDefinition.upsert({
+      where: { key: tier.key },
+      update: {
+        name: tier.name,
+        description: tier.description,
+        sortOrder: tier.sortOrder,
+        isActive: true,
+        thresholds: tier.thresholds,
+        benefits: tier.benefits,
+      },
+      create: {
+        id: tier.id,
+        key: tier.key,
+        name: tier.name,
+        description: tier.description,
+        sortOrder: tier.sortOrder,
+        isActive: true,
+        thresholds: tier.thresholds,
+        benefits: tier.benefits,
+      },
+    });
   }
 
   const agencyOwner = users.get(agencySeed.ownerEmail.toLowerCase());
@@ -621,6 +956,33 @@ async function run(): Promise<void> {
         notes: booking.notes ?? null,
         cancelledAt: null,
         cancelReason: null,
+        verificationStatus: booking.verificationStatus ?? BookingVerificationStatus.NOT_REQUIRED,
+        verificationCodeSentAt: booking.verificationCodeSentAt
+          ? new Date(booking.verificationCodeSentAt)
+          : null,
+        verificationCodeExpiresAt: booking.verificationCodeExpiresAt
+          ? new Date(booking.verificationCodeExpiresAt)
+          : null,
+        verificationEnteredAt: booking.jobStartedAt ? new Date(booking.jobStartedAt) : null,
+        jobStartedAt: booking.jobStartedAt ? new Date(booking.jobStartedAt) : null,
+        jobCompletedAt: booking.jobCompletedAt ? new Date(booking.jobCompletedAt) : null,
+        clientApprovedAt: booking.clientApprovedAt ? new Date(booking.clientApprovedAt) : null,
+        disputeOpenedAt: booking.disputeOpenedAt ? new Date(booking.disputeOpenedAt) : null,
+        disputeWindowEndsAt: booking.disputeWindowEndsAt
+          ? new Date(booking.disputeWindowEndsAt)
+          : null,
+        disputeWindowDays: 3,
+        payoutStatus: booking.payoutStatus ?? PayoutStatus.NOT_READY,
+        payoutPendingAt: booking.payoutPendingAt ? new Date(booking.payoutPendingAt) : null,
+        estimatedPayoutReleaseAt: booking.estimatedPayoutReleaseAt
+          ? new Date(booking.estimatedPayoutReleaseAt)
+          : null,
+        payoutReleasedAt: booking.payoutReleasedAt ? new Date(booking.payoutReleasedAt) : null,
+        payoutHoldReason: booking.payoutHoldReason ?? null,
+        payoutDelayDaysSnapshot: booking.payoutDelayDaysSnapshot ?? 0,
+        normalCommissionRate: booking.normalCommissionRate ?? '15.00',
+        appliedCommissionRate: booking.appliedCommissionRate ?? '15.00',
+        onboardingExtraCutAmount: booking.onboardingExtraCutAmount ?? '0.00',
         artistName: booking.artistName,
         artistInitials: booking.artistInitials,
         date: booking.legacyDate,
@@ -652,6 +1014,33 @@ async function run(): Promise<void> {
         notes: booking.notes ?? null,
         cancelledAt: null,
         cancelReason: null,
+        verificationStatus: booking.verificationStatus ?? BookingVerificationStatus.NOT_REQUIRED,
+        verificationCodeSentAt: booking.verificationCodeSentAt
+          ? new Date(booking.verificationCodeSentAt)
+          : null,
+        verificationCodeExpiresAt: booking.verificationCodeExpiresAt
+          ? new Date(booking.verificationCodeExpiresAt)
+          : null,
+        verificationEnteredAt: booking.jobStartedAt ? new Date(booking.jobStartedAt) : null,
+        jobStartedAt: booking.jobStartedAt ? new Date(booking.jobStartedAt) : null,
+        jobCompletedAt: booking.jobCompletedAt ? new Date(booking.jobCompletedAt) : null,
+        clientApprovedAt: booking.clientApprovedAt ? new Date(booking.clientApprovedAt) : null,
+        disputeOpenedAt: booking.disputeOpenedAt ? new Date(booking.disputeOpenedAt) : null,
+        disputeWindowEndsAt: booking.disputeWindowEndsAt
+          ? new Date(booking.disputeWindowEndsAt)
+          : null,
+        disputeWindowDays: 3,
+        payoutStatus: booking.payoutStatus ?? PayoutStatus.NOT_READY,
+        payoutPendingAt: booking.payoutPendingAt ? new Date(booking.payoutPendingAt) : null,
+        estimatedPayoutReleaseAt: booking.estimatedPayoutReleaseAt
+          ? new Date(booking.estimatedPayoutReleaseAt)
+          : null,
+        payoutReleasedAt: booking.payoutReleasedAt ? new Date(booking.payoutReleasedAt) : null,
+        payoutHoldReason: booking.payoutHoldReason ?? null,
+        payoutDelayDaysSnapshot: booking.payoutDelayDaysSnapshot ?? 0,
+        normalCommissionRate: booking.normalCommissionRate ?? '15.00',
+        appliedCommissionRate: booking.appliedCommissionRate ?? '15.00',
+        onboardingExtraCutAmount: booking.onboardingExtraCutAmount ?? '0.00',
         artistName: booking.artistName,
         artistInitials: booking.artistInitials,
         date: booking.legacyDate,

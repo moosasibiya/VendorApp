@@ -41,7 +41,14 @@ export function ArtistProfileActions({
       setAutoHandled(true);
       setIsMessaging(true);
       try {
-        await fetchMe();
+        const user = await fetchMe();
+        if (!user.onboardingCompleted) {
+          if (!cancelled) {
+            setIsMessaging(false);
+            router.replace("/onboarding");
+          }
+          return;
+        }
         if (cancelled) {
           return;
         }
@@ -70,7 +77,11 @@ export function ArtistProfileActions({
     }
 
     try {
-      await fetchMe();
+      const user = await fetchMe();
+      if (!user.onboardingCompleted) {
+        router.push("/onboarding");
+        return;
+      }
       router.push(`/bookings/new?artistId=${encodeURIComponent(artistId)}`);
     } catch {
       router.push(
@@ -88,7 +99,12 @@ export function ArtistProfileActions({
     setError(null);
     setIsMessaging(true);
     try {
-      await fetchMe();
+      const user = await fetchMe();
+      if (!user.onboardingCompleted) {
+        router.push("/onboarding");
+        setIsMessaging(false);
+        return;
+      }
     } catch {
       router.push(
         buildLoginRedirect(`/artists/${encodeURIComponent(artistSlug)}?message=1`),

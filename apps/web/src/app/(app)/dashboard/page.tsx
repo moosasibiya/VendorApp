@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { DashboardStats, NotificationItem, UpcomingBookingItem } from "@vendorapp/shared";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  Artist,
+  DashboardStats,
+  NotificationItem,
+  UpcomingBookingItem,
+} from "@vendorapp/shared";
 import {
   ApiError,
+  fetchMyArtistProfile,
   fetchMyStats,
   fetchMyUpcomingBookings,
   fetchNotifications,
@@ -86,13 +92,13 @@ function buildStatCards(stats: DashboardStats): Array<{
           icon: "payments",
           label: "Total earned",
           value: formatCurrency(stats.totalEarned),
-          hint: "Paid out bookings only",
+          hint: "Released payouts only",
         },
         {
-          icon: "visibility",
-          label: "Profile views",
-          value: String(stats.profileViews),
-          hint: `${stats.averageRating.toFixed(1)} rating from ${stats.totalReviews} reviews`,
+          icon: "star",
+          label: "Rating",
+          value: stats.averageRating.toFixed(1),
+          hint: `${stats.totalReviews} reviews and ${stats.profileViews} profile views`,
         },
       ];
     case "AGENCY":
@@ -116,6 +122,7 @@ function buildStatCards(stats: DashboardStats): Array<{
           hint: "Agency booking value handled",
         },
       ];
+    case "SUB_ADMIN":
     case "ADMIN":
     default:
       return [
@@ -151,26 +158,31 @@ function buildQuickActions(role: DashboardStats["role"]): Array<{
       return [
         { href: "/artists", icon: "travel_explore", label: "Browse artists" },
         { href: "/bookings/new", icon: "post_add", label: "New booking" },
+        { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/messages", icon: "forum", label: "Messages" },
       ];
     case "ARTIST":
       return [
+        { href: "/payments", icon: "payments", label: "Payouts" },
         { href: "/calendar", icon: "calendar_month", label: "Calendar" },
+        { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/messages", icon: "forum", label: "Messages" },
-        { href: "/payments", icon: "payments", label: "Payments" },
       ];
     case "AGENCY":
       return [
         { href: "/bookings", icon: "event", label: "Bookings" },
-        { href: "/messages", icon: "forum", label: "Messages" },
+        { href: "/payments", icon: "payments", label: "Payments" },
+        { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/settings", icon: "settings", label: "Settings" },
       ];
+    case "SUB_ADMIN":
     case "ADMIN":
     default:
       return [
-        { href: "/artists", icon: "travel_explore", label: "Artists" },
+        { href: "/admin", icon: "admin_panel_settings", label: "Admin console" },
         { href: "/bookings", icon: "event", label: "Bookings" },
-        { href: "/settings", icon: "settings", label: "Settings" },
+        { href: "/support", icon: "support_agent", label: "Support queue" },
+        { href: "/messages", icon: "forum", label: "Messages" },
       ];
   }
 }
@@ -198,8 +210,24 @@ function StatCard({
   );
 }
 
+function applicationTone(
+  status?: Artist["applicationStatus"],
+): "pending" | "success" | "danger" | "neutral" {
+  if (!status) {
+    return "neutral";
+  }
+  if (status === "APPROVED" || status === "LIVE") {
+    return "success";
+  }
+  if (status === "REJECTED") {
+    return "danger";
+  }
+  return "pending";
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [artistProfile, setArtistProfile] = useState<Artist | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingBookingItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,14 +240,16 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [statsData, upcomingData, notificationFeed] = await Promise.all([
-          fetchMyStats(),
+        const statsData = await fetchMyStats();
+        const [upcomingData, notificationFeed, profile] = await Promise.all([
           fetchMyUpcomingBookings(),
           fetchNotifications({ limit: 5 }),
+          statsData.role === "ARTIST" ? fetchMyArtistProfile() : Promise.resolve(null),
         ]);
 
         if (!cancelled) {
           setStats(statsData);
+          setArtistProfile(profile);
           setUpcoming(upcomingData);
           setNotifications(notificationFeed.notifications);
         }
@@ -249,6 +279,40 @@ export default function DashboardPage() {
   const statCards = stats ? buildStatCards(stats) : [];
   const quickActions = buildQuickActions(stats?.role ?? "CLIENT");
 
+  const tierMetrics = useMemo(() => {
+    const metrics = artistProfile?.tierProgress?.metrics;
+    if (!metrics) {
+      return [];
+    }
+
+    return [
+      {
+        label: "Verified bookings",
+        value: String(metrics.verifiedPlatformBookings),
+      },
+      {
+        label: "Platform revenue",
+        value: formatCurrency(metrics.platformRevenue),
+      },
+      {
+        label: "Reliability",
+        value: `${Math.round(metrics.reliabilityScore)}%`,
+      },
+      {
+        label: "Profile completeness",
+        value: `${metrics.profileCompleteness}%`,
+      },
+      {
+        label: "Repeat bookings",
+        value: String(metrics.repeatBookings),
+      },
+      {
+        label: "Dispute rate",
+        value: `${metrics.disputeRate.toFixed(1)}%`,
+      },
+    ];
+  }, [artistProfile?.tierProgress?.metrics]);
+
   return (
     <main className={styles.page}>
       {error ? <div className={styles.error}>{error}</div> : null}
@@ -274,6 +338,134 @@ export default function DashboardPage() {
               />
             ))}
       </section>
+
+      {artistProfile ? (
+        <section className={styles.featureGrid}>
+          <article className={styles.featureCard}>
+            <div className={styles.featureHeader}>
+              <div>
+                <div className={styles.panelTitle}>Artist rollout status</div>
+                <div className={styles.panelSub}>
+                  Your application, live status, and onboarding recovery model.
+                </div>
+              </div>
+              <span
+                className={styles.statusPill}
+                data-tone={applicationTone(artistProfile.applicationStatus)}
+              >
+                {artistProfile.applicationStatus
+                  ? humanize(artistProfile.applicationStatus)
+                  : "Draft"}
+              </span>
+            </div>
+
+            <div className={styles.messageCard}>
+              <strong>
+                {artistProfile.isLive ? "Your profile is live." : "Your profile is in rollout."}
+              </strong>
+              <p>{artistProfile.applicationMessage ?? "Application status will appear here."}</p>
+            </div>
+
+            <div className={styles.metricGrid}>
+              <div className={styles.metricCard}>
+                <span>Application sequence</span>
+                <strong>{artistProfile.applicationSequence ?? "Pending"}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Submitted</span>
+                <strong>
+                  {artistProfile.applicationSubmittedAt
+                    ? formatDate(artistProfile.applicationSubmittedAt)
+                    : "Not yet"}
+                </strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Approval</span>
+                <strong>
+                  {artistProfile.approvedAt ? formatDate(artistProfile.approvedAt) : "Awaiting review"}
+                </strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Live status</span>
+                <strong>{artistProfile.isLive ? "Live" : "Not live yet"}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>Commission</span>
+                <strong>{artistProfile.normalCommissionRate ?? 0}% standard</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span>First booking onboarding model</span>
+                <strong>
+                  {artistProfile.firstBookingOnboardingDeductionApplied
+                    ? "Recovered"
+                    : `${artistProfile.temporaryFirstBookingCommissionRate ?? 0}% on first completed booking`}
+                </strong>
+              </div>
+            </div>
+
+            {artistProfile.applicationReviewNotes ? (
+              <div className={styles.notePanel}>
+                <strong>Admin note</strong>
+                <p>{artistProfile.applicationReviewNotes}</p>
+              </div>
+            ) : null}
+          </article>
+
+          <article className={styles.featureCard}>
+            <div className={styles.featureHeader}>
+              <div>
+                <div className={styles.panelTitle}>Tier progress</div>
+                <div className={styles.panelSub}>
+                  Verified platform work drives progression. Off-platform work does not count.
+                </div>
+              </div>
+              <Link href="/payments" className={styles.ghostBtn}>
+                View payouts
+              </Link>
+            </div>
+
+            <div className={styles.tierHero}>
+              <div>
+                <span className={styles.tierLabel}>Current tier</span>
+                <strong>
+                  {artistProfile.tierProgress?.currentTier?.name ??
+                    artistProfile.tier?.name ??
+                    "Pending evaluation"}
+                </strong>
+              </div>
+              <div>
+                <span className={styles.tierLabel}>Progress</span>
+                <strong>{Math.round(artistProfile.tierProgress?.progressPercent ?? 0)}%</strong>
+              </div>
+            </div>
+
+            <div className={styles.metricGrid}>
+              {tierMetrics.length > 0 ? (
+                tierMetrics.map((metric) => (
+                  <div key={metric.label} className={styles.metricCard}>
+                    <span>{metric.label}</span>
+                    <strong>{metric.value}</strong>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.emptyState}>
+                  Tier metrics will populate after your verified platform bookings and rating history grow.
+                </div>
+              )}
+            </div>
+
+            {artistProfile.tierProgress?.reasons?.length ? (
+              <div className={styles.reasonList}>
+                {artistProfile.tierProgress.reasons.map((reason) => (
+                  <div key={reason} className={styles.reasonItem}>
+                    {reason}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        </section>
+      ) : null}
 
       <section className={styles.grid}>
         <div className={styles.panel}>
@@ -302,7 +494,7 @@ export default function DashboardPage() {
                   <div className={styles.listMain}>
                     <div className={styles.listTitle}>{booking.title}</div>
                     <div className={styles.listSub}>
-                      {booking.counterpartName} • {formatDate(booking.eventDate)}
+                      {booking.counterpartName} · {formatDate(booking.eventDate)}
                     </div>
                   </div>
                   <div className={styles.pill}>{humanize(booking.status)}</div>
@@ -337,7 +529,7 @@ export default function DashboardPage() {
         <div className={styles.panelHeader}>
           <div>
             <div className={styles.panelTitle}>Recent notifications</div>
-            <div className={styles.panelSub}>Latest booking, message, and payment events</div>
+            <div className={styles.panelSub}>Latest booking, message, support, and payment events</div>
           </div>
           <Link className={styles.ghostBtn} href="/messages">
             Messages

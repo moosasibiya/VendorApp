@@ -112,8 +112,8 @@
   font-size: 11px;
   font-weight: 800;
   color: #fff;
-  background: #d14343;
-  box-shadow: 0 8px 18px rgba(209, 67, 67, 0.24);
+  background: var(--brand-gradient);
+  box-shadow: var(--brand-shadow);
 }
 
 .notificationPanel {
@@ -188,7 +188,7 @@
 
 .notificationItem[data-read="false"] {
   background:
-    linear-gradient(90deg, rgba(209, 67, 67, 0.08), transparent 55%),
+    linear-gradient(90deg, var(--brand-surface), transparent 55%),
     var(--panel);
 }
 

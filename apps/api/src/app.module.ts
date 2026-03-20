@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from './health/health.controller';
+import { AdminModule } from './admin/admin.module';
 import { ArtistsModule } from './artists/artists.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { AuthModule } from './auth/auth.module';
@@ -20,6 +21,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     PrismaModule,
     RateLimitModule,
     RealtimeModule,
+    AdminModule,
     ArtistsModule,
     BookingsModule,
     AuthModule,

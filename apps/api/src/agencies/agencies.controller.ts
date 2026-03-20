@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import type { Agency } from '@vendorapp/shared';
+import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
+import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
 import { CreateAgencyDto } from './dto/create-agency.dto';
 import { AgenciesService } from './agencies.service';
 
@@ -11,7 +13,7 @@ type AuthRequest = {
 };
 
 @Controller('agencies')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OnboardingCompleteGuard)
 export class AgenciesController {
   constructor(private readonly agenciesService: AgenciesService) {}
 
@@ -21,6 +23,7 @@ export class AgenciesController {
   }
 
   @Post()
+  @AllowIncompleteOnboarding()
   async createAgency(
     @Req() request: AuthRequest,
     @Body() input: CreateAgencyDto,

@@ -30,7 +30,7 @@ export interface AgencyDashboardStats extends DashboardStatsBase {
 }
 
 export interface AdminDashboardStats extends DashboardStatsBase {
-  role: 'ADMIN';
+  role: 'ADMIN' | 'SUB_ADMIN';
   totalUsers: number;
   totalBookings: number;
   totalRevenue: number;

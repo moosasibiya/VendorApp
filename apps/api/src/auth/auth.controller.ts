@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Get, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import type { AuthResponse, User } from '@vendorapp/shared';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
@@ -203,16 +215,46 @@ export class AuthController {
   @Get('verify-email')
   async verifyEmail(
     @Query('token') token: string | undefined,
+    @Query('redirect') redirect: string | undefined,
     @Req() req: RequestWithIp,
-  ): Promise<{ success: true; email: string }> {
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ success: true; email: string } | void> {
+    const shouldRedirect = redirect === '1' || redirect === 'true';
+
     if (!token) {
+      if (shouldRedirect) {
+        response.redirect(this.buildWebRedirectUrl('/verify-email?error=missing_token'));
+        return;
+      }
       throw new BadRequestException('Email verification token is required');
     }
-    const result = await this.authService.verifyEmail(token, {
-      ipAddress: req.ip,
-      requestId: req.headers['x-request-id'],
-    });
-    return { success: true, email: result.email };
+
+    try {
+      const result = await this.authService.verifyEmail(token, {
+        ipAddress: req.ip,
+        requestId: req.headers['x-request-id'],
+      });
+
+      if (shouldRedirect) {
+        const params = new URLSearchParams({
+          verified: '1',
+          email: result.email,
+        });
+        response.redirect(this.buildWebRedirectUrl(`/login?${params.toString()}`));
+        return;
+      }
+
+      return { success: true, email: result.email };
+    } catch (error: unknown) {
+      if (shouldRedirect) {
+        const params = new URLSearchParams({
+          error: this.getVerifyEmailErrorCode(error),
+        });
+        response.redirect(this.buildWebRedirectUrl(`/verify-email?${params.toString()}`));
+        return;
+      }
+      throw error;
+    }
   }
 
   @Post('verify-email/resend')
@@ -375,5 +417,15 @@ export class AuthController {
       next: nextPath,
     });
     return this.buildWebRedirectUrl(`${target}?${params.toString()}`);
+  }
+
+  private getVerifyEmailErrorCode(error: unknown): string {
+    if (error instanceof BadRequestException) {
+      return 'missing_token';
+    }
+    if (error instanceof UnauthorizedException) {
+      return 'invalid_or_expired';
+    }
+    return 'verification_failed';
   }
 }
