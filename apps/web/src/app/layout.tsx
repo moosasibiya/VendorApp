@@ -1,29 +1,44 @@
-﻿import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import type { Metadata } from "next";
+import { Bebas_Neue, DM_Serif_Display, Manrope } from "next/font/google";
+import CursorEffects from "@/components/global/CursorEffects";
 import "./globals.css";
 
-const outfit = Outfit({
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  display: "optional",
-  variable: "--font-outfit",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-manrope",
+});
+
+const bebasNeue = Bebas_Neue({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--font-bebas",
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-serif-display",
 });
 
 export const metadata: Metadata = {
   title: "VendrMan",
-  description: "Find your perfect creative",
+  description: "Book trusted creatives on a secure, premium marketplace.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html
       lang="en"
-      className={outfit.variable}
-      data-theme="light"
+      className={`${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -31,20 +46,11 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,450,0,0"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function () {
-                try {
-                  document.documentElement.setAttribute("data-theme", "light");
-                  localStorage.setItem("vendrman_theme", "light");
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
       </head>
-      <body>{children}</body>
+      <body>
+        <CursorEffects />
+        {children}
+      </body>
     </html>
   );
 }

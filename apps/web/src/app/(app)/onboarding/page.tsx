@@ -131,6 +131,98 @@ export default function OnboardingPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setIsPreviewMode(
+      new URLSearchParams(window.location.search).get("preview") === "1",
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-scroll-text]"),
+    );
+
+    if (targets.length === 0) {
+      return;
+    }
+
+    targets.forEach((element) => {
+      element.classList.add(styles.textMotion);
+    });
+
+    let frame = 0;
+
+    const updateMotion = () => {
+      frame = 0;
+      const viewportHeight = window.innerHeight;
+      const viewportAnchor = viewportHeight * 0.56;
+
+      targets.forEach((element) => {
+        const rect = element.getBoundingClientRect();
+        const travel = Number(element.dataset.motionTravel ?? "34");
+        const center = rect.top + rect.height / 2;
+        const revealProgress = Math.min(
+          1,
+          Math.max(0, (viewportHeight * 0.92 - rect.top) / (viewportHeight * 0.9)),
+        );
+        const parallaxOffset = Math.max(
+          -20,
+          Math.min(20, ((center - viewportAnchor) / viewportHeight) * -18),
+        );
+
+        element.style.setProperty("--scroll-progress", revealProgress.toFixed(3));
+        element.style.setProperty(
+          "--scroll-translate",
+          `${((1 - revealProgress) * travel).toFixed(2)}px`,
+        );
+        element.style.setProperty(
+          "--scroll-parallax",
+          `${parallaxOffset.toFixed(2)}px`,
+        );
+      });
+    };
+
+    const onScroll = () => {
+      if (frame) {
+        return;
+      }
+      frame = window.requestAnimationFrame(updateMotion);
+    };
+
+    updateMotion();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      targets.forEach((element) => {
+        element.classList.remove(styles.textMotion);
+        element.style.removeProperty("--scroll-progress");
+        element.style.removeProperty("--scroll-translate");
+        element.style.removeProperty("--scroll-parallax");
+      });
+    };
+  }, [isLoading, step, user?.accountType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -332,21 +424,21 @@ export default function OnboardingPage() {
   };
 
   if (isLoading) {
-    return <main className={styles.page}><section className={styles.loadingCard}><p className={styles.kicker}>Onboarding</p><h1 className={styles.title}>Loading your setup</h1><p className={styles.subtitle}>Pulling your account and any saved onboarding data.</p></section></main>;
+    return <main className={styles.page}><section className={styles.loadingCard} data-scroll-text data-motion-travel="28"><p className={styles.kicker}>Onboarding</p><h1 className={styles.title}>Loading your setup</h1><p className={styles.subtitle}>Pulling your account and any saved onboarding data.</p></section></main>;
   }
   if (!user || !flow) {
-    return <main className={styles.page}><section className={styles.loadingCard}><p className={styles.kicker}>Onboarding</p><h1 className={styles.title}>Unable to load onboarding</h1><p className={styles.subtitle}>Sign in again and reopen this page.</p></section></main>;
+    return <main className={styles.page}><section className={styles.loadingCard} data-scroll-text data-motion-travel="28"><p className={styles.kicker}>Onboarding</p><h1 className={styles.title}>Unable to load onboarding</h1><p className={styles.subtitle}>Sign in again and reopen this page.</p></section></main>;
   }
 
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
         <aside className={styles.sidebar}>
-          <p className={styles.kicker}>{flow.kicker}</p>
-          <h1 className={styles.title}>{flow.title}</h1>
-          <p className={styles.subtitle}>{flow.subtitle}</p>
+          <p className={styles.kicker} data-scroll-text data-motion-travel="22">{flow.kicker}</p>
+          <h1 className={styles.title} data-scroll-text data-motion-travel="34">{flow.title}</h1>
+          <p className={styles.subtitle} data-scroll-text data-motion-travel="26">{flow.subtitle}</p>
           {user.accountType === "CREATIVE" ? (
-            <div className={styles.statusCard}>
+            <div className={styles.statusCard} data-scroll-text data-motion-travel="28">
               <div className={styles.statusHeader}>
                 <strong>Application status</strong>
                 <span className={styles.statusPill}>
@@ -363,15 +455,26 @@ export default function OnboardingPage() {
               </div>
             </div>
           ) : null}
-          <div className={styles.progressCard}><div><span className={styles.progressLabel}>Completion</span><strong className={styles.progressValue}>{Math.round((completedCount / Math.max(flow.totalRequired, 1)) * 100)}%</strong></div><p className={styles.progressText}>{completedCount} of {flow.totalRequired} setup sections ready.</p></div>
-          <div className={styles.stepList}>{flow.steps.map((item, index) => <button key={item.title} type="button" className={`${styles.stepCard} ${index === step ? styles.stepCardActive : ""}`} onClick={() => setStep(index)}><span className={styles.stepIndex}>{index + 1}</span><span className={styles.stepText}><strong>{item.title}</strong><small>{item.hint}</small></span><span className={styles.stepState}>{index < flow.totalRequired && validateStep(index) === null ? "Ready" : index === step ? "Current" : "Pending"}</span></button>)}</div>
+          <div className={styles.progressCard} data-scroll-text data-motion-travel="24"><div><span className={styles.progressLabel}>Completion</span><strong className={styles.progressValue}>{Math.round((completedCount / Math.max(flow.totalRequired, 1)) * 100)}%</strong></div><p className={styles.progressText}>{completedCount} of {flow.totalRequired} setup sections ready.</p></div>
+          <div className={styles.stepList} data-scroll-text data-motion-travel="20">{flow.steps.map((item, index) => <button key={item.title} type="button" className={`${styles.stepCard} ${index === step ? styles.stepCardActive : ""}`} onClick={() => setStep(index)}><span className={styles.stepIndex}>{index + 1}</span><span className={styles.stepText}><strong>{item.title}</strong><small>{item.hint}</small></span><span className={styles.stepState}>{index < flow.totalRequired && validateStep(index) === null ? "Ready" : index === step ? "Current" : "Pending"}</span></button>)}</div>
         </aside>
 
         <section className={styles.content}>
+          {isPreviewMode ? (
+            <div className={styles.previewBanner}>
+              <div>
+                <strong>Preview mode is on</strong>
+                <p>You can open onboarding even after completion and jump to the public home page at any time.</p>
+              </div>
+              <Link href="/home" className={styles.previewLink}>
+                Public home
+              </Link>
+            </div>
+          ) : null}
           {error ? <div className={styles.errorBanner}>{error}</div> : null}
           {successMessage ? <div className={styles.successBanner}><div><strong>{successMessage}</strong><p>Your account is now using this onboarding data.</p></div>{savedSlug && user.accountType === "CREATIVE" ? <Link href={`/artists/${savedSlug}`} className={styles.successLink}>View profile</Link> : null}</div> : null}
           <div className={styles.formCard}>
-            <div className={styles.sectionHeader}><div><p className={styles.sectionEyebrow}>Step {step + 1} of {flow.steps.length}</p><h2>{flow.steps[step].title}</h2><p>{flow.steps[step].hint}</p></div><span className={styles.accountBadge}>{user.accountType === "CREATIVE" ? "Creative account" : user.accountType === "AGENCY" ? "Agency account" : "Client account"}</span></div>
+            <div className={styles.sectionHeader} data-scroll-text data-motion-travel="26"><div><p className={styles.sectionEyebrow}>Step {step + 1} of {flow.steps.length}</p><h2>{flow.steps[step].title}</h2><p>{flow.steps[step].hint}</p></div><span className={styles.accountBadge}>{user.accountType === "CREATIVE" ? "Creative account" : user.accountType === "AGENCY" ? "Agency account" : "Client account"}</span></div>
             {user.accountType === "CREATIVE" ? renderArtistStep(step, artistForm, setArtistForm) : user.accountType === "CLIENT" ? renderClientStep(step, clientForm, setClientForm) : renderAgencyStep(step, agencyForm, setAgencyForm, isAgencySlugEdited, setIsAgencySlugEdited)}
             <div className={styles.actions}><button type="button" className={styles.ghostBtn} onClick={() => { setError(null); setStep((current) => Math.max(current - 1, 0)); }} disabled={step === 0 || isSaving}>Previous</button><div className={styles.inlineActions}>{step < flow.steps.length - 1 ? <button type="button" className={styles.primaryBtn} onClick={() => { const validationError = validateStep(step); if (validationError) { setError(validationError); return; } setError(null); setStep((current) => Math.min(current + 1, flow.steps.length - 1)); }} disabled={isSaving}>Continue</button> : <button type="button" className={styles.primaryBtn} onClick={() => void submit()} disabled={isSaving}>{isSaving ? "Saving..." : user.accountType === "CREATIVE" ? "Submit application" : "Finish onboarding"}</button>}</div></div>
           </div>
@@ -384,7 +487,7 @@ export default function OnboardingPage() {
 function renderArtistStep(step: number, form: ArtistProfileInput, setForm: Dispatch<SetStateAction<ArtistProfileInput>>) {
   if (step === 0) return <div className={styles.fieldGrid}><label className={styles.field}>Display name<input value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Studio Kuhle" /></label><label className={styles.field}>Primary role<input value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} placeholder="Wedding Photographer" /></label><label className={styles.field}>Location<input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Cape Town" /></label><label className={`${styles.field} ${styles.fieldFull}`}>Bio<textarea value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} placeholder="Tell clients what you shoot, how you work, and what sets your style apart." /></label></div>;
   if (step === 1) return <div className={styles.sectionStack}><ChoiceGroup title="Services" lead="Select every service you actively want inquiries for." options={serviceOptions} values={form.services} onToggle={(value) => setForm((current) => ({ ...current, services: current.services.includes(value) ? current.services.filter((item) => item !== value) : [...current.services, value] }))} /><ChoiceGroup title="Specialties" lead="Add the work you want to become known for." options={specialtyOptions} values={form.specialties} onToggle={(value) => setForm((current) => ({ ...current, specialties: current.specialties.includes(value) ? current.specialties.filter((item) => item !== value) : [...current.specialties, value] }))} /></div>;
-  if (step === 2) return <div className={styles.sectionStack}><div className={styles.fieldGrid}><label className={styles.field}>Pricing summary<input value={form.pricingSummary} onChange={(event) => setForm((current) => ({ ...current, pricingSummary: event.target.value }))} placeholder="Portraits from R3,500. Weddings from R12,000." /></label><label className={styles.field}>Availability summary<input value={form.availabilitySummary} onChange={(event) => setForm((current) => ({ ...current, availabilitySummary: event.target.value }))} placeholder="Available in Gauteng and Western Cape with 2 weeks notice." /></label></div><div className={styles.portfolioGrid}>{form.portfolioLinks.map((value, index) => <label key={index} className={styles.field}>Portfolio link {index + 1}<input value={value} onChange={(event) => setForm((current) => { const nextLinks = [...current.portfolioLinks]; nextLinks[index] = event.target.value; return { ...current, portfolioLinks: nextLinks }; })} placeholder="https://yourportfolio.com/project" /></label>)}</div><div className={styles.rolloutNote}><strong>Current rollout policy</strong><p>No upfront onboarding payment is collected right now. Profiles are reviewed manually, and approved artists go live in limited rollout slots.</p></div></div>;
+  if (step === 2) return <div className={styles.sectionStack}><div className={styles.fieldGrid}><label className={styles.field}>Pricing summary<input value={form.pricingSummary} onChange={(event) => setForm((current) => ({ ...current, pricingSummary: event.target.value }))} placeholder="Portraits from R3,500. Weddings from R12,000." /></label><label className={styles.field}>Availability summary<input value={form.availabilitySummary} onChange={(event) => setForm((current) => ({ ...current, availabilitySummary: event.target.value }))} placeholder="Available in Gauteng and Western Cape with 2 weeks notice." /></label></div><div className={styles.portfolioGrid}>{form.portfolioLinks.map((value, index) => <label key={index} className={styles.field}>Portfolio link {index + 1}<input value={value} onChange={(event) => setForm((current) => { const nextLinks = [...current.portfolioLinks]; nextLinks[index] = event.target.value; return { ...current, portfolioLinks: nextLinks }; })} placeholder="https://yourportfolio.com/project" /></label>)}</div><div className={styles.rolloutNote} data-scroll-text data-motion-travel="22"><strong>Current rollout policy</strong><p>No upfront onboarding payment is collected right now. Profiles are reviewed manually, and approved artists go live in limited rollout slots.</p></div></div>;
   return <div className={styles.reviewGrid}><SummaryCard label="Public identity" title={summaryValue(form.displayName)} lines={[summaryValue(form.role), summaryValue(form.location)]} /><SummaryCard label="About" lines={[summaryValue(form.bio)]} /><SummaryCard label="Services" lines={[summaryValue(form.services)]} /><SummaryCard label="Specialties" lines={[summaryValue(form.specialties)]} /><SummaryCard label="Booking summary" lines={[summaryValue(form.pricingSummary), summaryValue(form.availabilitySummary)]} /><SummaryCard label="Rollout" lines={["Application review happens before launch approval.", "No upfront onboarding payment in the current rollout.", "If enabled, onboarding recovery is taken from the first completed booking only."]} /><SummaryCard label="Portfolio" lines={uniqueValues(form.portfolioLinks).length ? uniqueValues(form.portfolioLinks) : ["No links added yet."]} /></div>;
 }
 
@@ -401,9 +504,9 @@ function renderAgencyStep(step: number, form: AgencyForm, setForm: Dispatch<SetS
 }
 
 function ChoiceGroup(props: { title: string; lead: string; options: string[]; values: string[]; onToggle: (value: string) => void }) {
-  return <div><h3 className={styles.blockTitle}>{props.title}</h3><p className={styles.blockLead}>{props.lead}</p><div className={styles.choiceGrid}>{props.options.map((option) => <button key={option} type="button" className={`${styles.choiceCard} ${props.values.includes(option) ? styles.choiceCardSelected : ""}`} onClick={() => props.onToggle(option)}>{option}</button>)}</div></div>;
+  return <div><h3 className={styles.blockTitle} data-scroll-text data-motion-travel="18">{props.title}</h3><p className={styles.blockLead} data-scroll-text data-motion-travel="18">{props.lead}</p><div className={styles.choiceGrid}>{props.options.map((option) => <button key={option} type="button" className={`${styles.choiceCard} ${props.values.includes(option) ? styles.choiceCardSelected : ""}`} onClick={() => props.onToggle(option)}>{option}</button>)}</div></div>;
 }
 
 function SummaryCard(props: { label: string; title?: string; lines: string[] }) {
-  return <article className={styles.reviewCard}><span className={styles.reviewLabel}>{props.label}</span>{props.title ? <h3>{props.title}</h3> : null}{props.lines.map((line) => <p key={line}>{line}</p>)}</article>;
+  return <article className={styles.reviewCard} data-scroll-text data-motion-travel="16"><span className={styles.reviewLabel}>{props.label}</span>{props.title ? <h3>{props.title}</h3> : null}{props.lines.map((line) => <p key={line}>{line}</p>)}</article>;
 }

@@ -1,68 +1,71 @@
-﻿.stack {
+.stack {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .hero {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  letter-spacing: 0.22em;
-  font-size: 11px;
-  color: var(--muted);
+  color: var(--blue-sky);
 }
 
 .title {
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
 }
 
 .muted {
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .form {
   display: grid;
-  gap: 14px;
-  margin-top: 4px;
+  gap: 16px;
+}
+
+.error,
+.success {
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .error {
   border: 1px solid var(--alert-error-border);
   background: var(--alert-error-bg);
   color: var(--alert-error-text);
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
 }
 
 .success {
   border: 1px solid var(--alert-success-border);
   background: var(--alert-success-bg);
   color: var(--alert-success-text);
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
 }
 
 .field {
   display: grid;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
 .field input {
-  padding: 12px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  background: var(--panel);
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   outline: none;
 }
@@ -72,35 +75,31 @@
   box-shadow: 0 0 0 3px var(--brand-focus-ring);
 }
 
-.row {
+.row,
+.footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--muted);
+.row {
+  justify-content: space-between;
 }
 
 .primary {
-  border: none;
-  border-radius: 12px;
-  padding: 12px 14px;
+  min-height: 54px;
+  border-radius: 18px;
+  background: var(--brand-gradient);
+  color: #fff;
+  font-size: 0.82rem;
   font-weight: 800;
-  color: white;
-  cursor: pointer;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: var(--brand-gradient);
-  transition: transform 0.15s ease;
   box-shadow: var(--brand-shadow);
 }
 
@@ -109,30 +108,25 @@
   box-shadow: var(--brand-shadow-strong);
 }
 
-.primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: var(--brand-shadow);
-}
-
 .divider {
+  position: relative;
   display: grid;
   place-items: center;
-  color: var(--muted);
-  font-size: 12px;
-  position: relative;
-  margin: 4px 0;
+  color: var(--text-dim);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin: 6px 0;
 }
 
 .divider::before,
 .divider::after {
   content: "";
-  height: 1px;
-  background: var(--panel3);
   position: absolute;
   top: 50%;
-  width: 40%;
+  width: 36%;
+  height: 1px;
+  background: var(--border);
 }
 
 .divider::before {
@@ -150,34 +144,31 @@
 }
 
 .socials button {
+  min-height: 52px;
   border: 1px solid var(--border);
-  background: var(--panel);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  font-weight: 700;
 }
 
 .footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  font-size: 13px;
   color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .link {
-  color: var(--text);
-  text-decoration: none;
-}
-
-.link:hover {
-  color: var(--text);
+  color: var(--blue-sky);
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
+@media (max-width: 600px) {
+  .socials {
+    grid-template-columns: 1fr;
+  }
+}

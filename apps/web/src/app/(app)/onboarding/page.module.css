@@ -3,6 +3,21 @@
   color: var(--text);
 }
 
+.textMotion {
+  opacity: calc(0.18 + (var(--scroll-progress, 0) * 0.82));
+  filter: blur(calc((1 - var(--scroll-progress, 0)) * 12px));
+  transform: translate3d(
+    0,
+    calc(var(--scroll-translate, 24px) + var(--scroll-parallax, 0px)),
+    0
+  );
+  transition:
+    opacity 0.2s linear,
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.24s ease;
+  will-change: transform, opacity, filter;
+}
+
 .shell {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -182,6 +197,7 @@
 }
 
 .errorBanner,
+.previewBanner,
 .successBanner {
   border-radius: 18px;
   padding: 14px 16px;
@@ -197,22 +213,33 @@
   color: var(--alert-error-text);
 }
 
+.previewBanner {
+  border: 1px solid rgba(122, 184, 255, 0.2);
+  background:
+    linear-gradient(180deg, rgba(122, 184, 255, 0.12), transparent),
+    rgba(9, 16, 31, 0.82);
+  color: var(--text);
+}
+
 .successBanner {
   border: 1px solid var(--alert-success-border);
   background: var(--alert-success-bg);
   color: var(--alert-success-text);
 }
 
+.previewBanner strong,
 .successBanner strong {
   display: block;
   margin-bottom: 4px;
 }
 
+.previewBanner p,
 .successBanner p {
   color: inherit;
   font-size: 13px;
 }
 
+.previewLink,
 .successLink {
   display: inline-flex;
   align-items: center;

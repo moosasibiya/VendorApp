@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { NotificationFeed, NotificationItem } from "@vendorapp/shared";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   fetchNotifications,
   logout as logoutRequest,
@@ -13,63 +15,39 @@ import { getRealtimeSocket } from "@/lib/realtime";
 import styles from "./Topbar.module.css";
 
 const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
-  "/dashboard": {
-    title: "Dashboard",
-    subtitle: "Overview of your workspace and activity.",
-  },
-  "/creatives": {
-    title: "Creatives",
-    subtitle: "Browse, verify, and manage creative profiles.",
-  },
-  "/bookings": {
-    title: "Bookings",
-    subtitle: "Track new, active, and completed bookings.",
-  },
-  "/messages": {
-    title: "Messages",
-    subtitle: "Conversations, delivery updates, and client notes.",
-  },
-  "/support": {
-    title: "Support",
-    subtitle: "Guided help, escalations, and support thread routing.",
-  },
-  "/calendar": {
-    title: "Calendar",
-    subtitle: "Availability, upcoming shoots, and blocked time.",
-  },
-  "/reviews": {
-    title: "Reviews",
-    subtitle: "Ratings, testimonials, and feedback responses.",
-  },
-  "/payments": {
-    title: "Payments",
-    subtitle: "Payouts, invoices, and revenue insights.",
-  },
-  "/settings": {
-    title: "Settings",
-    subtitle: "Manage your profile and platform preferences.",
-  },
-  "/onboarding": {
-    title: "Onboarding",
-    subtitle: "Complete your artist setup and verification.",
-  },
-  "/admin": {
-    title: "Admin",
-    subtitle: "Applications, rollout settings, support, and tier controls.",
-  },
+  "/dashboard": { title: "Dashboard", subtitle: "Overview of your workspace and live platform activity." },
+  "/creatives": { title: "Creatives", subtitle: "Browse, verify, and manage creative profiles." },
+  "/bookings": { title: "Bookings", subtitle: "Track upcoming work, status changes, and next actions." },
+  "/messages": { title: "Messages", subtitle: "Conversations, delivery updates, and support context." },
+  "/support": { title: "Support", subtitle: "Guided help that escalates into the central support queue." },
+  "/calendar": { title: "Calendar", subtitle: "Availability, upcoming shoots, and booking timing in one view." },
+  "/reviews": { title: "Reviews", subtitle: "Ratings, public feedback, and booking-linked testimonials." },
+  "/payments": { title: "Payments", subtitle: "Payment tracking, payout release states, and platform fees." },
+  "/settings": { title: "Settings", subtitle: "Manage profile, notifications, and account controls." },
+  "/onboarding": { title: "Onboarding", subtitle: "Complete verification and rollout-ready profile details." },
+  "/admin": { title: "Admin", subtitle: "Applications, support triage, and rollout configuration." },
 };
 
 function formatRelativeTime(value: string): string {
   const deltaSeconds = Math.round((Date.now() - new Date(value).getTime()) / 1000);
   const abs = Math.abs(deltaSeconds);
-
   if (abs < 60) return "now";
   if (abs < 3600) return `${Math.round(abs / 60)}m`;
   if (abs < 86400) return `${Math.round(abs / 3600)}h`;
   return `${Math.round(abs / 86400)}d`;
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
 export default function Topbar() {
+  const { user } = useAppSession();
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,10 +64,15 @@ export default function Topbar() {
 
   const route =
     Object.keys(ROUTE_META).find(
-      (key) => pathname === key || pathname.startsWith(key + "/"),
+      (key) => pathname === key || pathname.startsWith(`${key}/`),
     ) ?? "/dashboard";
 
   const { title, subtitle } = ROUTE_META[route];
+  const initials = useMemo(() => getInitials(user.fullName || "VM"), [user.fullName]);
+  const isOnboardingRoute = route === "/onboarding";
+  const switchHref = isOnboardingRoute ? "/home" : "/";
+  const switchLabel = isOnboardingRoute ? "Public home" : "Onboarding";
+  const switchIcon = isOnboardingRoute ? "public" : "switch_access_shortcut";
 
   useEffect(() => {
     let frame = 0;
@@ -111,7 +94,6 @@ export default function Topbar() {
 
     updateCompact();
     window.addEventListener("scroll", onScroll, { passive: true });
-
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
@@ -145,7 +127,6 @@ export default function Topbar() {
     };
 
     void loadNotifications();
-
     return () => {
       cancelled = true;
     };
@@ -165,8 +146,7 @@ export default function Topbar() {
             ...current.notifications.filter((item) => item.id !== notification.id),
           ].slice(0, 8),
           unreadCount:
-            current.unreadCount +
-            (!alreadyExists && !notification.isRead ? 1 : 0),
+            current.unreadCount + (!alreadyExists && !notification.isRead ? 1 : 0),
           hasMore: current.hasMore,
           nextCursor: current.nextCursor,
         };
@@ -196,19 +176,11 @@ export default function Topbar() {
     };
   }, []);
 
-  const toggleTheme = () => {
-    const root = document.documentElement;
-    const next =
-      root.getAttribute("data-theme") === "light" ? "dark" : "light";
-    root.setAttribute("data-theme", next);
-    localStorage.setItem("vendrman_theme", next);
-  };
-
   const logout = async () => {
     try {
       await logoutRequest();
     } finally {
-      window.location.href = "/";
+      window.location.assign("/");
     }
   };
 
@@ -217,15 +189,12 @@ export default function Topbar() {
       try {
         await markNotificationRead(notification.id);
       } catch {
-        // Leave local state unchanged on failure.
+        // Keep local state as-is on transient failures.
       }
 
       setNotificationFeed((current) => ({
         ...current,
-        unreadCount: Math.max(
-          0,
-          current.unreadCount - (notification.isRead ? 0 : 1),
-        ),
+        unreadCount: Math.max(0, current.unreadCount - 1),
         notifications: current.notifications.map((item) =>
           item.id === notification.id ? { ...item, isRead: true } : item,
         ),
@@ -262,13 +231,14 @@ export default function Topbar() {
         })),
       }));
     } catch {
-      // Ignore and keep current state.
+      // Ignore transient failures.
     }
   };
 
   return (
     <header className={styles.topbar} data-compact={compactSearch}>
       <div className={styles.left}>
+        <span className={styles.eyebrow}>Workspace</span>
         <div className={styles.title}>{title}</div>
         <div className={styles.subtitle}>{subtitle}</div>
       </div>
@@ -276,19 +246,13 @@ export default function Topbar() {
       <div className={styles.right}>
         <div className={styles.search}>
           <span className="material-symbols-outlined">search</span>
-          <span className={styles.searchSummary}>
-            {searchQuery.trim() || "Search"}
-          </span>
+          <span className={styles.searchSummary}>{searchQuery.trim() || "Search"}</span>
           <input
-            placeholder="Search creatives, bookings..."
+            placeholder="Search creatives, bookings, messages..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
         </div>
-
-        <button className={styles.iconBtn} type="button" onClick={toggleTheme}>
-          <span className="material-symbols-outlined">contrast</span>
-        </button>
 
         <div className={styles.notificationWrap} ref={notificationRef}>
           <button
@@ -300,9 +264,7 @@ export default function Topbar() {
             <span className="material-symbols-outlined">notifications</span>
             {notificationFeed.unreadCount > 0 ? (
               <span className={styles.badge}>
-                {notificationFeed.unreadCount > 9
-                  ? "9+"
-                  : String(notificationFeed.unreadCount)}
+                {notificationFeed.unreadCount > 9 ? "9+" : String(notificationFeed.unreadCount)}
               </span>
             ) : null}
           </button>
@@ -327,9 +289,7 @@ export default function Topbar() {
               {notificationsLoading ? (
                 <p className={styles.notificationEmpty}>Loading...</p>
               ) : notificationFeed.notifications.length === 0 ? (
-                <p className={styles.notificationEmpty}>
-                  No notifications yet.
-                </p>
+                <p className={styles.notificationEmpty}>No notifications yet.</p>
               ) : (
                 <div className={styles.notificationList}>
                   {notificationFeed.notifications.map((notification) => (
@@ -353,17 +313,18 @@ export default function Topbar() {
           ) : null}
         </div>
 
-        <button
-          className={styles.logoutBtn}
-          type="button"
-          onClick={() => void logout()}
-        >
+        <Link className={styles.switchBtn} href={switchHref}>
+          <span className="material-symbols-outlined">{switchIcon}</span>
+          {switchLabel}
+        </Link>
+
+        <button className={styles.logoutBtn} type="button" onClick={() => void logout()}>
           <span className="material-symbols-outlined">logout</span>
           Logout
         </button>
 
-        <div className={styles.avatar} title="Profile">
-          MS
+        <div className={styles.avatar} title={user.fullName}>
+          {initials || "VM"}
         </div>
       </div>
     </header>

@@ -10,6 +10,10 @@ type ArtistProfileActionsProps = {
   bookNowClassName: string;
   messageClassName: string;
   feedbackClassName: string;
+  bookLabel?: string;
+  messageLabel?: string;
+  busyMessageLabel?: string;
+  autoMessageTrigger?: boolean;
 };
 
 function buildLoginRedirect(path: string): string {
@@ -22,6 +26,10 @@ export function ArtistProfileActions({
   bookNowClassName,
   messageClassName,
   feedbackClassName,
+  bookLabel = "Book Now",
+  messageLabel = "Message",
+  busyMessageLabel = "Opening...",
+  autoMessageTrigger = true,
 }: ArtistProfileActionsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,7 +38,7 @@ export function ArtistProfileActions({
   const [autoHandled, setAutoHandled] = useState(false);
 
   useEffect(() => {
-    const shouldAutoOpen = searchParams.get("message") === "1";
+    const shouldAutoOpen = autoMessageTrigger && searchParams.get("message") === "1";
     if (!shouldAutoOpen || !artistId || isMessaging || autoHandled) {
       return;
     }
@@ -68,7 +76,7 @@ export function ArtistProfileActions({
     return () => {
       cancelled = true;
     };
-  }, [artistId, autoHandled, isMessaging, router, searchParams]);
+  }, [artistId, autoHandled, autoMessageTrigger, isMessaging, router, searchParams]);
 
   const bookNow = async () => {
     if (!artistId) {
@@ -130,7 +138,7 @@ export function ArtistProfileActions({
   return (
     <>
       <button type="button" className={bookNowClassName} onClick={() => void bookNow()}>
-        Book Now
+        {bookLabel}
       </button>
       <button
         type="button"
@@ -138,7 +146,7 @@ export function ArtistProfileActions({
         onClick={() => void messageArtist()}
         disabled={isMessaging}
       >
-        {isMessaging ? "Opening..." : "Message"}
+        {isMessaging ? busyMessageLabel : messageLabel}
       </button>
       {error ? <p className={feedbackClassName}>{error}</p> : null}
     </>

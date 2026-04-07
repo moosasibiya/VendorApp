@@ -1,70 +1,97 @@
 .footer {
   border-top: 1px solid var(--border);
-  background: var(--panel2);
-  margin-top: 56px;
+  background: var(--black);
 }
 
 .inner {
-  max-width: 1200px;
+  width: min(1320px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 46px 20px;
+  padding: 64px 0 56px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 60px;
 }
 
-.col h4 {
-  margin-bottom: 12px;
-  font-size: 13px;
+.brandBlock {
+  max-width: 260px;
+}
+
+.brand {
+  font-family:
+    var(--font-bebas),
+    "Bebas Neue",
+    sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: 0.04em;
+}
+
+.brand span {
+  color: transparent;
+  background: linear-gradient(135deg, var(--blue-sky), var(--violet-bright));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.brandCopy {
+  margin-top: 16px;
+  color: var(--text-dim);
+  font-size: 0.81rem;
+  line-height: 1.75;
+}
+
+.column {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.columnTitle {
+  margin-bottom: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.col a {
-  display: block;
-  color: var(--muted-strong);
-  text-decoration: none;
-  padding: 6px 0;
-  font-size: 13px;
+.column a {
+  color: var(--text-dim);
+  font-size: 0.81rem;
 }
 
-.col a:hover {
+.column a:hover {
   color: var(--text);
 }
 
-.legal {
+.bottom {
+  width: min(1320px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 28px 0 42px;
   border-top: 1px solid var(--border);
-  padding: 16px 20px 24px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: var(--muted);
-  font-size: 12px;
-  max-width: 1200px;
-  margin: 0 auto;
+  color: var(--text-dim);
+  font-size: 0.78rem;
 }
 
-.legalLinks {
-  display: flex;
-  gap: 12px;
-}
-
-.legalLinks a {
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.legalLinks a:hover {
-  color: var(--text);
-}
-
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .inner {
+    width: min(1320px, calc(100% - 24px));
     grid-template-columns: 1fr;
+    padding-top: 52px;
   }
 
-  .legal {
+  .bottom {
+    width: min(1320px, calc(100% - 24px));
     flex-direction: column;
+    align-items: flex-start;
   }
 }

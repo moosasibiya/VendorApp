@@ -458,8 +458,8 @@ export default function SignupPage() {
           <Link className={styles.link} href="/login">
             Sign in
           </Link>
-          <Link className={styles.link} href="/">
-            Back to home
+          <Link className={styles.link} href="/home">
+            Public home
           </Link>
         </div>
       </form>

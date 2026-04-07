@@ -7,6 +7,21 @@ import type { User } from "@vendorapp/shared";
 import { AppSessionProvider } from "@/components/session/AppSessionContext";
 import { defaultAppPathForUser, fetchMe } from "@/lib/api";
 
+function getRequestedPath(pathname: string | null): string {
+  const basePath = pathname || "/dashboard";
+  if (typeof window === "undefined") {
+    return basePath;
+  }
+  return `${basePath}${window.location.search || ""}`;
+}
+
+function isOnboardingPreviewPath(pathname: string | null): boolean {
+  if (typeof window === "undefined" || pathname !== "/onboarding") {
+    return false;
+  }
+  return new URLSearchParams(window.location.search).get("preview") === "1";
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user === null) {
-      const next = encodeURIComponent(pathname || "/dashboard");
+      const next = encodeURIComponent(getRequestedPath(pathname));
       router.replace(`/login?next=${next}`);
       return;
     }
@@ -40,7 +55,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (user.onboardingCompleted && pathname === "/onboarding") {
+    if (
+      user.onboardingCompleted &&
+      pathname === "/onboarding" &&
+      !isOnboardingPreviewPath(pathname)
+    ) {
       router.replace(defaultAppPathForUser(user));
     }
   }, [pathname, router, user]);

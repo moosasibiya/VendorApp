@@ -173,8 +173,8 @@ export default function LoginPage() {
           <Link className={styles.link} href="/signup">
             Create an account
           </Link>
-          <Link className={styles.link} href="/">
-            Back to home
+          <Link className={styles.link} href="/home">
+            Public home
           </Link>
         </div>
       </form>

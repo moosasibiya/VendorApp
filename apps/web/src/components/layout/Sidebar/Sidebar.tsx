@@ -69,7 +69,7 @@ export default function Sidebar() {
         <div className={styles.footerLinks}>
           <Link href="/login">Login</Link>
           <Link href="/signup">Sign up</Link>
-          <Link href="/">Public home</Link>
+          <Link href="/home">Public home</Link>
         </div>
         <button
           className={styles.footerBtn}
