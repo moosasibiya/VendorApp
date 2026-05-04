@@ -23,18 +23,18 @@ const supportOptions: Array<{
     summary: "Clarify booking status, confirmations, timelines, and next steps.",
     steps: [
       "Open the booking detail page and check the current status timeline.",
-      "If payment is complete, the booking moves into the booked state and later awaits the safety code.",
+      "After confirmation, the booking moves into the booked state and later awaits the safety code.",
       "Use the booking messages thread for work updates tied to that booking.",
     ],
   },
   {
     category: "PAYMENT_ISSUE",
     title: "Payment issue",
-    summary: "Troubleshoot payment confirmation, pending payouts, or failed checkout.",
+    summary: "Escalate payment questions for manual support review.",
     steps: [
-      "Refresh the booking after checkout because Payfast confirmation can take a moment.",
-      "If you are an artist, use the payments page to review payout state, platform fee, and any holds.",
-      "If the booking looks stuck after payment, escalate and include the booking reference.",
+      "Open the related booking and review the status timeline.",
+      "Include the booking reference and a concise description of the payment question.",
+      "Support will route the thread to the owner of the new payment process.",
     ],
   },
   {

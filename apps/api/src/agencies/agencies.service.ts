@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Agency } from '@vendorapp/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateAgencyDto } from './dto/create-agency.dto';
@@ -15,7 +20,10 @@ export class AgenciesService {
     return agency ? this.toAgency(agency) : null;
   }
 
-  async createForOwner(userId: string, input: CreateAgencyDto): Promise<Agency> {
+  async createForOwner(
+    userId: string,
+    input: CreateAgencyDto,
+  ): Promise<Agency> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -28,7 +36,9 @@ export class AgenciesService {
       throw new UnauthorizedException('User not found for token');
     }
     if (user.accountType !== 'AGENCY') {
-      throw new ForbiddenException('Only agency accounts can complete agency onboarding');
+      throw new ForbiddenException(
+        'Only agency accounts can complete agency onboarding',
+      );
     }
 
     const existingBySlug = await this.prisma.agency.findUnique({
@@ -76,7 +86,9 @@ export class AgenciesService {
     return this.toAgency(agency);
   }
 
-  private normalizeOptionalString(value: string | null | undefined): string | null {
+  private normalizeOptionalString(
+    value: string | null | undefined,
+  ): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
   }

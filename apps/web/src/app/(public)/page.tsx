@@ -1,268 +1,215 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import InsiderSignupForm from "./InsiderSignupForm";
 import styles from "./page.module.css";
 
-const marqueeItems = [
-  "Profiles You Can Trust",
-  "Payments That Stay Protected",
-  "Safe Booking Starts",
-  "Support When Things Go Wrong",
-  "Better Perks As You Grow",
-  "Early Access For 100 Artists",
-  "See Every Fee Upfront",
-  "Built For South Africa",
-];
+export const metadata: Metadata = {
+  title: "VendrStudio Insider Programme",
+  description:
+    "Vendr Studios connects clients with photographers and videographers. Join the VendrStudio Insider Programme for early access before launch.",
+  alternates: { canonical: "https://vendr.studio/" },
+  openGraph: {
+    title: "VendrStudio Insider Programme",
+    description:
+      "Join Vendr Studios for early access before the 1 July 2026 launch.",
+    url: "https://vendr.studio/",
+    siteName: "Vendr Studios",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VendrStudio Insider Programme",
+    description:
+      "Early access for South African clients, photographers, and videographers.",
+  },
+};
 
-const trustCards = [
-  ["01", "badge", "violet", "Identity verification (KYC)", "Artists are reviewed before they can go live and accept work on the platform. Every profile you see is manually vetted."],
-  ["02", "payments", "blue", "Secure payment tracking", "Payment, dispute windows, and payout release states stay visible to both sides at every stage of a booking."],
-  ["03", "encrypted", "violet", "Booking start verification", "A client safety code confirms the job start before normal payout release can proceed. No silent starts."],
-  ["04", "shield", "blue", "Internal support and disputes", "Support conversations and escalations stay inside platform messaging for full context and auditability."],
-  ["05", "trending_up", "violet", "Tiered trust framework", "Verified platform performance powers progression instead of off-platform claims or unverifiable histories."],
-  ["06", "admin_panel_settings", "blue", "Admin review tools", "Application vetting, payout overrides, and manual support triage remain fully auditable at the admin level."],
+const steps = [
+  ["01", "Choose your role", "Join as a client looking to book creatives or as a photographer or videographer."],
+  ["02", "Join the Insider Programme", "Submit your details so the team can create your pending Insider record."],
+  ["03", "Follow, verify, invite", "Follow Instagram and TikTok, get manually verified, then unlock your personal invite link."],
 ] as const;
 
-const clientSteps = [
-  ["01", "Browse verified creatives", "Explore portfolios from identity-checked artists and teams you can trust."],
-  ["02", "Book and pay securely", "Payment is tracked through the platform with clear status updates and escrow protection."],
-  ["03", "Approve or escalate", "Safety checks, disputes, and support all stay in one centralized place."],
+const bannerItems = [
+  "Where moments meet creatives",
+  "Verified insiders unlock invite links",
+  "Early access before 1 July 2026",
+  "R2,500 photoshoot draw entries",
+  "R50 artist referral bonuses",
+  "Built for South African creatives",
 ] as const;
 
-const artistSteps = [
-  ["01", "Create your profile and apply", "Submit your artist profile for manual review before launch access opens."],
-  ["02", "Join the prelaunch pool", "The first 100 valid applications enter the initial rollout pool automatically."],
-  ["03", "Go live and level up", "Verified on-platform work unlocks visibility, payout speed, and tier rewards."],
+const faqs = [
+  ["What is Vendr Studios?", "Vendr Studios is a South African platform being built to connect clients with trusted photographers and videographers."],
+  ["Who can join?", "Clients, photographers, videographers, and creative teams can join before public launch."],
+  ["Is this a waitlist?", "It is an Insider Programme. Signup creates a pending Insider record; verification unlocks referral rewards and invite links."],
+  ["Why follow Instagram and TikTok?", "Social follows help the team confirm real early supporters while the programme is manually verified."],
+  ["How do referrals work?", "Verified Insiders receive a personal invite link. Referral rewards only count after the referred person is also verified."],
+  ["When do rewards count?", "Rewards count only after the referred person submits valid details, follows Instagram and TikTok, and is manually verified."],
+  ["When does the platform launch?", "Vendr Studios is scheduled to launch on 1 July 2026."],
+  ["When must the R2,500 prize be redeemed?", "Photoshoot draw prizes must be redeemed by 31 December 2026."],
+  ["How do artists earn the referral bonus?", "Artists earn R50 on their first payout per verified referral, capped at R500."],
 ] as const;
-
-const pricingCards = [
-  ["For artists", "Artist fees", "violet", ["No upfront onboarding payment during the current rollout.", "Normal commission stays configurable and visible in the dashboard.", "If onboarding recovery applies, it is taken once from the first completed booking only."]],
-  ["For clients", "Client fees", "blue", ["Browse and message artists inside the platform with no cost to look.", "Booking payment and approval flow remain visible from start to payout release.", "Support, disputes, and refunds route into the centralized messaging area."]],
-] as const;
-
-const tiers = [
-  ["1", "Tier 1", "Launch Entry", "Start here while you build verified booking history and profile quality on the platform.", "neutral"],
-  ["2", "Tier 2", "Consistency", "Reliable platform activity can unlock stronger visibility and ranking boosts across search.", "blue"],
-  ["3", "Tier 3", "Performance", "Higher-quality verified work can reduce payout delays and open more booking opportunities.", "violet"],
-  ["4", "Tier 4", "Priority", "Top performers receive the strongest trust signals and platform access benefits available.", "gold"],
-] as const;
-
-const artistNotes = [
-  "The first 100 valid artists enter the prelaunch pool automatically.",
-  "Applications submitted after that join the waitlist for later review waves.",
-  "Only a limited number of approved artists go live in the initial three-month rollout.",
-  "There is no upfront onboarding payment right now.",
-  "If onboarding recovery is enabled, it is handled through the first completed booking only.",
-];
 
 export default function PublicOnboardingPage() {
   return (
     <main className={styles.page}>
-      <section className={styles.hero}>
+      <section className={styles.insiderHero}>
         <div className={styles.heroBackground} />
         <div className={styles.heroGrid} />
-        <div className={`${styles.heroOrb} ${styles.heroOrbOne}`} />
-        <div className={`${styles.heroOrb} ${styles.heroOrbTwo}`} />
-        <div className={`${styles.heroOrb} ${styles.heroOrbThree}`} />
-        <div className={`${styles.heroOrb} ${styles.heroOrbFour}`} />
-        <div className={styles.heroBadge}>
-          <span className={styles.badgeDot} />
-          Launching Soon
+        <div className={styles.heroContent}>
+          <div className={styles.heroBadge}>
+            <span>Launching</span>
+            <strong>21 July 2026</strong>
+          </div>
+          <h1 className={styles.heroTitle} aria-label="Book trusted creatives">
+            <span className={`${styles.heroTitleRow} ${styles.heroTitleRowBook}`}>
+              <span className={`${styles.heroTitleLine} ${styles.heroTitleLineOne}`}>Book</span>
+            </span>
+            <span className={`${styles.heroTitleRow} ${styles.heroTitleRowTrusted}`}>
+              <em className={`${styles.heroTitleAccent} ${styles.heroTitleLineTwo}`}>trusted</em>
+            </span>
+            <span className={`${styles.heroTitleRow} ${styles.heroTitleRowCreatives}`}>
+              <span className={`${styles.heroTitleLine} ${styles.heroTitleLineThree}`}>Creatives</span>
+            </span>
+          </h1>
+          <p className={styles.heroCopy}>
+            A secure marketplace for photographers, videographers, and creative talent built with verified identities, transparent booking, and the VendrStudio Insider Programme.
+          </p>
+          <div className={styles.heroActions}>
+            <Link href="/join" className={styles.primaryHeroBtn}>I want to book creatives</Link>
+            <Link href="/artists" className={styles.secondaryHeroBtn}>I am a creative</Link>
+          </div>
         </div>
-        <h1 className={styles.heroTitle}>
-          <span className={styles.heroTitleLine}>Book</span>
-          <em className={styles.heroTitleAccent}>trusted</em>
-          <span className={styles.heroTitleLine}>creatives</span>
-        </h1>
-        <p className={styles.heroCopy}>
-          A secure marketplace for photographers, videographers, and creative talent built with verified identities, transparent payments, and centralized support.
-        </p>
-        <div className={styles.heroActions}>
-          <Link href="/signup?accountType=CREATIVE" className={styles.primaryHeroBtn}>
-            Join as an artist
-          </Link>
-          <a href="#launch-updates" className={styles.secondaryHeroBtn}>
-            Get launch updates
-          </a>
-        </div>
-      
       </section>
 
-      <div className={styles.marqueeWrap}>
-        <div className={styles.marqueeTrack}>
-          {[...marqueeItems, ...marqueeItems].map((item, index) => (
-            <span key={`${item}-${index}`} className={styles.marqueeItem}>
+      <section id="how-it-works" className={styles.lightSection}>
+        <div className={styles.sectionHeaderLight}>
+          <span className={styles.sectionLabelBlue}>How it works</span>
+          <h2 className={styles.sectionTitleLight}>Three steps to early access</h2>
+        </div>
+        <div className={styles.featureGrid}>
+          {steps.map(([number, title, copy]) => (
+            <article key={number} className={styles.featureCard}>
+              <span>{number}</span>
+              <h3>{title}</h3>
+              <p>{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className={styles.insiderMarquee} aria-label="VendrStudio Insider Programme highlights">
+        <div className={styles.insiderMarqueeTrack}>
+          {[...bannerItems, ...bannerItems].map((item, index) => (
+            <span key={`${item}-${index}`} className={styles.insiderMarqueeItem}>
               {item}
             </span>
           ))}
         </div>
       </div>
 
-      <section className={styles.statsStrip}>
-        <article className={styles.statCard}>
-          <strong className={`${styles.statValue} ${styles.statViolet}`}>100</strong>
-          <span className={styles.statLabel}>Prelaunch artist spots</span>
+      <section className={styles.splitSection}>
+        <article>
+          <span className={styles.sectionLabelBlue}>For clients</span>
+          <h2>Book trusted creative talent earlier</h2>
+          <ul>
+            <li>Discover trusted photographers and videographers.</li>
+            <li>Book creative talent more easily when the platform opens.</li>
+            <li>Get early access before public launch.</li>
+            <li>Earn one R2,500 photoshoot draw entry per verified referral.</li>
+          </ul>
+          <Link href="/join" className={styles.primaryHeroBtn}>Join as a client</Link>
         </article>
-        <article className={styles.statCard}>
-          <strong className={`${styles.statValue} ${styles.statBlue}`}>4</strong>
-          <span className={styles.statLabel}>Trust tier levels</span>
-        </article>
-        <article className={styles.statCard}>
-          <strong className={`${styles.statValue} ${styles.statPink}`}>R0</strong>
-          <span className={styles.statLabel}>Upfront onboarding cost</span>
-        </article>
-        <article className={styles.statCard}>
-          <strong className={`${styles.statValue} ${styles.statGold}`}>100%</strong>
-          <span className={styles.statLabel}>Verified artist profiles</span>
+        <article>
+          <span className={styles.sectionLabelBlue}>For artists</span>
+          <h2>Join the founding creative community</h2>
+          <ul>
+            <li>Get early access to paid opportunities.</li>
+            <li>Build visibility before launch.</li>
+            <li>Earn R50 per verified referral, capped at R500.</li>
+            <li>Be part of the founding Vendr Studios creative community.</li>
+          </ul>
+          <Link href="/artists" className={styles.primaryHeroBtn}>Join as a creative</Link>
         </article>
       </section>
 
-      <section className={styles.trustSection}>
+      <section className={styles.darkSection}>
         <div className={styles.sectionHeader}>
-          <span className={styles.sectionLabel}>Built different</span>
-          <h2 className={styles.sectionTitle}>Trust, Safety and Compliance</h2>
-          <div className={styles.sectionDivider} />
+          <span className={styles.sectionLabel}>Insider Programme</span>
+          <h2 className={styles.sectionTitle}>Follow. Verify. Invite.</h2>
           <p className={styles.sectionCopy}>
-            The platform is built around verification, transparent payout logic, and internal support tooling instead of fragmented communication.
+            Every signup starts as pending. Follow Instagram and TikTok, reply Done, and the team will manually verify your status. Verified Insiders receive a personal invite link, and referrals count only once the referred user is verified.
           </p>
         </div>
-        <div className={styles.trustGrid}>
-          {trustCards.map(([number, icon, tone, title, copy]) => (
-            <article key={number} className={styles.trustCard} data-tone={tone}>
-              <span className={styles.trustNumber}>{number}</span>
-              <div className={styles.trustIcon}>
-                <span className="material-symbols-outlined">{icon}</span>
-              </div>
-              <h3>{title}</h3>
-              <p>{copy}</p>
-            </article>
-          ))}
+        <div className={styles.signupPanel}>
+          <InsiderSignupForm defaultUserType="CLIENT" />
         </div>
       </section>
 
-      <section className={styles.howSection} id="how-it-works">
-        <div className={styles.sectionHeaderLight}>
-          <span className={styles.sectionLabelBlue}>Process</span>
-          <h2 className={styles.sectionTitleLight}>How it works</h2>
-          <p className={styles.sectionCopyLight}>Simple, secure, and transparent for both sides of the marketplace.</p>
+      <section className={styles.spotlightSection}>
+        <div className={styles.spotlightIntro}>
+          <span className={styles.sectionLabelViolet}>Artist spotlight</span>
+          <h2>Founding creatives are being curated</h2>
+          <p>
+            Approved photographer and videographer profiles will appear here once real founding artists are ready. No fake testimonials, borrowed portfolios, or invented jobs.
+          </p>
         </div>
-        <div className={styles.howGrid}>
-          <article className={styles.howColumn}>
-            <div className={styles.columnHeader}>
-              <span className={`${styles.columnTag} ${styles.clientTag}`}>For clients</span>
-              <h3 className={styles.columnTitle}>Book with confidence</h3>
-              <span className={`${styles.columnDivider} ${styles.columnDividerBlue}`} />
+
+        <div className={styles.spotlightGrid}>
+          <article className={styles.rosterPreview} aria-label="Founding artist preview slots">
+            <div className={styles.rosterHeader}>
+              <span>Founding roster</span>
+              <strong>Opening soon</strong>
             </div>
-            <div className={styles.howSteps}>
-              {clientSteps.map(([number, title, body]) => (
-                <div key={number} className={styles.howStep}>
-                  <span className={styles.stepNumberClient}>{number}</span>
-                  <div>
-                    <strong>{title}</strong>
-                    <p>{body}</p>
-                  </div>
+            <div className={styles.rosterCards}>
+              {["Photography", "Videography", "Events"].map((label, index) => (
+                <div key={label} className={styles.rosterCard}>
+                  <span className={styles.rosterNumber}>0{index + 1}</span>
+                  <strong>{label}</strong>
+                  <p>Verified profile slot</p>
                 </div>
               ))}
             </div>
           </article>
-          <article className={styles.howColumn}>
-            <div className={styles.columnHeader}>
-              <span className={`${styles.columnTag} ${styles.artistTag}`}>For artists</span>
-              <h3 className={styles.columnTitle}>Grow your reputation</h3>
-              <span className={`${styles.columnDivider} ${styles.columnDividerViolet}`} />
+
+          <article className={styles.opportunityPanel}>
+            <span className={styles.sectionLabelBlue}>Upcoming opportunities</span>
+            <h3>Job board coming soon</h3>
+            <p>
+              Paid opportunities will be published when real client demand is ready for the launch rollout. Insider artists will be first in line for visibility.
+            </p>
+            <div className={styles.opportunityRows}>
+              <div>
+                <span>Launch priority</span>
+                <strong>Verified artists first</strong>
+              </div>
+              <div>
+                <span>Client demand</span>
+                <strong>Published only when real</strong>
+              </div>
+              <div>
+                <span>Reward path</span>
+                <strong>R50 per verified referral</strong>
+              </div>
             </div>
-            <div className={styles.howSteps}>
-              {artistSteps.map(([number, title, body]) => (
-                <div key={number} className={styles.howStep}>
-                  <span className={styles.stepNumberArtist}>{number}</span>
-                  <div>
-                    <strong>{title}</strong>
-                    <p>{body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Link href="/artists" className={styles.primaryHeroBtn}>Join as a creative</Link>
           </article>
         </div>
       </section>
 
-      <section className={styles.pricingSection}>
-        <div className={styles.sectionHeaderLight}>
-          <span className={styles.sectionLabelViolet}>Transparent</span>
-          <h2 className={styles.sectionTitleLight}>Clear and fair pricing</h2>
-          <p className={styles.sectionCopyLight}>No surprises. No hidden steps. Commission and recovery logic stay visible in your dashboard.</p>
+      <section className={styles.faqSection} id="faq">
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionLabel}>Questions</span>
+          <h2 className={styles.sectionTitle}>FAQ</h2>
         </div>
-        <div className={styles.pricingGrid}>
-          {pricingCards.map(([tag, title, tone, items]) => (
-            <article key={title} className={styles.pricingCard} data-tone={tone}>
-              <span className={styles.pricingStripe} />
-              <span className={styles.pricingTag}>{tag}</span>
-              <h3>{title}</h3>
-              <ul className={styles.pricingList}>
-                {items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </article>
+        <div className={styles.faqList}>
+          {faqs.map(([question, answer]) => (
+            <details key={question} className={styles.faqItem}>
+              <summary>{question}</summary>
+              <p>{answer}</p>
+            </details>
           ))}
-        </div>
-        <p className={styles.pricingNote}>
-          <strong>No subscriptions</strong> are required to start the current rollout.
-        </p>
-      </section>
-
-      <section className={styles.tiersSection} id="artist-tiers">
-        <div className={styles.tiersHeader}>
-          <span className={styles.sectionLabel}>Gamification</span>
-          <h2 className={styles.sectionTitle}>Grow as you work</h2>
-          <p className={styles.sectionCopy}>Artists progress through four configurable performance tiers based on verified on-platform bookings, revenue, ratings, and reliability.</p>
-        </div>
-        <div className={styles.tiersGrid}>
-          {tiers.map(([number, name, label, copy, tone]) => (
-            <article key={number} className={styles.tierCard} data-tone={tone}>
-              <span className={styles.tierAccent} />
-              <span className={styles.tierName}>{name}</span>
-              <h3>{label}</h3>
-              <p>{copy}</p>
-              <span className={styles.tierNumber}>{number}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.artistCta}>
-        <div className={styles.artistCtaBackground} />
-        <div className={styles.artistCtaInner}>
-          <h2 className={styles.artistCtaTitle}>
-            Artists:
-            <br />
-            <em>join early</em>
-          </h2>
-          <p className={styles.artistCtaCopy}>Apply before public launch and start building your profile while rollout capacity opens in controlled phases.</p>
-          <div className={styles.artistNoteCard}>
-            {artistNotes.map((note) => (
-              <div key={note} className={styles.artistNoteRow}>
-                <span className={styles.artistNoteDot} />
-                <span>{note}</span>
-              </div>
-            ))}
-          </div>
-          <Link href="/signup?accountType=CREATIVE" className={styles.primaryHeroBtn}>
-            Create artist profile
-          </Link>
-        </div>
-      </section>
-
-      <section className={styles.notifySection} id="launch-updates">
-        <div className={styles.notifyBox}>
-          <span className={styles.sectionLabelBlue}>Stay in the loop</span>
-          <h2 className={styles.notifyTitle}>Be first to know</h2>
-          <p className={styles.notifyCopy}>Sign up to receive launch updates when rollout expands and booking access opens more broadly.</p>
-          <form action="/signup" method="get" className={styles.notifyForm}>
-            <input type="hidden" name="accountType" value="CLIENT" />
-            <input type="email" name="email" className={styles.notifyInput} placeholder="Enter your email address" aria-label="Email address" />
-            <button type="submit" className={styles.notifyButton}>
-              Notify me
-            </button>
-          </form>
         </div>
       </section>
     </main>

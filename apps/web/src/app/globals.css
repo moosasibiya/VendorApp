@@ -328,7 +328,7 @@ body.csearch #app-cursor {
   height: 12px;
   margin-left: -6px;
   margin-top: -6px;
-  background: var(--green);
+  background: var(--good);
 }
 
 body.csearch #app-cursor-ring {

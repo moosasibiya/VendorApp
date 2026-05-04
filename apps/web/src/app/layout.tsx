@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, DM_Serif_Display, Manrope } from "next/font/google";
 import CursorEffects from "@/components/global/CursorEffects";
+import "material-symbols/outlined.css";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -26,8 +27,27 @@ const dmSerifDisplay = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "VendrMan",
-  description: "Book trusted creatives on a secure, premium marketplace.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_WEB_URL ?? "https://vendr.studio"),
+  title: {
+    default: "Vendr Studios",
+    template: "%s | Vendr Studios",
+  },
+  description:
+    "A premium South African marketplace for discovering and booking verified creative talent.",
+  openGraph: {
+    title: "Vendr Studios",
+    description:
+      "Discover and book verified photographers, videographers, and creative talent across South Africa.",
+    url: "/",
+    siteName: "Vendr Studios",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vendr Studios",
+    description:
+      "A premium South African marketplace for discovering and booking verified creative talent.",
+  },
 };
 
 export default function RootLayout({
@@ -41,12 +61,6 @@ export default function RootLayout({
       className={`${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,450,0,0"
-        />
-      </head>
       <body>
         <CursorEffects />
         {children}

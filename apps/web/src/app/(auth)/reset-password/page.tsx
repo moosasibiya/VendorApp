@@ -30,7 +30,7 @@ function ResetPasswordForm() {
         <p className={styles.kicker}>Password reset</p>
         <h1 className={styles.title}>Choose a new password</h1>
         <p className={styles.muted}>
-          Set a new password for your VendorApp account. Reset links expire after one hour.
+          Set a new password for your Vendr Studios account. Reset links expire after one hour.
         </p>
       </div>
 

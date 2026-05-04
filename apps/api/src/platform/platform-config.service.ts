@@ -29,16 +29,31 @@ export class PlatformConfigService {
     const values = new Map(records.map((record) => [record.key, record.value]));
 
     return {
-      maxPrelaunchPoolSize: this.readNumber(values, PLATFORM_SETTING_KEYS.maxPrelaunchPoolSize),
-      liveArtistSlotLimit: this.readNumber(values, PLATFORM_SETTING_KEYS.liveArtistSlotLimit),
+      maxPrelaunchPoolSize: this.readNumber(
+        values,
+        PLATFORM_SETTING_KEYS.maxPrelaunchPoolSize,
+      ),
+      liveArtistSlotLimit: this.readNumber(
+        values,
+        PLATFORM_SETTING_KEYS.liveArtistSlotLimit,
+      ),
       onboardingFeeModel: this.readOnboardingFeeModel(values),
-      normalCommissionRate: this.readNumber(values, PLATFORM_SETTING_KEYS.normalCommissionRate),
+      normalCommissionRate: this.readNumber(
+        values,
+        PLATFORM_SETTING_KEYS.normalCommissionRate,
+      ),
       temporaryFirstBookingCommissionRate: this.readNumber(
         values,
         PLATFORM_SETTING_KEYS.temporaryFirstBookingCommissionRate,
       ),
-      disputeWindowDays: this.readNumber(values, PLATFORM_SETTING_KEYS.disputeWindowDays),
-      bookingStartCodeLength: this.readNumber(values, PLATFORM_SETTING_KEYS.bookingStartCodeLength),
+      disputeWindowDays: this.readNumber(
+        values,
+        PLATFORM_SETTING_KEYS.disputeWindowDays,
+      ),
+      bookingStartCodeLength: this.readNumber(
+        values,
+        PLATFORM_SETTING_KEYS.bookingStartCodeLength,
+      ),
       startCodeActivationHours: this.readNumber(
         values,
         PLATFORM_SETTING_KEYS.startCodeActivationHours,
@@ -55,7 +70,9 @@ export class PlatformConfigService {
     updates: Partial<PlatformSettings>,
     db: DbClient = this.prisma,
   ): Promise<PlatformSettings> {
-    const entries = Object.entries(updates) as Array<[PlatformSettingKey, PlatformSettings[keyof PlatformSettings]]>;
+    const entries = Object.entries(updates) as Array<
+      [PlatformSettingKey, PlatformSettings[keyof PlatformSettings]]
+    >;
     if (entries.length === 0) {
       return this.getSettings(db);
     }
@@ -106,7 +123,10 @@ export class PlatformConfigService {
   }
 
   async formatSupportTicketNumber(db: DbClient = this.prisma): Promise<string> {
-    const sequence = await this.nextCounterValue(PLATFORM_COUNTER_KEYS.supportTickets, db);
+    const sequence = await this.nextCounterValue(
+      PLATFORM_COUNTER_KEYS.supportTickets,
+      db,
+    );
     return `SUP-${String(sequence).padStart(5, '0')}`;
   }
 
@@ -127,9 +147,14 @@ export class PlatformConfigService {
     return PLATFORM_SETTINGS_DEFAULTS[key as keyof PlatformSettings] as number;
   }
 
-  private readOnboardingFeeModel(values: Map<string, Prisma.JsonValue>): OnboardingFeeModel {
+  private readOnboardingFeeModel(
+    values: Map<string, Prisma.JsonValue>,
+  ): OnboardingFeeModel {
     const value = values.get(PLATFORM_SETTING_KEYS.onboardingFeeModel);
-    if (value === OnboardingFeeModel.UPFRONT || value === OnboardingFeeModel.FIRST_BOOKING_DEDUCTION) {
+    if (
+      value === OnboardingFeeModel.UPFRONT ||
+      value === OnboardingFeeModel.FIRST_BOOKING_DEDUCTION
+    ) {
       return value;
     }
     return PLATFORM_SETTINGS_DEFAULTS.onboardingFeeModel;

@@ -11,10 +11,10 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { UsersModule } from './users/users.module';
 import { AgenciesModule } from './agencies/agencies.module';
-import { PayfastModule } from './payfast/payfast.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { PrelaunchModule } from './prelaunch/prelaunch.module';
 
 @Module({
   imports: [
@@ -27,10 +27,10 @@ import { ReviewsModule } from './reviews/reviews.module';
     AuthModule,
     UsersModule,
     AgenciesModule,
-    PayfastModule,
     NotificationsModule,
     MessagesModule,
     ReviewsModule,
+    PrelaunchModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

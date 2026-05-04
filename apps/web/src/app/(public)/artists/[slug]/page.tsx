@@ -959,7 +959,7 @@ export default async function ArtistProfilePage({
                 </div>
                 <div className={styles.trustMicroRow}>
                   <span>⊙</span>
-                  Disputes handled through VendrMan support
+                  Disputes handled through Vendr Studios support
                 </div>
               </div>
             </div>

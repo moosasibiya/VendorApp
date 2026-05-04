@@ -96,8 +96,12 @@ const conversationAccessSelect = {
 } satisfies Prisma.ConversationSelect;
 
 type MessageRecord = Prisma.MessageGetPayload<{ select: typeof messageSelect }>;
-type ConversationSummaryRecord = Prisma.ConversationGetPayload<{ select: typeof conversationSummarySelect }>;
-type ConversationAccessRecord = Prisma.ConversationGetPayload<{ select: typeof conversationAccessSelect }>;
+type ConversationSummaryRecord = Prisma.ConversationGetPayload<{
+  select: typeof conversationSummarySelect;
+}>;
+type ConversationAccessRecord = Prisma.ConversationGetPayload<{
+  select: typeof conversationAccessSelect;
+}>;
 type SenderRecord = Prisma.UserGetPayload<{ select: typeof senderSelect }>;
 
 type ViewerContext = {
@@ -114,7 +118,10 @@ export class MessagesService {
     private readonly platformConfigService: PlatformConfigService,
   ) {}
 
-  async createConversation(userId: string, input: CreateConversationDto): Promise<ApiResponse<ConversationSummary>> {
+  async createConversation(
+    userId: string,
+    input: CreateConversationDto,
+  ): Promise<ApiResponse<ConversationSummary>> {
     await this.assertMessagingAllowed(userId);
 
     if (input.bookingId?.trim()) {
@@ -148,7 +155,9 @@ export class MessagesService {
         select: { id: true },
       });
       if (!booking) {
-        throw new ForbiddenException('You can only open support on bookings you can access');
+        throw new ForbiddenException(
+          'You can only open support on bookings you can access',
+        );
       }
     }
 
@@ -158,7 +167,13 @@ export class MessagesService {
         participantIds: { has: userId },
         supportCategory: input.category as never,
         bookingId: input.bookingId?.trim() || null,
-        supportStatus: { in: [SupportThreadStatus.OPEN, SupportThreadStatus.AWAITING_USER, SupportThreadStatus.ESCALATED] },
+        supportStatus: {
+          in: [
+            SupportThreadStatus.OPEN,
+            SupportThreadStatus.AWAITING_USER,
+            SupportThreadStatus.ESCALATED,
+          ],
+        },
       },
       select: conversationSummarySelect,
     });
@@ -169,7 +184,9 @@ export class MessagesService {
     }
 
     const supportStatus =
-      input.category === 'DISPUTE_HELP' || input.category === 'REFUND_HELP' || input.category === 'OTHER'
+      input.category === 'DISPUTE_HELP' ||
+      input.category === 'REFUND_HELP' ||
+      input.category === 'OTHER'
         ? SupportThreadStatus.ESCALATED
         : SupportThreadStatus.OPEN;
 
@@ -183,7 +200,8 @@ export class MessagesService {
           subject,
           supportCategory: input.category as never,
           supportStatus,
-          supportTicketNumber: await this.platformConfigService.formatSupportTicketNumber(tx),
+          supportTicketNumber:
+            await this.platformConfigService.formatSupportTicketNumber(tx),
           lastMessageAt: new Date(),
         },
         select: conversationSummarySelect,
@@ -252,14 +270,17 @@ export class MessagesService {
         data: {
           supportStatus: (input.status as never) ?? undefined,
           assignedAdminUserId:
-            input.assignedAdminUserId === undefined ? undefined : input.assignedAdminUserId || null,
+            input.assignedAdminUserId === undefined
+              ? undefined
+              : input.assignedAdminUserId || null,
           resolvedAt: input.status
             ? input.status === 'RESOLVED'
               ? new Date()
               : null
             : undefined,
           participantIds:
-            input.assignedAdminUserId && !conversation.participantIds.includes(input.assignedAdminUserId)
+            input.assignedAdminUserId &&
+            !conversation.participantIds.includes(input.assignedAdminUserId)
               ? [...conversation.participantIds, input.assignedAdminUserId]
               : undefined,
         },
@@ -283,7 +304,9 @@ export class MessagesService {
     };
   }
 
-  async listConversations(userId: string): Promise<ApiResponse<ConversationSummary[]>> {
+  async listConversations(
+    userId: string,
+  ): Promise<ApiResponse<ConversationSummary[]>> {
     const viewer = await this.getViewerContext(userId);
     const conversations = await this.prisma.conversation.findMany({
       where: this.getConversationListWhere(viewer),
@@ -315,11 +338,13 @@ export class MessagesService {
     const page = hasMore ? messages.slice(0, query.limit) : messages;
 
     return {
-      data: page.reverse().map((message) => this.toConversationMessage(message)),
+      data: page
+        .reverse()
+        .map((message) => this.toConversationMessage(message)),
       meta: {
         limit: query.limit,
         hasMore,
-        nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       },
     };
   }
@@ -329,7 +354,10 @@ export class MessagesService {
     conversationId: string,
     input: SendMessageDto,
   ): Promise<ApiResponse<ConversationMessage>> {
-    const conversation = await this.findAccessibleConversationOrThrow(userId, conversationId);
+    const conversation = await this.findAccessibleConversationOrThrow(
+      userId,
+      conversationId,
+    );
     const viewer = await this.getViewerContext(userId);
     if (conversation.kind !== ConversationKind.SUPPORT) {
       await this.assertMessagingAllowed(userId);
@@ -340,22 +368,33 @@ export class MessagesService {
     }
 
     const supportAdminIds =
-      conversation.kind === ConversationKind.SUPPORT && !this.isAdminRole(viewer.role)
+      conversation.kind === ConversationKind.SUPPORT &&
+      !this.isAdminRole(viewer.role)
         ? await this.getAdminUserIds()
         : [];
     const recipientIds =
-      conversation.kind === ConversationKind.SUPPORT && this.isAdminRole(viewer.role)
-        ? conversation.participantIds.filter((participantId) => participantId !== userId)
+      conversation.kind === ConversationKind.SUPPORT &&
+      this.isAdminRole(viewer.role)
+        ? conversation.participantIds.filter(
+            (participantId) => participantId !== userId,
+          )
         : conversation.kind === ConversationKind.SUPPORT
-          ? Array.from(new Set([...supportAdminIds, ...conversation.participantIds])).filter((id) => id !== userId)
-          : conversation.participantIds.filter((participantId) => participantId !== userId);
+          ? Array.from(
+              new Set([...supportAdminIds, ...conversation.participantIds]),
+            ).filter((id) => id !== userId)
+          : conversation.participantIds.filter(
+              (participantId) => participantId !== userId,
+            );
 
     let createdMessage!: MessageRecord;
-    let createdNotifications: Awaited<ReturnType<NotificationsService['createMany']>> = [];
+    let createdNotifications: Awaited<
+      ReturnType<NotificationsService['createMany']>
+    > = [];
 
     await this.prisma.$transaction(async (tx) => {
       const participantIds =
-        conversation.kind === ConversationKind.SUPPORT && !conversation.participantIds.includes(userId)
+        conversation.kind === ConversationKind.SUPPORT &&
+        !conversation.participantIds.includes(userId)
           ? [...conversation.participantIds, userId]
           : conversation.participantIds;
 
@@ -406,7 +445,10 @@ export class MessagesService {
             conversation.kind === ConversationKind.SUPPORT
               ? NotificationType.SUPPORT_THREAD_UPDATED
               : NotificationType.MESSAGE_RECEIVED,
-          title: conversation.kind === ConversationKind.SUPPORT ? 'Support thread updated' : 'New message',
+          title:
+            conversation.kind === ConversationKind.SUPPORT
+              ? 'Support thread updated'
+              : 'New message',
           body:
             conversation.kind === ConversationKind.SUPPORT
               ? `${createdMessage.sender.fullName}: ${this.buildMessagePreview(content, input.type as MessageType)}`
@@ -423,14 +465,23 @@ export class MessagesService {
 
     const message = this.toConversationMessage(createdMessage);
     this.messagesGateway.emitMessage(conversationId, message);
-    this.messagesGateway.emitConversationUpdated([...conversation.participantIds, ...recipientIds], conversationId);
+    this.messagesGateway.emitConversationUpdated(
+      [...conversation.participantIds, ...recipientIds],
+      conversationId,
+    );
     this.notificationsService.emitMany(createdNotifications);
 
     return { data: message };
   }
 
-  async markConversationRead(userId: string, conversationId: string): Promise<{ success: true }> {
-    const conversation = await this.findAccessibleConversationOrThrow(userId, conversationId);
+  async markConversationRead(
+    userId: string,
+    conversationId: string,
+  ): Promise<{ success: true }> {
+    const conversation = await this.findAccessibleConversationOrThrow(
+      userId,
+      conversationId,
+    );
     await this.prisma.message.updateMany({
       where: {
         conversationId,
@@ -440,11 +491,17 @@ export class MessagesService {
       data: { isRead: true },
     });
 
-    this.messagesGateway.emitConversationUpdated(conversation.participantIds, conversationId);
+    this.messagesGateway.emitConversationUpdated(
+      conversation.participantIds,
+      conversationId,
+    );
     return { success: true };
   }
 
-  private async getConversationSummaryForUser(userId: string, conversationId: string): Promise<ConversationSummary> {
+  private async getConversationSummaryForUser(
+    userId: string,
+    conversationId: string,
+  ): Promise<ConversationSummary> {
     const conversations = await this.prisma.conversation.findMany({
       where: {
         id: conversationId,
@@ -456,7 +513,10 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    const [summary] = await this.mapConversationSummaries(userId, conversations);
+    const [summary] = await this.mapConversationSummaries(
+      userId,
+      conversations,
+    );
     return summary;
   }
 
@@ -468,8 +528,14 @@ export class MessagesService {
       return [];
     }
 
-    const conversationIds = conversations.map((conversation) => conversation.id);
-    const participantIds = Array.from(new Set(conversations.flatMap((conversation) => conversation.participantIds)));
+    const conversationIds = conversations.map(
+      (conversation) => conversation.id,
+    );
+    const participantIds = Array.from(
+      new Set(
+        conversations.flatMap((conversation) => conversation.participantIds),
+      ),
+    );
 
     const [participants, unreadCounts] = await Promise.all([
       this.prisma.user.findMany({
@@ -493,8 +559,15 @@ export class MessagesService {
       }),
     ]);
 
-    const participantMap = new Map(participants.map((participant) => [participant.id, this.toConversationParticipant(participant)]));
-    const unreadMap = new Map(unreadCounts.map((entry) => [entry.conversationId, entry._count._all]));
+    const participantMap = new Map(
+      participants.map((participant) => [
+        participant.id,
+        this.toConversationParticipant(participant),
+      ]),
+    );
+    const unreadMap = new Map(
+      unreadCounts.map((entry) => [entry.conversationId, entry._count._all]),
+    );
 
     return conversations.map((conversation) => ({
       id: conversation.id,
@@ -502,7 +575,9 @@ export class MessagesService {
       participantIds: conversation.participantIds,
       participants: conversation.participantIds
         .map((participantId) => participantMap.get(participantId))
-        .filter((participant): participant is ConversationParticipant => Boolean(participant)),
+        .filter((participant): participant is ConversationParticipant =>
+          Boolean(participant),
+        ),
       kind: conversation.kind,
       subject: conversation.subject,
       supportCategory: conversation.supportCategory,
@@ -512,7 +587,9 @@ export class MessagesService {
       resolvedAt: conversation.resolvedAt?.toISOString() ?? null,
       lastMessageAt: conversation.lastMessageAt.toISOString(),
       unreadCount: unreadMap.get(conversation.id) ?? 0,
-      lastMessage: conversation.messages[0] ? this.toConversationMessage(conversation.messages[0]) : null,
+      lastMessage: conversation.messages[0]
+        ? this.toConversationMessage(conversation.messages[0])
+        : null,
       booking: conversation.booking
         ? {
             id: conversation.booking.id,
@@ -527,7 +604,10 @@ export class MessagesService {
     }));
   }
 
-  private async findAccessibleConversationOrThrow(userId: string, conversationId: string): Promise<ConversationAccessRecord> {
+  private async findAccessibleConversationOrThrow(
+    userId: string,
+    conversationId: string,
+  ): Promise<ConversationAccessRecord> {
     const viewer = await this.getViewerContext(userId);
     const conversation = await this.prisma.conversation.findFirst({
       where: {
@@ -542,7 +622,10 @@ export class MessagesService {
     return conversation;
   }
 
-  private async createBookingConversation(userId: string, bookingId: string): Promise<ApiResponse<ConversationSummary>> {
+  private async createBookingConversation(
+    userId: string,
+    bookingId: string,
+  ): Promise<ApiResponse<ConversationSummary>> {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       select: {
@@ -559,9 +642,14 @@ export class MessagesService {
       throw new NotFoundException('Booking not found');
     }
 
-    const participantIds = this.buildParticipantIds(booking.clientId, booking.artist.userId);
+    const participantIds = this.buildParticipantIds(
+      booking.clientId,
+      booking.artist.userId,
+    );
     if (!participantIds.includes(userId)) {
-      throw new ForbiddenException('Only booking participants can create a conversation');
+      throw new ForbiddenException(
+        'Only booking participants can create a conversation',
+      );
     }
 
     let conversation = await this.prisma.conversation.findFirst({
@@ -584,18 +672,30 @@ export class MessagesService {
       });
     }
 
-    this.messagesGateway.joinConversationForUsers(participantIds, conversation.id);
-    this.messagesGateway.emitConversationUpdated(participantIds, conversation.id);
+    this.messagesGateway.joinConversationForUsers(
+      participantIds,
+      conversation.id,
+    );
+    this.messagesGateway.emitConversationUpdated(
+      participantIds,
+      conversation.id,
+    );
 
     return {
       data: await this.getConversationSummaryForUser(userId, conversation.id),
     };
   }
 
-  private async createDirectConversation(userId: string, participantId: string): Promise<ApiResponse<ConversationSummary>> {
-    const targetUserId = await this.resolveDirectConversationParticipantId(participantId);
+  private async createDirectConversation(
+    userId: string,
+    participantId: string,
+  ): Promise<ApiResponse<ConversationSummary>> {
+    const targetUserId =
+      await this.resolveDirectConversationParticipantId(participantId);
     if (targetUserId === userId) {
-      throw new BadRequestException('You cannot start a conversation with yourself');
+      throw new BadRequestException(
+        'You cannot start a conversation with yourself',
+      );
     }
 
     const participantIds = Array.from(new Set([userId, targetUserId]));
@@ -630,15 +730,23 @@ export class MessagesService {
       });
     }
 
-    this.messagesGateway.joinConversationForUsers(participantIds, conversation.id);
-    this.messagesGateway.emitConversationUpdated(participantIds, conversation.id);
+    this.messagesGateway.joinConversationForUsers(
+      participantIds,
+      conversation.id,
+    );
+    this.messagesGateway.emitConversationUpdated(
+      participantIds,
+      conversation.id,
+    );
 
     return {
       data: await this.getConversationSummaryForUser(userId, conversation.id),
     };
   }
 
-  private async resolveDirectConversationParticipantId(participantId: string): Promise<string> {
+  private async resolveDirectConversationParticipantId(
+    participantId: string,
+  ): Promise<string> {
     const directUser = await this.prisma.user.findUnique({
       where: { id: participantId },
       select: { id: true, isActive: true },
@@ -662,9 +770,14 @@ export class MessagesService {
     return artist.userId;
   }
 
-  private buildParticipantIds(clientId: string, artistUserId: string | null): string[] {
+  private buildParticipantIds(
+    clientId: string,
+    artistUserId: string | null,
+  ): string[] {
     if (!artistUserId) {
-      throw new BadRequestException('Selected booking artist cannot receive messages yet');
+      throw new BadRequestException(
+        'Selected booking artist cannot receive messages yet',
+      );
     }
     return Array.from(new Set([clientId, artistUserId]));
   }
@@ -683,7 +796,9 @@ export class MessagesService {
     };
   }
 
-  private toConversationParticipant(participant: SenderRecord): ConversationParticipant {
+  private toConversationParticipant(
+    participant: SenderRecord,
+  ): ConversationParticipant {
     return {
       userId: participant.id,
       name: participant.fullName,
@@ -738,7 +853,10 @@ export class MessagesService {
       return;
     }
 
-    if (user.role === UserRole.ARTIST && user.artistProfile?.onboardingCompleted) {
+    if (
+      user.role === UserRole.ARTIST &&
+      user.artistProfile?.onboardingCompleted
+    ) {
       return;
     }
 
@@ -751,7 +869,9 @@ export class MessagesService {
     );
   }
 
-  private getConversationListWhere(viewer: ViewerContext): Prisma.ConversationWhereInput {
+  private getConversationListWhere(
+    viewer: ViewerContext,
+  ): Prisma.ConversationWhereInput {
     if (this.isAdminRole(viewer.role)) {
       return {
         OR: [

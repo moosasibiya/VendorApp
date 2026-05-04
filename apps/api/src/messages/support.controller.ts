@@ -1,4 +1,13 @@
-import { Body, Controller, Param, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import type { ApiResponse, ConversationSummary } from '@vendorapp/shared';
 import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
@@ -25,7 +34,10 @@ export class SupportController {
     @Req() request: AuthenticatedRequest,
     @Body() input: CreateSupportThreadDto,
   ): Promise<ApiResponse<ConversationSummary>> {
-    return this.messagesService.createSupportConversation(this.getUserId(request), input);
+    return this.messagesService.createSupportConversation(
+      this.getUserId(request),
+      input,
+    );
   }
 
   @Patch('threads/:id')
@@ -34,7 +46,11 @@ export class SupportController {
     @Param() params: ConversationIdParamDto,
     @Body() input: UpdateSupportThreadDto,
   ): Promise<ApiResponse<ConversationSummary>> {
-    return this.messagesService.updateSupportThread(this.getUserId(request), params.id, input);
+    return this.messagesService.updateSupportThread(
+      this.getUserId(request),
+      params.id,
+      input,
+    );
   }
 
   private getUserId(request: AuthenticatedRequest): string {

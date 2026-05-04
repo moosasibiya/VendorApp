@@ -62,7 +62,11 @@ export class BookingsController {
     @Param() params: BookingIdParamDto,
     @Body() input: UpdateBookingStatusDto,
   ): Promise<ApiResponse<Booking>> {
-    return this.bookingsService.updateStatus(this.getUserId(request), params.id, input);
+    return this.bookingsService.updateStatus(
+      this.getUserId(request),
+      params.id,
+      input,
+    );
   }
 
   @Post(':id/start-code/verify')
@@ -71,7 +75,11 @@ export class BookingsController {
     @Param() params: BookingIdParamDto,
     @Body() input: VerifyBookingStartCodeDto,
   ): Promise<ApiResponse<Booking>> {
-    return this.bookingsService.verifyStartCode(this.getUserId(request), params.id, input.code);
+    return this.bookingsService.verifyStartCode(
+      this.getUserId(request),
+      params.id,
+      input.code,
+    );
   }
 
   @Patch(':id/admin-override')
@@ -80,7 +88,11 @@ export class BookingsController {
     @Param() params: BookingIdParamDto,
     @Body() input: AdminBookingOverrideDto,
   ): Promise<ApiResponse<Booking>> {
-    return this.bookingsService.applyAdminOverride(this.getUserId(request), params.id, input);
+    return this.bookingsService.applyAdminOverride(
+      this.getUserId(request),
+      params.id,
+      input,
+    );
   }
 
   private getUserId(request: AuthenticatedRequest): string {

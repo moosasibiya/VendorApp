@@ -30,11 +30,6 @@ export enum PaymentStatus {
 }
 export type PaymentStatusValue = `${PaymentStatus}`;
 
-export enum PaymentProvider {
-  PAYFAST = 'PAYFAST',
-}
-export type PaymentProviderValue = `${PaymentProvider}`;
-
 export enum MessageType {
   TEXT = 'TEXT',
   IMAGE = 'IMAGE',

@@ -25,7 +25,7 @@ describe('API Security Flows (e2e)', () => {
     process.env.AUTH_COOKIE_SECURE ??= 'false';
     process.env.AUTH_COOKIE_SAME_SITE ??= 'lax';
     process.env.CSRF_COOKIE_NAME ??= 'vendrman_csrf';
-    process.env.AUTH_MFA_ISSUER ??= 'VendorApp';
+    process.env.AUTH_MFA_ISSUER ??= 'Vendr Studios';
     process.env.RESEND_API_KEY = '';
     process.env.EMAIL_FROM = '';
     prisma = new PrismaClient();
@@ -94,7 +94,10 @@ describe('API Security Flows (e2e)', () => {
       })
       .expect(201);
 
-    await agent.post('/api/auth/logout').set('X-CSRF-Token', csrfToken).expect(201);
+    await agent
+      .post('/api/auth/logout')
+      .set('X-CSRF-Token', csrfToken)
+      .expect(201);
     await agent.get('/api/auth/me').expect(401);
   });
 
@@ -173,14 +176,18 @@ describe('API Security Flows (e2e)', () => {
     });
 
     const verifyResponse = await request(app.getHttpServer())
-      .get(`/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`)
+      .get(
+        `/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`,
+      )
       .expect(200);
 
     expect(verifyResponse.body.success).toBe(true);
     expect(verifyResponse.body.email).toBe(email);
 
     const redirectResponse = await request(app.getHttpServer())
-      .get(`/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}&redirect=1`)
+      .get(
+        `/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}&redirect=1`,
+      )
       .expect(302);
 
     expect(redirectResponse.headers.location).toContain('/login?verified=1');
@@ -212,7 +219,10 @@ describe('API Security Flows (e2e)', () => {
     });
 
     const csrfToken = await getCsrfToken(agent);
-    const setup = await agent.post('/api/auth/mfa/setup').set('X-CSRF-Token', csrfToken).expect(201);
+    const setup = await agent
+      .post('/api/auth/mfa/setup')
+      .set('X-CSRF-Token', csrfToken)
+      .expect(201);
     const secret = setup.body.secret as string;
     expect(secret).toBeTruthy();
     expect(setup.body.otpauthUrl).toContain('otpauth://');
@@ -228,7 +238,10 @@ describe('API Security Flows (e2e)', () => {
     expect(Array.isArray(backupCodes)).toBe(true);
     expect(backupCodes.length).toBeGreaterThan(0);
 
-    await agent.post('/api/auth/logout').set('X-CSRF-Token', csrfToken).expect(201);
+    await agent
+      .post('/api/auth/logout')
+      .set('X-CSRF-Token', csrfToken)
+      .expect(201);
 
     await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -278,7 +291,10 @@ describe('API Security Flows (e2e)', () => {
 
     expect(saveResponse.body.slug).toContain('artist');
     expect(saveResponse.body.name).toBe('Studio Test');
-    expect(saveResponse.body.services).toEqual(['Photography', 'Content Creation']);
+    expect(saveResponse.body.services).toEqual([
+      'Photography',
+      'Content Creation',
+    ]);
 
     await agent.get('/api/artists/me/profile').expect(200);
     await request(app.getHttpServer())
@@ -317,8 +333,16 @@ describe('API Security Flows (e2e)', () => {
       orderBy: { createdAt: 'asc' },
     });
 
-    expect(events.some((event) => event.eventType === 'login_failed' && !event.success)).toBe(true);
-    expect(events.some((event) => event.eventType === 'login_success' && event.success)).toBe(true);
+    expect(
+      events.some(
+        (event) => event.eventType === 'login_failed' && !event.success,
+      ),
+    ).toBe(true);
+    expect(
+      events.some(
+        (event) => event.eventType === 'login_success' && event.success,
+      ),
+    ).toBe(true);
   });
 
   it('enforces IP-based login throttling', async () => {
@@ -330,7 +354,9 @@ describe('API Security Flows (e2e)', () => {
 
     let throttled = false;
     for (let attempt = 0; attempt < 25; attempt += 1) {
-      const response = await request(httpServer).post('/api/auth/login').send(baseBody);
+      const response = await request(httpServer)
+        .post('/api/auth/login')
+        .send(baseBody);
       if (response.status === 429) {
         throttled = true;
         break;
@@ -342,7 +368,9 @@ describe('API Security Flows (e2e)', () => {
   });
 });
 
-async function getCsrfToken(agent: ReturnType<typeof request.agent>): Promise<string> {
+async function getCsrfToken(
+  agent: ReturnType<typeof request.agent>,
+): Promise<string> {
   const response = await agent.get('/api/auth/csrf').expect(200);
   const token = response.body?.csrfToken as string | undefined;
   if (!token) {

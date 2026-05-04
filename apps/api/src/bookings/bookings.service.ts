@@ -10,14 +10,18 @@ import {
   BookingVerificationStatus,
   NotificationType,
   OnboardingFeeModel,
-  PaymentProvider,
   PaymentStatus,
   PayoutStatus,
   Prisma,
   UserRole,
 } from '@prisma/client';
 import type { ApiResponse, Booking, BookingAction } from '@vendorapp/shared';
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from 'crypto';
 import { ArtistTierService } from '../artists/artist-tier.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformConfigService } from '../platform/platform-config.service';
@@ -40,14 +44,7 @@ const bookingSelect = {
   totalAmount: true,
   platformFee: true,
   artistPayout: true,
-  paymentProvider: true,
   paymentStatus: true,
-  stripePaymentIntentId: true,
-  paymentReference: true,
-  paymentGatewayReference: true,
-  paymentInitiatedAt: true,
-  paymentPaidAt: true,
-  paymentFailedAt: true,
   notes: true,
   cancelledAt: true,
   cancelReason: true,
@@ -223,7 +220,10 @@ export class BookingsService {
     private readonly platformConfigService: PlatformConfigService,
   ) {}
 
-  async findAll(userId: string, query: ListBookingsQueryDto): Promise<ApiResponse<Booking[]>> {
+  async findAll(
+    userId: string,
+    query: ListBookingsQueryDto,
+  ): Promise<ApiResponse<Booking[]>> {
     const actor = await this.getActorContext(userId);
     this.validateDateRange(query);
 
@@ -250,7 +250,10 @@ export class BookingsService {
     };
   }
 
-  async findOne(userId: string, bookingId: string): Promise<ApiResponse<Booking>> {
+  async findOne(
+    userId: string,
+    bookingId: string,
+  ): Promise<ApiResponse<Booking>> {
     const actor = await this.getActorContext(userId);
     let booking = await this.findAccessibleBookingOrThrow(actor, bookingId);
     if (await this.syncAutomaticStatus(booking)) {
@@ -262,7 +265,10 @@ export class BookingsService {
     };
   }
 
-  async create(userId: string, input: CreateBookingDto): Promise<ApiResponse<Booking>> {
+  async create(
+    userId: string,
+    input: CreateBookingDto,
+  ): Promise<ApiResponse<Booking>> {
     const actor = await this.getActorContext(userId);
     if (actor.role !== UserRole.CLIENT) {
       throw new ForbiddenException('Only client accounts can create bookings');
@@ -284,7 +290,9 @@ export class BookingsService {
       throw new NotFoundException('Artist not found');
     }
     if (!artist.isLive) {
-      throw new BadRequestException('Selected artist is not live for bookings yet');
+      throw new BadRequestException(
+        'Selected artist is not live for bookings yet',
+      );
     }
     if (!artist.isAvailable) {
       throw new BadRequestException('Selected artist is currently unavailable');
@@ -306,7 +314,12 @@ export class BookingsService {
 
     const settings = await this.platformConfigService.getSettings();
     const commissionRate = Number(artist.normalCommissionRate.toString());
-    const amounts = this.calculateAmounts(artist.hourlyRate, commissionRate, eventDate, eventEndDate);
+    const amounts = this.calculateAmounts(
+      artist.hourlyRate,
+      commissionRate,
+      eventDate,
+      eventEndDate,
+    );
     const bookingId = `bk-${randomBytes(8).toString('hex')}`;
 
     const createdNotifications = await this.prisma.$transaction(async (tx) => {
@@ -325,12 +338,6 @@ export class BookingsService {
           platformFee: amounts.platformFee,
           artistPayout: amounts.artistPayout,
           paymentStatus: PaymentStatus.UNPAID,
-          paymentProvider: null,
-          paymentReference: null,
-          paymentGatewayReference: null,
-          paymentInitiatedAt: null,
-          paymentPaidAt: null,
-          paymentFailedAt: null,
           notes: this.normalizeOptionalString(input.notes),
           artistName: artist.displayName,
           artistInitials: this.getInitials(artist.displayName),
@@ -433,30 +440,40 @@ export class BookingsService {
   ): Promise<ApiResponse<Booking>> {
     const actor = await this.getActorContext(userId);
     const booking = await this.findAccessibleBookingOrThrow(actor, bookingId);
-    const isArtist = actor.artistProfileId !== null && booking.artistId === actor.artistProfileId;
-    const isAgency = actor.agencyId !== null && booking.agencyId === actor.agencyId;
+    const isArtist =
+      actor.artistProfileId !== null &&
+      booking.artistId === actor.artistProfileId;
+    const isAgency =
+      actor.agencyId !== null && booking.agencyId === actor.agencyId;
 
     if (!(isArtist || isAgency || this.isAdminRole(actor.role))) {
-      throw new ForbiddenException('Only the artist, agency, or admin can start the booking');
+      throw new ForbiddenException(
+        'Only the artist, agency, or admin can start the booking',
+      );
     }
     if (!startCodeStatuses.includes(booking.status)) {
-      throw new BadRequestException('This booking is not waiting for a start code');
-    }
-    if (booking.paymentStatus !== PaymentStatus.PAID) {
-      throw new BadRequestException('The booking must be paid before work can begin');
+      throw new BadRequestException(
+        'This booking is not waiting for a start code',
+      );
     }
     if (!booking.verificationCodeCiphertext) {
-      throw new BadRequestException('No verification code has been generated for this booking');
+      throw new BadRequestException(
+        'No verification code has been generated for this booking',
+      );
     }
     if (
       booking.verificationCodeExpiresAt &&
       booking.verificationCodeExpiresAt.getTime() < Date.now()
     ) {
-      throw new BadRequestException('The verification code has expired and now requires support review');
+      throw new BadRequestException(
+        'The verification code has expired and now requires support review',
+      );
     }
 
     const normalizedCode = code.trim();
-    const expectedCode = this.decryptVerificationCode(booking.verificationCodeCiphertext);
+    const expectedCode = this.decryptVerificationCode(
+      booking.verificationCodeCiphertext,
+    );
     if (normalizedCode !== expectedCode) {
       await this.prisma.booking.update({
         where: { id: booking.id },
@@ -507,7 +524,11 @@ export class BookingsService {
     userId: string,
     bookingId: string,
     input: {
-      action: 'verify_without_code' | 'hold_payout' | 'release_payout' | 'resolve_dispute';
+      action:
+        | 'verify_without_code'
+        | 'hold_payout'
+        | 'release_payout'
+        | 'resolve_dispute';
       reason?: string;
     },
   ): Promise<ApiResponse<Booking>> {
@@ -517,12 +538,15 @@ export class BookingsService {
     }
 
     const booking = await this.findAccessibleBookingOrThrow(actor, bookingId);
-    const reason = this.normalizeOptionalString(input.reason) ?? 'Admin override applied';
+    const reason =
+      this.normalizeOptionalString(input.reason) ?? 'Admin override applied';
 
     switch (input.action) {
       case 'verify_without_code':
         if (!startCodeStatuses.includes(booking.status)) {
-          throw new BadRequestException('Only booked jobs can be manually verified');
+          throw new BadRequestException(
+            'Only booked jobs can be manually verified',
+          );
         }
         await this.applyStatusChange(
           booking,
@@ -556,16 +580,25 @@ export class BookingsService {
             payoutOverrideReason: reason,
           },
         });
-        await this.createAuditEvent(this.prisma, booking.id, 'booking_payout_held', actor.userId, reason, {
-          payoutStatus: PayoutStatus.ON_HOLD,
-        });
+        await this.createAuditEvent(
+          this.prisma,
+          booking.id,
+          'booking_payout_held',
+          actor.userId,
+          reason,
+          {
+            payoutStatus: PayoutStatus.ON_HOLD,
+          },
+        );
         break;
       case 'release_payout':
         await this.releasePayout(booking, actor, true, reason);
         break;
       case 'resolve_dispute':
         if (booking.status !== PrismaBookingStatus.DISPUTED) {
-          throw new BadRequestException('Only disputed bookings can be resolved');
+          throw new BadRequestException(
+            'Only disputed bookings can be resolved',
+          );
         }
         await this.applyStatusChange(
           booking,
@@ -626,25 +659,40 @@ export class BookingsService {
       case UserRole.CLIENT:
         return { clientId: actor.userId };
       case UserRole.ARTIST:
-        return actor.artistProfileId ? { artistId: actor.artistProfileId } : { id: '__no-bookings__' };
+        return actor.artistProfileId
+          ? { artistId: actor.artistProfileId }
+          : { id: '__no-bookings__' };
       case UserRole.AGENCY:
-        return actor.agencyId ? { agencyId: actor.agencyId } : { id: '__no-bookings__' };
+        return actor.agencyId
+          ? { agencyId: actor.agencyId }
+          : { id: '__no-bookings__' };
       default:
         return {};
     }
   }
 
-  private buildListWhere(actor: ActorContext, query: ListBookingsQueryDto): Prisma.BookingWhereInput {
-    const conditions: Prisma.BookingWhereInput[] = [this.buildAccessWhere(actor)];
+  private buildListWhere(
+    actor: ActorContext,
+    query: ListBookingsQueryDto,
+  ): Prisma.BookingWhereInput {
+    const conditions: Prisma.BookingWhereInput[] = [
+      this.buildAccessWhere(actor),
+    ];
 
     if (query.status) {
-      conditions.push({ status: query.status as unknown as PrismaBookingStatus });
+      conditions.push({
+        status: query.status as unknown as PrismaBookingStatus,
+      });
     }
     if (query.startDate || query.endDate) {
       conditions.push({
         eventDate: {
-          ...(query.startDate ? { gte: this.parseDate(query.startDate, 'startDate') } : {}),
-          ...(query.endDate ? { lte: this.parseDate(query.endDate, 'endDate') } : {}),
+          ...(query.startDate
+            ? { gte: this.parseDate(query.startDate, 'startDate') }
+            : {}),
+          ...(query.endDate
+            ? { lte: this.parseDate(query.endDate, 'endDate') }
+            : {}),
         },
       });
     }
@@ -669,7 +717,10 @@ export class BookingsService {
     }
   }
 
-  private async findAccessibleBookingOrThrow(actor: ActorContext, bookingId: string): Promise<BookingRecord> {
+  private async findAccessibleBookingOrThrow(
+    actor: ActorContext,
+    bookingId: string,
+  ): Promise<BookingRecord> {
     const booking = await this.prisma.booking.findFirst({
       where: {
         AND: [this.buildAccessWhere(actor), { id: bookingId }],
@@ -683,10 +734,14 @@ export class BookingsService {
     return booking;
   }
 
-  private async syncAutomaticStatuses(accessWhere: Prisma.BookingWhereInput): Promise<void> {
+  private async syncAutomaticStatuses(
+    accessWhere: Prisma.BookingWhereInput,
+  ): Promise<void> {
     const settings = await this.platformConfigService.getSettings();
     const now = new Date();
-    const approvalCutoff = new Date(now.getTime() - settings.clientApprovalGraceHours * 60 * 60 * 1000);
+    const approvalCutoff = new Date(
+      now.getTime() - settings.clientApprovalGraceHours * 60 * 60 * 1000,
+    );
 
     const candidates = await this.prisma.booking.findMany({
       where: {
@@ -695,9 +750,18 @@ export class BookingsService {
           {
             OR: [
               { status: PrismaBookingStatus.BOOKED },
-              { status: PrismaBookingStatus.AWAITING_CLIENT_APPROVAL, jobCompletedAt: { lte: approvalCutoff } },
-              { status: PrismaBookingStatus.COMPLETED, disputeWindowEndsAt: { lte: now } },
-              { status: PrismaBookingStatus.PAYOUT_PENDING, estimatedPayoutReleaseAt: { lte: now } },
+              {
+                status: PrismaBookingStatus.AWAITING_CLIENT_APPROVAL,
+                jobCompletedAt: { lte: approvalCutoff },
+              },
+              {
+                status: PrismaBookingStatus.COMPLETED,
+                disputeWindowEndsAt: { lte: now },
+              },
+              {
+                status: PrismaBookingStatus.PAYOUT_PENDING,
+                estimatedPayoutReleaseAt: { lte: now },
+              },
             ],
           },
         ],
@@ -714,55 +778,67 @@ export class BookingsService {
     booking: BookingRecord,
     settings?: Awaited<ReturnType<PlatformConfigService['getSettings']>>,
   ): Promise<boolean> {
-    const currentSettings = settings ?? (await this.platformConfigService.getSettings());
+    const currentSettings =
+      settings ?? (await this.platformConfigService.getSettings());
     const now = new Date();
-    const activationCutoff = new Date(now.getTime() + currentSettings.startCodeActivationHours * 60 * 60 * 1000);
+    const activationCutoff = new Date(
+      now.getTime() + currentSettings.startCodeActivationHours * 60 * 60 * 1000,
+    );
 
-    if (booking.status === PrismaBookingStatus.BOOKED && booking.eventDate.getTime() <= activationCutoff.getTime()) {
-      return this.applyStatusChange(
-        booking,
-        {
-          nextStatus: PrismaBookingStatus.AWAITING_START_CODE,
-          action: 'auto_await_start_code',
-          notificationType: NotificationType.BOOKING_CONFIRMED,
-          notificationTitle: 'Booking awaiting safety code',
-          notificationBody: `"${booking.title}" is now waiting for the safety code.`,
-          auditType: 'booking_awaiting_start_code',
-          auditMessage: 'Booking entered the start-code verification window.',
-        },
-      );
+    if (
+      booking.status === PrismaBookingStatus.BOOKED &&
+      booking.eventDate.getTime() <= activationCutoff.getTime()
+    ) {
+      return this.applyStatusChange(booking, {
+        nextStatus: PrismaBookingStatus.AWAITING_START_CODE,
+        action: 'auto_await_start_code',
+        notificationType: NotificationType.BOOKING_CONFIRMED,
+        notificationTitle: 'Booking awaiting safety code',
+        notificationBody: `"${booking.title}" is now waiting for the safety code.`,
+        auditType: 'booking_awaiting_start_code',
+        auditMessage: 'Booking entered the start-code verification window.',
+      });
     }
 
     if (
       booking.status === PrismaBookingStatus.AWAITING_CLIENT_APPROVAL &&
       booking.jobCompletedAt &&
-      booking.jobCompletedAt.getTime() <= now.getTime() - currentSettings.clientApprovalGraceHours * 60 * 60 * 1000
+      booking.jobCompletedAt.getTime() <=
+        now.getTime() -
+          currentSettings.clientApprovalGraceHours * 60 * 60 * 1000
     ) {
-      return this.applyStatusChange(
-        booking,
-        {
-          nextStatus: PrismaBookingStatus.COMPLETED,
-          action: 'auto_complete_approval',
-          notificationType: NotificationType.BOOKING_CONFIRMED,
-          notificationTitle: 'Booking completed',
-          notificationBody: `"${booking.title}" was auto-completed after the approval window elapsed.`,
-          updateData: {
-            disputeWindowDays: currentSettings.disputeWindowDays,
-            disputeWindowEndsAt: new Date(now.getTime() + currentSettings.disputeWindowDays * 24 * 60 * 60 * 1000),
-          },
-          auditType: 'booking_auto_completed',
-          auditMessage: 'Client approval window expired and the booking was auto-completed.',
+      return this.applyStatusChange(booking, {
+        nextStatus: PrismaBookingStatus.COMPLETED,
+        action: 'auto_complete_approval',
+        notificationType: NotificationType.BOOKING_CONFIRMED,
+        notificationTitle: 'Booking completed',
+        notificationBody: `"${booking.title}" was auto-completed after the approval window elapsed.`,
+        updateData: {
+          disputeWindowDays: currentSettings.disputeWindowDays,
+          disputeWindowEndsAt: new Date(
+            now.getTime() +
+              currentSettings.disputeWindowDays * 24 * 60 * 60 * 1000,
+          ),
         },
-      );
+        auditType: 'booking_auto_completed',
+        auditMessage:
+          'Client approval window expired and the booking was auto-completed.',
+      });
     }
 
-    if (booking.status === PrismaBookingStatus.COMPLETED && booking.disputeWindowEndsAt && booking.disputeWindowEndsAt.getTime() <= now.getTime()) {
+    if (
+      booking.status === PrismaBookingStatus.COMPLETED &&
+      booking.disputeWindowEndsAt &&
+      booking.disputeWindowEndsAt.getTime() <= now.getTime()
+    ) {
       if (!verifiedBookingStatuses.includes(booking.verificationStatus)) {
         await this.prisma.booking.update({
           where: { id: booking.id },
           data: {
             payoutStatus: PayoutStatus.MANUAL_REVIEW,
-            payoutHoldReason: booking.payoutHoldReason ?? 'Safety code was never verified. Manual review is required before payout.',
+            payoutHoldReason:
+              booking.payoutHoldReason ??
+              'Safety code was never verified. Manual review is required before payout.',
           },
         });
         await this.createAuditEvent(
@@ -776,7 +852,12 @@ export class BookingsService {
         return true;
       }
 
-      await this.moveToPayoutPending(booking, undefined, false, 'Dispute window elapsed.');
+      await this.moveToPayoutPending(
+        booking,
+        undefined,
+        false,
+        'Dispute window elapsed.',
+      );
       return true;
     }
 
@@ -786,58 +867,91 @@ export class BookingsService {
       booking.estimatedPayoutReleaseAt &&
       booking.estimatedPayoutReleaseAt.getTime() <= now.getTime()
     ) {
-      await this.releasePayout(booking, undefined, false, 'Payout release timing reached.');
+      await this.releasePayout(
+        booking,
+        undefined,
+        false,
+        'Payout release timing reached.',
+      );
       return true;
     }
 
     return false;
   }
 
-  private async confirmBooking(actor: ActorContext, booking: BookingRecord, reason?: string): Promise<void> {
-    const isArtist = actor.artistProfileId !== null && booking.artistId === actor.artistProfileId;
-    const isAgency = actor.agencyId !== null && booking.agencyId === actor.agencyId;
+  private async confirmBooking(
+    actor: ActorContext,
+    booking: BookingRecord,
+    reason?: string,
+  ): Promise<void> {
+    const isArtist =
+      actor.artistProfileId !== null &&
+      booking.artistId === actor.artistProfileId;
+    const isAgency =
+      actor.agencyId !== null && booking.agencyId === actor.agencyId;
     if (!(isArtist || isAgency || this.isAdminRole(actor.role))) {
-      throw new ForbiddenException('Only the artist, agency, or admin can confirm this booking');
+      throw new ForbiddenException(
+        'Only the artist, agency, or admin can confirm this booking',
+      );
     }
     if (booking.status !== PrismaBookingStatus.PENDING) {
       throw new BadRequestException('Only pending bookings can be confirmed');
     }
 
+    const verificationCode = this.generateVerificationCode(6);
+    const now = new Date();
+
     await this.applyStatusChange(
       booking,
       {
-        nextStatus: PrismaBookingStatus.CONFIRMED,
+        nextStatus: PrismaBookingStatus.BOOKED,
         action: 'confirm',
         reason,
         notificationType: NotificationType.BOOKING_CONFIRMED,
         notificationTitle: 'Booking confirmed',
         notificationBody: `${actor.name} confirmed "${booking.title}".`,
         updateData: {
-          paymentProvider: booking.paymentProvider ?? PaymentProvider.PAYFAST,
-          paymentReference: booking.paymentReference ?? this.buildPaymentReference(booking.id),
+          verificationCodeCiphertext:
+            this.encryptVerificationCode(verificationCode),
+          verificationCodeSentAt: now,
+          verificationCodeExpiresAt: new Date(
+            now.getTime() + 24 * 60 * 60 * 1000,
+          ),
+          verificationStatus: BookingVerificationStatus.PENDING,
         },
         auditType: 'booking_confirmed',
-        auditMessage: 'Booking confirmed and waiting for payment.',
+        auditMessage: 'Booking confirmed.',
       },
       actor,
     );
   }
 
-  private async cancelBooking(actor: ActorContext, booking: BookingRecord, reason?: string): Promise<void> {
+  private async cancelBooking(
+    actor: ActorContext,
+    booking: BookingRecord,
+    reason?: string,
+  ): Promise<void> {
     const isParticipant =
       booking.clientId === actor.userId ||
-      (actor.artistProfileId !== null && booking.artistId === actor.artistProfileId) ||
+      (actor.artistProfileId !== null &&
+        booking.artistId === actor.artistProfileId) ||
       (actor.agencyId !== null && booking.agencyId === actor.agencyId) ||
       this.isAdminRole(actor.role);
 
     if (!isParticipant) {
-      throw new ForbiddenException('Only booking participants can cancel this booking');
+      throw new ForbiddenException(
+        'Only booking participants can cancel this booking',
+      );
     }
     if (!cancellableBookingStatuses.includes(booking.status)) {
-      throw new BadRequestException('Only pending or unpaid confirmed bookings can be cancelled');
+      throw new BadRequestException(
+        'Only pending or unpaid confirmed bookings can be cancelled',
+      );
     }
     if (booking.paymentStatus === PaymentStatus.PAID) {
-      throw new BadRequestException('Paid bookings must be handled through support review');
+      throw new BadRequestException(
+        'Paid bookings must be handled through support review',
+      );
     }
 
     await this.applyStatusChange(
@@ -861,17 +975,30 @@ export class BookingsService {
     );
   }
 
-  private async completeBooking(actor: ActorContext, booking: BookingRecord, reason?: string): Promise<void> {
-    const isArtist = actor.artistProfileId !== null && booking.artistId === actor.artistProfileId;
-    const isAgency = actor.agencyId !== null && booking.agencyId === actor.agencyId;
+  private async completeBooking(
+    actor: ActorContext,
+    booking: BookingRecord,
+    reason?: string,
+  ): Promise<void> {
+    const isArtist =
+      actor.artistProfileId !== null &&
+      booking.artistId === actor.artistProfileId;
+    const isAgency =
+      actor.agencyId !== null && booking.agencyId === actor.agencyId;
     if (!(isArtist || isAgency || this.isAdminRole(actor.role))) {
-      throw new ForbiddenException('Only the artist, agency, or admin can complete this booking');
+      throw new ForbiddenException(
+        'Only the artist, agency, or admin can complete this booking',
+      );
     }
     if (booking.status !== PrismaBookingStatus.IN_PROGRESS) {
-      throw new BadRequestException('Only in-progress bookings can be completed');
+      throw new BadRequestException(
+        'Only in-progress bookings can be completed',
+      );
     }
     if (!verifiedBookingStatuses.includes(booking.verificationStatus)) {
-      throw new BadRequestException('This booking was not properly verified before starting');
+      throw new BadRequestException(
+        'This booking was not properly verified before starting',
+      );
     }
 
     await this.applyStatusChange(
@@ -893,12 +1020,20 @@ export class BookingsService {
     );
   }
 
-  private async approveCompletion(actor: ActorContext, booking: BookingRecord, reason?: string): Promise<void> {
+  private async approveCompletion(
+    actor: ActorContext,
+    booking: BookingRecord,
+    reason?: string,
+  ): Promise<void> {
     if (!(booking.clientId === actor.userId || this.isAdminRole(actor.role))) {
-      throw new ForbiddenException('Only the client or admin can approve completion');
+      throw new ForbiddenException(
+        'Only the client or admin can approve completion',
+      );
     }
     if (booking.status !== PrismaBookingStatus.AWAITING_CLIENT_APPROVAL) {
-      throw new BadRequestException('This booking is not awaiting client approval');
+      throw new BadRequestException(
+        'This booking is not awaiting client approval',
+      );
     }
 
     const settings = await this.platformConfigService.getSettings();
@@ -914,7 +1049,9 @@ export class BookingsService {
         updateData: {
           clientApprovedAt: new Date(),
           disputeWindowDays: settings.disputeWindowDays,
-          disputeWindowEndsAt: new Date(Date.now() + settings.disputeWindowDays * 24 * 60 * 60 * 1000),
+          disputeWindowEndsAt: new Date(
+            Date.now() + settings.disputeWindowDays * 24 * 60 * 60 * 1000,
+          ),
         },
         auditType: 'booking_completion_approved',
         auditMessage: reason ?? 'Client approved completion.',
@@ -923,23 +1060,34 @@ export class BookingsService {
     );
   }
 
-  private async disputeBooking(actor: ActorContext, booking: BookingRecord, reason?: string): Promise<void> {
+  private async disputeBooking(
+    actor: ActorContext,
+    booking: BookingRecord,
+    reason?: string,
+  ): Promise<void> {
     const isParticipant =
       booking.clientId === actor.userId ||
-      (actor.artistProfileId !== null && booking.artistId === actor.artistProfileId) ||
+      (actor.artistProfileId !== null &&
+        booking.artistId === actor.artistProfileId) ||
       (actor.agencyId !== null && booking.agencyId === actor.agencyId) ||
       this.isAdminRole(actor.role);
 
     if (!isParticipant) {
-      throw new ForbiddenException('Only booking participants can dispute this booking');
+      throw new ForbiddenException(
+        'Only booking participants can dispute this booking',
+      );
     }
     if (booking.status === PrismaBookingStatus.DISPUTED) {
       throw new BadRequestException('Booking is already disputed');
     }
     if (disputeWindowStatuses.includes(booking.status)) {
-      const disputeWindowOpen = !booking.disputeWindowEndsAt || booking.disputeWindowEndsAt.getTime() >= Date.now();
+      const disputeWindowOpen =
+        !booking.disputeWindowEndsAt ||
+        booking.disputeWindowEndsAt.getTime() >= Date.now();
       if (!disputeWindowOpen && !this.isAdminRole(actor.role)) {
-        throw new BadRequestException('The standard dispute window has expired. Please escalate through support for manual review.');
+        throw new BadRequestException(
+          'The standard dispute window has expired. Please escalate through support for manual review.',
+        );
       }
     }
 
@@ -976,11 +1124,16 @@ export class BookingsService {
     await this.prisma.$transaction(async (tx) => {
       let platformFee = Number(booking.platformFee.toString());
       let artistPayout = Number(booking.artistPayout.toString());
-      let appliedCommissionRate = Number(booking.appliedCommissionRate.toString());
-      let onboardingExtraCutAmount = Number(booking.onboardingExtraCutAmount.toString());
+      let appliedCommissionRate = Number(
+        booking.appliedCommissionRate.toString(),
+      );
+      let onboardingExtraCutAmount = Number(
+        booking.onboardingExtraCutAmount.toString(),
+      );
 
       if (
-        booking.artist.onboardingFeeModel === OnboardingFeeModel.FIRST_BOOKING_DEDUCTION &&
+        booking.artist.onboardingFeeModel ===
+          OnboardingFeeModel.FIRST_BOOKING_DEDUCTION &&
         !booking.artist.firstBookingOnboardingDeductionApplied
       ) {
         const claimed = await tx.artist.updateMany({
@@ -995,12 +1148,22 @@ export class BookingsService {
         });
 
         if (claimed.count > 0) {
-          const normalRate = Number(booking.artist.normalCommissionRate.toString());
-          appliedCommissionRate = Number(booking.artist.temporaryFirstBookingCommissionRate.toString());
-          platformFee = this.roundMoney((Number(booking.totalAmount.toString()) * appliedCommissionRate) / 100);
-          artistPayout = this.roundMoney(Number(booking.totalAmount.toString()) - platformFee);
+          const normalRate = Number(
+            booking.artist.normalCommissionRate.toString(),
+          );
+          appliedCommissionRate = Number(
+            booking.artist.temporaryFirstBookingCommissionRate.toString(),
+          );
+          platformFee = this.roundMoney(
+            (Number(booking.totalAmount.toString()) * appliedCommissionRate) /
+              100,
+          );
+          artistPayout = this.roundMoney(
+            Number(booking.totalAmount.toString()) - platformFee,
+          );
           onboardingExtraCutAmount = this.roundMoney(
-            Number(booking.totalAmount.toString()) * ((appliedCommissionRate - normalRate) / 100),
+            Number(booking.totalAmount.toString()) *
+              ((appliedCommissionRate - normalRate) / 100),
           );
         }
       }
@@ -1014,16 +1177,24 @@ export class BookingsService {
           status: PrismaBookingStatus.PAYOUT_PENDING,
           payoutStatus: PayoutStatus.PENDING,
           payoutPendingAt: now,
-          estimatedPayoutReleaseAt: new Date(now.getTime() + payoutDelayDays * 24 * 60 * 60 * 1000),
+          estimatedPayoutReleaseAt: new Date(
+            now.getTime() + payoutDelayDays * 24 * 60 * 60 * 1000,
+          ),
           payoutDelayDaysSnapshot: payoutDelayDays,
           payoutHoldReason: null,
-          normalCommissionRate: Number(booking.artist.normalCommissionRate.toString()).toFixed(2),
+          normalCommissionRate: Number(
+            booking.artist.normalCommissionRate.toString(),
+          ).toFixed(2),
           appliedCommissionRate: appliedCommissionRate.toFixed(2),
           platformFee: platformFee.toFixed(2),
           artistPayout: artistPayout.toFixed(2),
           onboardingExtraCutAmount: onboardingExtraCutAmount.toFixed(2),
-          payoutOverrideByUserId: manualOverride ? actor?.userId ?? null : booking.payoutOverrideByUserId,
-          payoutOverrideReason: manualOverride ? reason ?? null : booking.payoutOverrideReason,
+          payoutOverrideByUserId: manualOverride
+            ? (actor?.userId ?? null)
+            : booking.payoutOverrideByUserId,
+          payoutOverrideReason: manualOverride
+            ? (reason ?? null)
+            : booking.payoutOverrideReason,
         },
       });
 
@@ -1036,7 +1207,9 @@ export class BookingsService {
           bookingId: booking.id,
           fromStatus: booking.status,
           toStatus: PrismaBookingStatus.PAYOUT_PENDING,
-          action: manualOverride ? 'admin_move_to_payout_pending' : 'auto_move_to_payout_pending',
+          action: manualOverride
+            ? 'admin_move_to_payout_pending'
+            : 'auto_move_to_payout_pending',
           reason: reason ?? null,
           actorUserId: actor?.userId ?? null,
           actorName: actor?.name ?? null,
@@ -1044,26 +1217,37 @@ export class BookingsService {
         },
       });
 
-      await this.createAuditEvent(tx, booking.id, 'booking_payout_pending', actor?.userId ?? null, reason ?? 'Booking moved into payout pending.', {
-        payoutDelayDays,
-        appliedCommissionRate,
-        onboardingExtraCutAmount,
-        manualOverride,
-      });
+      await this.createAuditEvent(
+        tx,
+        booking.id,
+        'booking_payout_pending',
+        actor?.userId ?? null,
+        reason ?? 'Booking moved into payout pending.',
+        {
+          payoutDelayDays,
+          appliedCommissionRate,
+          onboardingExtraCutAmount,
+          manualOverride,
+        },
+      );
 
       const notifications = await this.notificationsService.createMany(
         tx,
-        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map((userId) => ({
-          userId,
-          type: NotificationType.PAYOUT_STATUS_UPDATED,
-          title: 'Payout pending',
-          body: `Payout for "${booking.title}" is pending release.`,
-          metadata: {
-            bookingId: booking.id,
-            payoutStatus: PayoutStatus.PENDING,
-            estimatedPayoutReleaseAt: new Date(now.getTime() + payoutDelayDays * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        })),
+        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map(
+          (userId) => ({
+            userId,
+            type: NotificationType.PAYOUT_STATUS_UPDATED,
+            title: 'Payout pending',
+            body: `Payout for "${booking.title}" is pending release.`,
+            metadata: {
+              bookingId: booking.id,
+              payoutStatus: PayoutStatus.PENDING,
+              estimatedPayoutReleaseAt: new Date(
+                now.getTime() + payoutDelayDays * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            },
+          }),
+        ),
       );
       this.notificationsService.emitMany(notifications);
     });
@@ -1089,8 +1273,12 @@ export class BookingsService {
           payoutStatus: PayoutStatus.RELEASED,
           payoutReleasedAt: now,
           payoutHoldReason: null,
-          payoutOverrideByUserId: manualOverride ? actor?.userId ?? null : booking.payoutOverrideByUserId,
-          payoutOverrideReason: manualOverride ? reason ?? null : booking.payoutOverrideReason,
+          payoutOverrideByUserId: manualOverride
+            ? (actor?.userId ?? null)
+            : booking.payoutOverrideByUserId,
+          payoutOverrideReason: manualOverride
+            ? (reason ?? null)
+            : booking.payoutOverrideReason,
         },
       });
 
@@ -1103,7 +1291,9 @@ export class BookingsService {
           bookingId: booking.id,
           fromStatus: booking.status,
           toStatus: PrismaBookingStatus.PAYOUT_RELEASED,
-          action: manualOverride ? 'admin_release_payout' : 'auto_release_payout',
+          action: manualOverride
+            ? 'admin_release_payout'
+            : 'auto_release_payout',
           reason: reason ?? null,
           actorUserId: actor?.userId ?? null,
           actorName: actor?.name ?? null,
@@ -1111,24 +1301,33 @@ export class BookingsService {
         },
       });
 
-      await this.createAuditEvent(tx, booking.id, 'booking_payout_released', actor?.userId ?? null, reason ?? 'Payout released to artist.', {
-        manualOverride,
-        payoutStatus: PayoutStatus.RELEASED,
-      });
+      await this.createAuditEvent(
+        tx,
+        booking.id,
+        'booking_payout_released',
+        actor?.userId ?? null,
+        reason ?? 'Payout released to artist.',
+        {
+          manualOverride,
+          payoutStatus: PayoutStatus.RELEASED,
+        },
+      );
 
       return this.notificationsService.createMany(
         tx,
-        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map((userId) => ({
-          userId,
-          type: NotificationType.PAYOUT_STATUS_UPDATED,
-          title: 'Payout released',
-          body: `Payout for "${booking.title}" has been released.`,
-          metadata: {
-            bookingId: booking.id,
-            payoutStatus: PayoutStatus.RELEASED,
-            payoutReleasedAt: now.toISOString(),
-          },
-        })),
+        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map(
+          (userId) => ({
+            userId,
+            type: NotificationType.PAYOUT_STATUS_UPDATED,
+            title: 'Payout released',
+            body: `Payout for "${booking.title}" has been released.`,
+            metadata: {
+              bookingId: booking.id,
+              payoutStatus: PayoutStatus.RELEASED,
+              payoutReleasedAt: now.toISOString(),
+            },
+          }),
+        ),
       );
     });
 
@@ -1145,7 +1344,11 @@ export class BookingsService {
     return 7;
   }
 
-  private async applyStatusChange(booking: BookingRecord, plan: StatusChangePlan, actor?: ActorContext): Promise<boolean> {
+  private async applyStatusChange(
+    booking: BookingRecord,
+    plan: StatusChangePlan,
+    actor?: ActorContext,
+  ): Promise<boolean> {
     const normalizedReason = this.normalizeOptionalString(plan.reason);
     const createdNotifications = await this.prisma.$transaction(async (tx) => {
       const result = await tx.booking.updateMany({
@@ -1161,7 +1364,12 @@ export class BookingsService {
       });
 
       if (result.count === 0) {
-        return { changed: false, notifications: [] as Awaited<ReturnType<NotificationsService['createMany']>> };
+        return {
+          changed: false,
+          notifications: [] as Awaited<
+            ReturnType<NotificationsService['createMany']>
+          >,
+        };
       }
 
       await tx.bookingStatusHistory.create({
@@ -1188,17 +1396,19 @@ export class BookingsService {
 
       const notifications = await this.notificationsService.createMany(
         tx,
-        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map((userId) => ({
-          userId,
-          type: plan.notificationType,
-          title: plan.notificationTitle,
-          body: plan.notificationBody,
-          metadata: {
-            bookingId: booking.id,
-            action: plan.action,
-            status: plan.nextStatus,
-          },
-        })),
+        this.getNotificationRecipientIds(booking, actor?.userId ?? null).map(
+          (userId) => ({
+            userId,
+            type: plan.notificationType,
+            title: plan.notificationTitle,
+            body: plan.notificationBody,
+            metadata: {
+              bookingId: booking.id,
+              action: plan.action,
+              status: plan.nextStatus,
+            },
+          }),
+        ),
       );
 
       return { changed: true, notifications };
@@ -1209,7 +1419,10 @@ export class BookingsService {
     return createdNotifications.changed;
   }
 
-  private getNotificationRecipientIds(booking: BookingRecord, actorUserId: string | null): string[] {
+  private getNotificationRecipientIds(
+    booking: BookingRecord,
+    actorUserId: string | null,
+  ): string[] {
     const ids = new Set<string>([booking.clientId]);
     if (booking.artist.userId) ids.add(booking.artist.userId);
     if (booking.agency?.ownerId) ids.add(booking.agency.ownerId);
@@ -1231,17 +1444,28 @@ export class BookingsService {
         actorUserId,
         eventType,
         message,
-        metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.DbNull,
+        metadata: metadata
+          ? (metadata as Prisma.InputJsonValue)
+          : Prisma.DbNull,
       },
     });
   }
 
-  private calculateAmounts(hourlyRate: Prisma.Decimal, commissionRate: number, eventDate: Date, eventEndDate: Date | null) {
+  private calculateAmounts(
+    hourlyRate: Prisma.Decimal,
+    commissionRate: number,
+    eventDate: Date,
+    eventEndDate: Date | null,
+  ) {
     const rate = this.decimalToNumber(hourlyRate);
     if (!Number.isFinite(rate) || rate <= 0) {
-      throw new BadRequestException('Selected artist does not have a valid hourly rate');
+      throw new BadRequestException(
+        'Selected artist does not have a valid hourly rate',
+      );
     }
-    const durationHours = eventEndDate ? Math.max((eventEndDate.getTime() - eventDate.getTime()) / 3600000, 1) : 1;
+    const durationHours = eventEndDate
+      ? Math.max((eventEndDate.getTime() - eventDate.getTime()) / 3600000, 1)
+      : 1;
     const totalAmount = this.roundMoney(rate * durationHours);
     const platformFee = this.roundMoney((totalAmount * commissionRate) / 100);
     return {
@@ -1271,11 +1495,9 @@ export class BookingsService {
     return `R${value.toFixed(2)}`;
   }
 
-  private buildPaymentReference(bookingId: string): string {
-    return bookingId;
-  }
-
-  private normalizeOptionalString(value: string | null | undefined): string | null {
+  private normalizeOptionalString(
+    value: string | null | undefined,
+  ): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
   }
@@ -1291,7 +1513,10 @@ export class BookingsService {
     );
   }
 
-  private toBookingResponse(booking: BookingRecord, actor: ActorContext): Booking {
+  private toBookingResponse(
+    booking: BookingRecord,
+    actor: ActorContext,
+  ): Booking {
     return {
       id: booking.id,
       clientId: booking.clientId,
@@ -1306,14 +1531,7 @@ export class BookingsService {
       totalAmount: this.decimalToNumber(booking.totalAmount),
       platformFee: this.decimalToNumber(booking.platformFee),
       artistPayout: this.decimalToNumber(booking.artistPayout),
-      paymentProvider: booking.paymentProvider,
       paymentStatus: booking.paymentStatus,
-      stripePaymentIntentId: booking.stripePaymentIntentId,
-      paymentReference: booking.paymentReference,
-      paymentGatewayReference: booking.paymentGatewayReference,
-      paymentInitiatedAt: booking.paymentInitiatedAt?.toISOString() ?? null,
-      paymentPaidAt: booking.paymentPaidAt?.toISOString() ?? null,
-      paymentFailedAt: booking.paymentFailedAt?.toISOString() ?? null,
       notes: booking.notes,
       cancelledAt: booking.cancelledAt?.toISOString() ?? null,
       cancelReason: booking.cancelReason,
@@ -1323,9 +1541,12 @@ export class BookingsService {
         (booking.clientId === actor.userId || this.isAdminRole(actor.role))
           ? this.decryptVerificationCode(booking.verificationCodeCiphertext)
           : null,
-      verificationCodeSentAt: booking.verificationCodeSentAt?.toISOString() ?? null,
-      verificationCodeExpiresAt: booking.verificationCodeExpiresAt?.toISOString() ?? null,
-      verificationEnteredAt: booking.verificationEnteredAt?.toISOString() ?? null,
+      verificationCodeSentAt:
+        booking.verificationCodeSentAt?.toISOString() ?? null,
+      verificationCodeExpiresAt:
+        booking.verificationCodeExpiresAt?.toISOString() ?? null,
+      verificationEnteredAt:
+        booking.verificationEnteredAt?.toISOString() ?? null,
       verificationAttempts: booking.verificationAttempts,
       jobStartedAt: booking.jobStartedAt?.toISOString() ?? null,
       jobCompletedAt: booking.jobCompletedAt?.toISOString() ?? null,
@@ -1335,13 +1556,18 @@ export class BookingsService {
       disputeWindowEndsAt: booking.disputeWindowEndsAt?.toISOString() ?? null,
       payoutStatus: booking.payoutStatus,
       payoutPendingAt: booking.payoutPendingAt?.toISOString() ?? null,
-      estimatedPayoutReleaseAt: booking.estimatedPayoutReleaseAt?.toISOString() ?? null,
+      estimatedPayoutReleaseAt:
+        booking.estimatedPayoutReleaseAt?.toISOString() ?? null,
       payoutReleasedAt: booking.payoutReleasedAt?.toISOString() ?? null,
       payoutHoldReason: booking.payoutHoldReason,
       payoutDelayDaysSnapshot: booking.payoutDelayDaysSnapshot,
       normalCommissionRate: this.decimalToNumber(booking.normalCommissionRate),
-      appliedCommissionRate: this.decimalToNumber(booking.appliedCommissionRate),
-      onboardingExtraCutAmount: this.decimalToNumber(booking.onboardingExtraCutAmount),
+      appliedCommissionRate: this.decimalToNumber(
+        booking.appliedCommissionRate,
+      ),
+      onboardingExtraCutAmount: this.decimalToNumber(
+        booking.onboardingExtraCutAmount,
+      ),
       createdAt: booking.createdAt.toISOString(),
       updatedAt: booking.updatedAt.toISOString(),
       client: {
@@ -1405,14 +1631,23 @@ export class BookingsService {
     };
   }
 
-  private getAvailableActions(actor: ActorContext, booking: BookingRecord): BookingAction[] {
+  private getAvailableActions(
+    actor: ActorContext,
+    booking: BookingRecord,
+  ): BookingAction[] {
     const actions: BookingAction[] = [];
     const isClient = booking.clientId === actor.userId;
-    const isArtist = actor.artistProfileId !== null && booking.artistId === actor.artistProfileId;
-    const isAgency = actor.agencyId !== null && booking.agencyId === actor.agencyId;
+    const isArtist =
+      actor.artistProfileId !== null &&
+      booking.artistId === actor.artistProfileId;
+    const isAgency =
+      actor.agencyId !== null && booking.agencyId === actor.agencyId;
     const isAdmin = this.isAdminRole(actor.role);
 
-    if (booking.status === PrismaBookingStatus.PENDING && (isArtist || isAgency || isAdmin)) {
+    if (
+      booking.status === PrismaBookingStatus.PENDING &&
+      (isArtist || isAgency || isAdmin)
+    ) {
       actions.push('confirm');
     }
     if (
@@ -1422,10 +1657,16 @@ export class BookingsService {
     ) {
       actions.push('cancel');
     }
-    if (booking.status === PrismaBookingStatus.IN_PROGRESS && (isArtist || isAgency || isAdmin)) {
+    if (
+      booking.status === PrismaBookingStatus.IN_PROGRESS &&
+      (isArtist || isAgency || isAdmin)
+    ) {
       actions.push('complete');
     }
-    if (booking.status === PrismaBookingStatus.AWAITING_CLIENT_APPROVAL && (isClient || isAdmin)) {
+    if (
+      booking.status === PrismaBookingStatus.AWAITING_CLIENT_APPROVAL &&
+      (isClient || isAdmin)
+    ) {
       actions.push('approve_completion');
     }
     if (
@@ -1433,8 +1674,14 @@ export class BookingsService {
       disputableBookingStatuses.includes(booking.status) &&
       (isClient || isArtist || isAgency || isAdmin)
     ) {
-      const disputeWindowOpen = !booking.disputeWindowEndsAt || booking.disputeWindowEndsAt.getTime() >= Date.now();
-      if (!disputeWindowStatuses.includes(booking.status) || disputeWindowOpen || isAdmin) {
+      const disputeWindowOpen =
+        !booking.disputeWindowEndsAt ||
+        booking.disputeWindowEndsAt.getTime() >= Date.now();
+      if (
+        !disputeWindowStatuses.includes(booking.status) ||
+        disputeWindowOpen ||
+        isAdmin
+      ) {
         actions.push('dispute');
       }
     }
@@ -1442,7 +1689,9 @@ export class BookingsService {
     return actions;
   }
 
-  private normalizeMetadata(value: Prisma.JsonValue | null): Record<string, unknown> | null {
+  private normalizeMetadata(
+    value: Prisma.JsonValue | null,
+  ): Record<string, unknown> | null {
     if (!value || Array.isArray(value) || typeof value !== 'object') {
       return null;
     }
@@ -1467,10 +1716,15 @@ export class BookingsService {
   }
 
   encryptVerificationCode(code: string): string {
-    const key = createHash('sha256').update(this.getVerificationSecret()).digest();
+    const key = createHash('sha256')
+      .update(this.getVerificationSecret())
+      .digest();
     const iv = randomBytes(12);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
-    const encrypted = Buffer.concat([cipher.update(code, 'utf8'), cipher.final()]);
+    const encrypted = Buffer.concat([
+      cipher.update(code, 'utf8'),
+      cipher.final(),
+    ]);
     const tag = cipher.getAuthTag();
     return `${iv.toString('hex')}.${tag.toString('hex')}.${encrypted.toString('hex')}`;
   }
@@ -1478,22 +1732,37 @@ export class BookingsService {
   private decryptVerificationCode(payload: string): string {
     const [ivHex, tagHex, encryptedHex] = payload.split('.');
     if (!ivHex || !tagHex || !encryptedHex) {
-      throw new BadRequestException('Stored booking verification code is invalid');
+      throw new BadRequestException(
+        'Stored booking verification code is invalid',
+      );
     }
-    const key = createHash('sha256').update(this.getVerificationSecret()).digest();
-    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
+    const key = createHash('sha256')
+      .update(this.getVerificationSecret())
+      .digest();
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      key,
+      Buffer.from(ivHex, 'hex'),
+    );
     decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-    const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedHex, 'hex')), decipher.final()]);
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(encryptedHex, 'hex')),
+      decipher.final(),
+    ]);
     return decrypted.toString('utf8');
   }
 
   private getVerificationSecret(): string {
-    const secret = process.env.BOOKING_START_CODE_SECRET?.trim() || process.env.AUTH_TOKEN_SECRET?.trim();
+    const secret =
+      process.env.BOOKING_START_CODE_SECRET?.trim() ||
+      process.env.AUTH_TOKEN_SECRET?.trim();
     if (secret) {
       return secret;
     }
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('BOOKING_START_CODE_SECRET or AUTH_TOKEN_SECRET must be configured');
+      throw new Error(
+        'BOOKING_START_CODE_SECRET or AUTH_TOKEN_SECRET must be configured',
+      );
     }
     return 'dev-booking-start-code-secret-change-me';
   }

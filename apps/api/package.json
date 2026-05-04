@@ -25,6 +25,9 @@
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "migrate:status": "prisma migrate status --schema prisma/schema.prisma",
+    "type-check": "tsc -p tsconfig.json --noEmit",
     "db:import:users": "ts-node --transpile-only scripts/import-users-json.ts",
     "db:seed:core": "ts-node --transpile-only scripts/seed-core-data.ts"
   },

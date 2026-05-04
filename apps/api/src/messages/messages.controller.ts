@@ -42,7 +42,10 @@ export class MessagesController {
     @Req() request: AuthenticatedRequest,
     @Body() input: CreateConversationDto,
   ): Promise<ApiResponse<ConversationSummary>> {
-    return this.messagesService.createConversation(this.getUserId(request), input);
+    return this.messagesService.createConversation(
+      this.getUserId(request),
+      input,
+    );
   }
 
   @Get()
@@ -58,7 +61,11 @@ export class MessagesController {
     @Param() params: ConversationIdParamDto,
     @Query() query: ListConversationMessagesQueryDto,
   ): Promise<CursorApiResponse<ConversationMessage[]>> {
-    return this.messagesService.listMessages(this.getUserId(request), params.id, query);
+    return this.messagesService.listMessages(
+      this.getUserId(request),
+      params.id,
+      query,
+    );
   }
 
   @Post(':id/messages')
@@ -67,7 +74,11 @@ export class MessagesController {
     @Param() params: ConversationIdParamDto,
     @Body() input: SendMessageDto,
   ): Promise<ApiResponse<ConversationMessage>> {
-    return this.messagesService.sendMessage(this.getUserId(request), params.id, input);
+    return this.messagesService.sendMessage(
+      this.getUserId(request),
+      params.id,
+      input,
+    );
   }
 
   @Patch(':id/read')
@@ -75,7 +86,10 @@ export class MessagesController {
     @Req() request: AuthenticatedRequest,
     @Param() params: ConversationIdParamDto,
   ): Promise<{ success: true }> {
-    return this.messagesService.markConversationRead(this.getUserId(request), params.id);
+    return this.messagesService.markConversationRead(
+      this.getUserId(request),
+      params.id,
+    );
   }
 
   private getUserId(request: AuthenticatedRequest): string {

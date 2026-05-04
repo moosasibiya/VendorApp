@@ -352,7 +352,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background-position: center;
+  background-size: cover;
   opacity: 0.88;
   transition:
     opacity 0.25s ease,

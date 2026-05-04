@@ -55,7 +55,6 @@ export default function Sidebar() {
         <NavItem href="/calendar" icon="calendar_month" label="Calendar" />
         <NavItem href="/reviews" icon="star" label="Reviews" />
         <NavItem href="/creatives" icon="groups" label="Creatives" />
-        <NavItem href="/payments" icon="payments" label="Payments" />
         <NavItem href="/settings" icon="settings" label="Settings" />
         <NavItem href="/onboarding" icon="checklist" label="Onboarding" />
         {user.role === "ADMIN" || user.role === "SUB_ADMIN" ? (

@@ -1,4 +1,11 @@
-import { IsEmail, IsIn, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 import { ACCOUNT_TYPE_VALUES, type AccountType } from '@vendorapp/shared';
 import {
   PASSWORD_LETTER_MESSAGE,
@@ -18,7 +25,8 @@ export class SignupDto {
 
   @IsString()
   @Matches(/^[a-zA-Z0-9_]{3,30}$/, {
-    message: 'username must be 3-30 chars and only letters, numbers, underscore',
+    message:
+      'username must be 3-30 chars and only letters, numbers, underscore',
   })
   username!: string;
 

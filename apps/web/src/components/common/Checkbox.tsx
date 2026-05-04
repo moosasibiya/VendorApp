@@ -9,7 +9,8 @@ type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, className, id, ...props }, ref) => {
-    const checkboxId = id ?? React.useId();
+    const generatedId = React.useId();
+    const checkboxId = id ?? generatedId;
 
     return (
       <label className="flex items-center gap-2 text-sm font-medium text-current">

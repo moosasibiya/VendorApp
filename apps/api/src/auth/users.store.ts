@@ -9,12 +9,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersStore {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly defaultNotificationPreferences: UserNotificationPreferences = {
-    email: true,
-    bookingUpdates: true,
-    newMessages: true,
-    marketing: false,
-  };
+  private readonly defaultNotificationPreferences: UserNotificationPreferences =
+    {
+      email: true,
+      bookingUpdates: true,
+      newMessages: true,
+      marketing: false,
+    };
 
   async findById(id: string): Promise<StoredUser | null> {
     const user = await this.prisma.user.findUnique({
@@ -23,7 +24,9 @@ export class UsersStore {
     return user ? this.toStoredUser(user) : null;
   }
 
-  async findByEmailNormalized(emailNormalized: string): Promise<StoredUser | null> {
+  async findByEmailNormalized(
+    emailNormalized: string,
+  ): Promise<StoredUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { emailNormalized },
     });
@@ -37,14 +40,18 @@ export class UsersStore {
     return user ? this.toStoredUser(user) : null;
   }
 
-  async findByUsernameNormalized(usernameNormalized: string): Promise<StoredUser | null> {
+  async findByUsernameNormalized(
+    usernameNormalized: string,
+  ): Promise<StoredUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { usernameNormalized },
     });
     return user ? this.toStoredUser(user) : null;
   }
 
-  async findByPasswordResetHash(passwordResetHash: string): Promise<StoredUser | null> {
+  async findByPasswordResetHash(
+    passwordResetHash: string,
+  ): Promise<StoredUser | null> {
     const user = await this.prisma.user.findFirst({
       where: { passwordResetHash },
     });
@@ -79,7 +86,9 @@ export class UsersStore {
       data.failedLoginAttempts = input.failedLoginAttempts;
     }
     if (input.lockoutUntil !== undefined) {
-      data.lockoutUntil = input.lockoutUntil ? new Date(input.lockoutUntil) : null;
+      data.lockoutUntil = input.lockoutUntil
+        ? new Date(input.lockoutUntil)
+        : null;
     }
     if (input.tokenVersion !== undefined) {
       data.tokenVersion = input.tokenVersion;
@@ -109,7 +118,9 @@ export class UsersStore {
     }
     if (input.mfaBackupCodeHashes !== undefined) {
       data.mfaBackupCodeHashes =
-        input.mfaBackupCodeHashes === null ? Prisma.DbNull : input.mfaBackupCodeHashes;
+        input.mfaBackupCodeHashes === null
+          ? Prisma.DbNull
+          : input.mfaBackupCodeHashes;
     }
     if (!Object.keys(data).length) {
       return;
@@ -138,15 +149,20 @@ export class UsersStore {
       clientBudgetMin: user.clientBudgetMin ?? null,
       clientBudgetMax: user.clientBudgetMax ?? null,
       notificationPreferences: (user.notificationPreferences ??
-        this.defaultNotificationPreferences) as unknown as Prisma.InputJsonObject,
-      onboardingCompletedAt: user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt) : null,
+        this
+          .defaultNotificationPreferences) as unknown as Prisma.InputJsonObject,
+      onboardingCompletedAt: user.onboardingCompletedAt
+        ? new Date(user.onboardingCompletedAt)
+        : null,
       isEmailVerified: user.isEmailVerified ?? false,
       isActive: user.isActive ?? true,
       createdAt: new Date(user.createdAt),
       passwordSalt: user.passwordSalt,
       passwordHash: user.passwordHash,
       passwordResetHash: user.passwordResetHash,
-      passwordResetExpiry: user.passwordResetExpiry ? new Date(user.passwordResetExpiry) : null,
+      passwordResetExpiry: user.passwordResetExpiry
+        ? new Date(user.passwordResetExpiry)
+        : null,
       mfaEnabled: user.mfaEnabled,
       mfaSecret: user.mfaSecret,
       mfaTempSecret: user.mfaTempSecret,
@@ -162,7 +178,9 @@ export class UsersStore {
     };
   }
 
-  private accountTypeToUserRole(accountType: StoredUser['accountType']): UserRole {
+  private accountTypeToUserRole(
+    accountType: StoredUser['accountType'],
+  ): UserRole {
     switch (accountType) {
       case 'CREATIVE':
         return UserRole.ARTIST;
@@ -190,15 +208,21 @@ export class UsersStore {
       clientEventTypes: user.clientEventTypes,
       clientBudgetMin: user.clientBudgetMin?.toString() ?? null,
       clientBudgetMax: user.clientBudgetMax?.toString() ?? null,
-      notificationPreferences: this.toNotificationPreferences(user.notificationPreferences),
-      onboardingCompletedAt: user.onboardingCompletedAt ? user.onboardingCompletedAt.toISOString() : null,
+      notificationPreferences: this.toNotificationPreferences(
+        user.notificationPreferences,
+      ),
+      onboardingCompletedAt: user.onboardingCompletedAt
+        ? user.onboardingCompletedAt.toISOString()
+        : null,
       isEmailVerified: user.isEmailVerified,
       isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
       passwordSalt: user.passwordSalt,
       passwordHash: user.passwordHash,
       passwordResetHash: user.passwordResetHash,
-      passwordResetExpiry: user.passwordResetExpiry ? user.passwordResetExpiry.toISOString() : null,
+      passwordResetExpiry: user.passwordResetExpiry
+        ? user.passwordResetExpiry.toISOString()
+        : null,
       mfaEnabled: user.mfaEnabled,
       mfaSecret: user.mfaSecret,
       mfaTempSecret: user.mfaTempSecret,
@@ -209,11 +233,15 @@ export class UsersStore {
     };
   }
 
-  private toStringArray(value: Prisma.JsonValue | null | undefined): string[] | null {
+  private toStringArray(
+    value: Prisma.JsonValue | null | undefined,
+  ): string[] | null {
     if (!Array.isArray(value)) {
       return null;
     }
-    const out = value.filter((item): item is string => typeof item === 'string');
+    const out = value.filter(
+      (item): item is string => typeof item === 'string',
+    );
     return out.length ? out : [];
   }
 

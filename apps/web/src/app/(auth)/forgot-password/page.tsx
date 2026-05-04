@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
         <p className={styles.kicker}>Password reset</p>
         <h1 className={styles.title}>Reset your password</h1>
         <p className={styles.muted}>
-          Enter the email you use for VendorApp and we&apos;ll send you a reset link.
+          Enter the email you use for Vendr Studios and we&apos;ll send you a reset link.
         </p>
       </div>
 

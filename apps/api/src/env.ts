@@ -67,14 +67,17 @@ function applyCompatibilityAliases(): void {
   setAlias('AUTH_BACKUP_CODE_PEPPER', 'BACKUP_CODE_PEPPER');
 
   if (!process.env.AUTH_TOKEN_SECRET) {
-    const secret = process.env.JWT_SECRET?.trim() || process.env.SESSION_SECRET?.trim();
+    const secret =
+      process.env.JWT_SECRET?.trim() || process.env.SESSION_SECRET?.trim();
     if (secret) {
       process.env.AUTH_TOKEN_SECRET = secret;
     }
   }
 
   if (!process.env.AUTH_TOKEN_EXPIRES_IN_SECONDS) {
-    const expiresInSeconds = parseDurationSeconds(process.env.JWT_EXPIRES_IN?.trim());
+    const expiresInSeconds = parseDurationSeconds(
+      process.env.JWT_EXPIRES_IN?.trim(),
+    );
     if (expiresInSeconds !== null) {
       process.env.AUTH_TOKEN_EXPIRES_IN_SECONDS = String(expiresInSeconds);
     }

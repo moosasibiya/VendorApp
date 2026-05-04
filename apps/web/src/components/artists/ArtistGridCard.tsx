@@ -17,10 +17,11 @@ export const ArtistGridCard = ({ artist }: { artist: Artist }) => {
   return (
     <article className="group relative overflow-hidden rounded-card border border-[var(--border)] bg-[var(--panel)] shadow-sm transition duration-normal ease-smooth hover:-translate-y-1 hover:shadow-lg">
       <div className="relative h-48 w-full overflow-hidden">
-        <img
-          src={artist.image}
-          alt={artist.name}
-          className="h-full w-full object-cover transition duration-normal ease-smooth group-hover:scale-105"
+        <div
+          role="img"
+          aria-label={artist.name}
+          className="h-full w-full bg-cover bg-center transition duration-normal ease-smooth group-hover:scale-105"
+          style={{ backgroundImage: `url(${artist.image})` }}
         />
         <div className="absolute inset-0 bg-black/20 opacity-0 transition duration-normal ease-smooth group-hover:opacity-100" />
         <Badge className="absolute left-3 top-3 bg-white/10 text-white">

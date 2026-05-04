@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   startTransition,
+  useCallback,
   useDeferredValue,
   useEffect,
   useEffectEvent,
@@ -132,7 +133,7 @@ export default function MessagesPage() {
   const preserveScrollRef = useRef(false);
   const previousScrollHeightRef = useRef(0);
 
-  const syncRoute = (conversationId: string | null) => {
+  const syncRoute = useCallback((conversationId: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (conversationId) {
       params.set("conversationId", conversationId);
@@ -142,9 +143,9 @@ export default function MessagesPage() {
 
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
-  };
+  }, [pathname, router, searchParams]);
 
-  const refreshConversations = useEffectEvent(async () => {
+  const refreshConversations = useCallback(async () => {
     try {
       const nextConversations = await fetchConversations();
       startTransition(() => {
@@ -174,9 +175,9 @@ export default function MessagesPage() {
     } catch {
       // Preserve current conversation rail on transient socket refresh failures.
     }
-  });
+  }, [activeConversationId, requestedConversationId]);
 
-  const loadMessages = useEffectEvent(
+  const loadMessages = useCallback(
     async (conversationId: string, options?: { cursor?: string | null; prepend?: boolean }) => {
       if (options?.prepend) {
         setLoadingMore(true);
@@ -217,6 +218,7 @@ export default function MessagesPage() {
         setLoadingMore(false);
       }
     },
+    [],
   );
 
   useEffect(() => {
@@ -269,7 +271,7 @@ export default function MessagesPage() {
     return () => {
       cancelled = true;
     };
-  }, [requestedConversationId]);
+  }, [requestedConversationId, syncRoute]);
 
   useEffect(() => {
     if (!activeConversationId) {
@@ -281,7 +283,7 @@ export default function MessagesPage() {
 
     setError(null);
     void loadMessages(activeConversationId);
-  }, [activeConversationId]);
+  }, [activeConversationId, loadMessages]);
 
   useEffect(() => {
     const sentinel = topSentinelRef.current;
@@ -315,7 +317,7 @@ export default function MessagesPage() {
     return () => {
       observer.disconnect();
     };
-  }, [activeConversationId, hasMore, loadingMore, loadingThread, nextCursor]);
+  }, [activeConversationId, hasMore, loadMessages, loadingMore, loadingThread, nextCursor]);
 
   useEffect(() => {
     const container = listRef.current;
@@ -374,7 +376,7 @@ export default function MessagesPage() {
       socket.off("message:new", onSocketMessage);
       socket.off("conversation:updated", onSocketConversationUpdated);
     };
-  }, [onSocketConversationUpdated, onSocketMessage]);
+  }, []);
 
   const filteredConversations = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();

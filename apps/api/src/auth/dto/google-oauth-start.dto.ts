@@ -1,4 +1,10 @@
-import { IsIn, IsOptional, IsString, MaxLength, Matches } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 import { ACCOUNT_TYPE_VALUES, type AccountType } from '@vendorapp/shared';
 
 const accountTypes = [...ACCOUNT_TYPE_VALUES] satisfies AccountType[];

@@ -1,6 +1,10 @@
 import { Type } from 'class-transformer';
 import { IsDateString, IsEnum, IsOptional, Max, Min } from 'class-validator';
-import { BookingStatus, BookingVerificationStatus, PayoutStatus } from '@vendorapp/shared';
+import {
+  BookingStatus,
+  BookingVerificationStatus,
+  PayoutStatus,
+} from '@vendorapp/shared';
 
 export class ListBookingsQueryDto {
   @IsOptional()

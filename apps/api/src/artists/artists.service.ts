@@ -224,7 +224,10 @@ export class ArtistsService {
     return this.toArtist(artist, settings, tierProgress);
   }
 
-  async upsertForUser(userId: string, input: UpsertArtistProfileDto): Promise<Artist> {
+  async upsertForUser(
+    userId: string,
+    input: UpsertArtistProfileDto,
+  ): Promise<Artist> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -238,7 +241,9 @@ export class ArtistsService {
       throw new UnauthorizedException('User not found for token');
     }
     if (user.accountType !== 'CREATIVE') {
-      throw new ForbiddenException('Only creative accounts can complete artist onboarding');
+      throw new ForbiddenException(
+        'Only creative accounts can complete artist onboarding',
+      );
     }
 
     const normalized = this.normalizeProfileInput(input);
@@ -278,7 +283,8 @@ export class ArtistsService {
             availabilitySummary: normalized.availabilitySummary,
             portfolioLinks: normalized.portfolioLinks,
             onboardingCompleted: true,
-            onboardingFeeModel: settings.onboardingFeeModel as OnboardingFeeModel,
+            onboardingFeeModel:
+              settings.onboardingFeeModel as OnboardingFeeModel,
             normalCommissionRate: settings.normalCommissionRate.toFixed(2),
             temporaryFirstBookingCommissionRate:
               settings.temporaryFirstBookingCommissionRate.toFixed(2),
@@ -291,17 +297,17 @@ export class ArtistsService {
                     settings.maxPrelaunchPoolSize,
                   )
                 : undefined,
-            applicationSequence:
-              nextApplicationSequence ?? undefined,
+            applicationSequence: nextApplicationSequence ?? undefined,
           },
           select: artistSelect,
         });
       }
 
-      const applicationSequence = await this.platformConfigService.nextCounterValue(
-        PLATFORM_COUNTER_KEYS.artistApplications,
-        tx,
-      );
+      const applicationSequence =
+        await this.platformConfigService.nextCounterValue(
+          PLATFORM_COUNTER_KEYS.artistApplications,
+          tx,
+        );
       const slug = await this.createUniqueSlug(
         user.usernameNormalized || user.username,
         tx,
@@ -338,7 +344,9 @@ export class ArtistsService {
       });
     });
 
-    const tierProgress = await this.artistTierService.refreshArtistTier(artist.id);
+    const tierProgress = await this.artistTierService.refreshArtistTier(
+      artist.id,
+    );
     return this.toArtist(artist, settings, tierProgress);
   }
 
@@ -392,11 +400,7 @@ export class ArtistsService {
     }
 
     if (query.q) {
-      const terms = query.q
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 8);
+      const terms = query.q.trim().split(/\s+/).filter(Boolean).slice(0, 8);
 
       if (terms.length > 0) {
         conditions.push({
@@ -441,7 +445,8 @@ export class ArtistsService {
     sortBy: ListArtistsQueryDto['sortBy'],
   ): ArtistRecord[] {
     const cloned = [...artists];
-    const tierOrder = (artist: ArtistRecord) => artist.tierSnapshot?.currentTier?.sortOrder ?? 0;
+    const tierOrder = (artist: ArtistRecord) =>
+      artist.tierSnapshot?.currentTier?.sortOrder ?? 0;
 
     cloned.sort((left, right) => {
       switch (sortBy) {
@@ -487,7 +492,9 @@ export class ArtistsService {
       services: this.normalizeStringList(input.services),
       specialties: this.normalizeStringList(input.specialties),
       pricingSummary: this.normalizeOptionalString(input.pricingSummary),
-      availabilitySummary: this.normalizeOptionalString(input.availabilitySummary),
+      availabilitySummary: this.normalizeOptionalString(
+        input.availabilitySummary,
+      ),
       portfolioLinks: this.normalizeStringList(input.portfolioLinks),
     };
   }
@@ -506,7 +513,9 @@ export class ArtistsService {
     return out;
   }
 
-  private normalizeOptionalString(value: string | null | undefined): string | null {
+  private normalizeOptionalString(
+    value: string | null | undefined,
+  ): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
   }
@@ -607,8 +616,10 @@ export class ArtistsService {
       onboardingCompleted: artist.onboardingCompleted,
       applicationStatus: artist.applicationStatus,
       applicationSequence: artist.applicationSequence,
-      applicationSubmittedAt: artist.applicationSubmittedAt?.toISOString() ?? null,
-      applicationReviewedAt: artist.applicationReviewedAt?.toISOString() ?? null,
+      applicationSubmittedAt:
+        artist.applicationSubmittedAt?.toISOString() ?? null,
+      applicationReviewedAt:
+        artist.applicationReviewedAt?.toISOString() ?? null,
       applicationReviewNotes: artist.applicationReviewNotes,
       approvedAt: artist.approvedAt?.toISOString() ?? null,
       isLive: artist.isLive,
@@ -622,7 +633,10 @@ export class ArtistsService {
       temporaryFirstBookingCommissionRate: Number(
         artist.temporaryFirstBookingCommissionRate.toString(),
       ),
-      applicationMessage: this.buildApplicationMessage(artist.applicationStatus, settings),
+      applicationMessage: this.buildApplicationMessage(
+        artist.applicationStatus,
+        settings,
+      ),
       tier: this.toTierDefinition(artist.tierSnapshot?.currentTier ?? null),
       tierProgress:
         tierProgress ??
@@ -681,7 +695,9 @@ export class ArtistsService {
   private snapshotToTierProgress(
     snapshot: NonNullable<ArtistRecord['tierSnapshot']>,
   ): ArtistTierProgress {
-    const details = this.normalizeJsonObject<{ reasons?: string[] }>(snapshot.evaluationDetails);
+    const details = this.normalizeJsonObject<{ reasons?: string[] }>(
+      snapshot.evaluationDetails,
+    );
     return {
       currentTier: this.toTierDefinition(snapshot.currentTier),
       evaluatedTier: this.toTierDefinition(snapshot.evaluatedTier),
@@ -706,7 +722,9 @@ export class ArtistsService {
     };
   }
 
-  private normalizeJsonObject<T extends object>(value: Prisma.JsonValue | null): T {
+  private normalizeJsonObject<T extends object>(
+    value: Prisma.JsonValue | null,
+  ): T {
     if (!value || Array.isArray(value) || typeof value !== 'object') {
       return {} as T;
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, createConversation, fetchMe } from "@/lib/api";
@@ -36,9 +37,31 @@ export function ArtistProfileActions({
   const [error, setError] = useState<string | null>(null);
   const [isMessaging, setIsMessaging] = useState(false);
   const [autoHandled, setAutoHandled] = useState(false);
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    const shouldAutoOpen = autoMessageTrigger && searchParams.get("message") === "1";
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        await fetchMe();
+        if (!cancelled) {
+          setAuthed(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthed(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const shouldAutoOpen = authed && autoMessageTrigger && searchParams.get("message") === "1";
     if (!shouldAutoOpen || !artistId || isMessaging || autoHandled) {
       return;
     }
@@ -76,7 +99,7 @@ export function ArtistProfileActions({
     return () => {
       cancelled = true;
     };
-  }, [artistId, autoHandled, autoMessageTrigger, isMessaging, router, searchParams]);
+  }, [artistId, autoHandled, autoMessageTrigger, authed, isMessaging, router, searchParams]);
 
   const bookNow = async () => {
     if (!artistId) {
@@ -134,6 +157,19 @@ export function ArtistProfileActions({
       setIsMessaging(false);
     }
   };
+
+  if (!authed) {
+    return (
+      <>
+        <Link href="/join" className={bookNowClassName}>
+          Join as Client
+        </Link>
+        <Link href="/artists" className={messageClassName}>
+          I&apos;m a Creative
+        </Link>
+      </>
+    );
+  }
 
   return (
     <>

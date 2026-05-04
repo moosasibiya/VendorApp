@@ -11,22 +11,20 @@ export type RateLimitDecision = {
 export class RateLimitService {
   private readonly logger = new Logger(RateLimitService.name);
   private readonly redis: Redis | null;
-  private readonly redisKeyPrefix = process.env.RATE_LIMIT_KEY_PREFIX?.trim() || 'vendorapp';
-  private readonly memoryWindow = new Map<string, { count: number; resetAtMs: number }>();
+  private readonly redisKeyPrefix =
+    process.env.RATE_LIMIT_KEY_PREFIX?.trim() || 'vendorapp';
+  private readonly memoryWindow = new Map<
+    string,
+    { count: number; resetAtMs: number }
+  >();
 
   constructor() {
     const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim();
     const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-    const isProduction = process.env.NODE_ENV === 'production';
-    const requireDistributedRateLimit =
-      process.env.REQUIRE_DISTRIBUTED_RATE_LIMIT?.trim() === 'true' || isProduction;
 
     if ((redisUrl && !redisToken) || (!redisUrl && redisToken)) {
-      throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must both be set');
-    }
-    if (requireDistributedRateLimit && !redisUrl) {
-      throw new Error(
-        'Distributed rate limiting is required. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
+      this.logger.warn(
+        'Incomplete Upstash Redis configuration. Falling back to in-memory rate limiting.',
       );
     }
 
@@ -37,10 +35,19 @@ export class RateLimitService {
       });
     } else {
       this.redis = null;
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.warn(
+          'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are not configured. In-memory rate limiting is process-local.',
+        );
+      }
     }
   }
 
-  async consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitDecision> {
+  async consume(
+    key: string,
+    limit: number,
+    windowSeconds: number,
+  ): Promise<RateLimitDecision> {
     if (this.redis) {
       try {
         return await this.consumeRedis(key, limit, windowSeconds);
@@ -65,7 +72,9 @@ export class RateLimitService {
     }
     const ttlSeconds = await this.redis!.ttl(redisKey);
     const resetAtMs =
-      ttlSeconds > 0 ? Date.now() + ttlSeconds * 1000 : Date.now() + windowSeconds * 1000;
+      ttlSeconds > 0
+        ? Date.now() + ttlSeconds * 1000
+        : Date.now() + windowSeconds * 1000;
     return {
       allowed: currentCount <= limit,
       currentCount,
@@ -73,7 +82,11 @@ export class RateLimitService {
     };
   }
 
-  private consumeMemory(key: string, limit: number, windowSeconds: number): RateLimitDecision {
+  private consumeMemory(
+    key: string,
+    limit: number,
+    windowSeconds: number,
+  ): RateLimitDecision {
     const now = Date.now();
     const windowMs = windowSeconds * 1000;
     const existing = this.memoryWindow.get(key);

@@ -37,7 +37,10 @@ export class NotificationsService {
     private readonly messagesGateway: MessagesGateway,
   ) {}
 
-  async listForUser(userId: string, query: ListNotificationsQueryDto): Promise<NotificationFeed> {
+  async listForUser(
+    userId: string,
+    query: ListNotificationsQueryDto,
+  ): Promise<NotificationFeed> {
     const limit = query.limit;
     const notifications = await this.prisma.notification.findMany({
       where: { userId },
@@ -64,14 +67,19 @@ export class NotificationsService {
     });
 
     return {
-      notifications: page.map((notification) => this.toNotificationItem(notification)),
+      notifications: page.map((notification) =>
+        this.toNotificationItem(notification),
+      ),
       unreadCount,
       hasMore,
-      nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+      nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     };
   }
 
-  async markRead(userId: string, notificationId: string): Promise<NotificationItem> {
+  async markRead(
+    userId: string,
+    notificationId: string,
+  ): Promise<NotificationItem> {
     const existing = await this.prisma.notification.findFirst({
       where: {
         id: notificationId,
@@ -110,7 +118,10 @@ export class NotificationsService {
     return { success: true };
   }
 
-  async createMany(db: DbClient, inputs: CreateNotificationInput[]): Promise<NotificationRecord[]> {
+  async createMany(
+    db: DbClient,
+    inputs: CreateNotificationInput[],
+  ): Promise<NotificationRecord[]> {
     const notifications: NotificationRecord[] = [];
     for (const input of inputs) {
       const notification = await db.notification.create({
@@ -137,7 +148,9 @@ export class NotificationsService {
     }
   }
 
-  private toNotificationItem(notification: NotificationRecord): NotificationItem {
+  private toNotificationItem(
+    notification: NotificationRecord,
+  ): NotificationItem {
     return {
       id: notification.id,
       type: notification.type,
@@ -149,7 +162,9 @@ export class NotificationsService {
     };
   }
 
-  private normalizeMetadata(value: Prisma.JsonValue | null): Record<string, unknown> | null {
+  private normalizeMetadata(
+    value: Prisma.JsonValue | null,
+  ): Record<string, unknown> | null {
     if (!value || Array.isArray(value) || typeof value !== 'object') {
       return null;
     }

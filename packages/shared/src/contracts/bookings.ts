@@ -1,7 +1,6 @@
 import type {
   BookingStatusValue,
   BookingVerificationStatusValue,
-  PaymentProviderValue,
   PaymentStatusValue,
   PayoutStatusValue,
   UserRoleValue,
@@ -84,14 +83,7 @@ export interface Booking {
   totalAmount: number;
   platformFee: number;
   artistPayout: number;
-  paymentProvider?: PaymentProviderValue | null;
   paymentStatus: PaymentStatusValue;
-  stripePaymentIntentId?: string | null;
-  paymentReference?: string | null;
-  paymentGatewayReference?: string | null;
-  paymentInitiatedAt?: string | null;
-  paymentPaidAt?: string | null;
-  paymentFailedAt?: string | null;
   notes?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
@@ -126,12 +118,4 @@ export interface Booking {
   availableActions?: BookingAction[];
   review?: BookingReviewSummary | null;
   canReview?: boolean;
-}
-
-export interface PaymentCheckoutSession {
-  bookingId: string;
-  provider: PaymentProviderValue;
-  method: 'POST';
-  gatewayUrl: string;
-  formFields: Record<string, string>;
 }

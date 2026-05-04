@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { BookingStatus, BookingVerificationStatus, PaymentStatus, Prisma } from '@prisma/client';
+import {
+  BookingStatus,
+  BookingVerificationStatus,
+  PaymentStatus,
+  Prisma,
+} from '@prisma/client';
 import type {
   ArtistTierAdminRow,
   ArtistTierBenefits,
@@ -38,7 +43,8 @@ const defaultTierDefinitions: Array<{
   {
     key: 'tier_1',
     name: 'Tier 1',
-    description: 'Initial launch tier. Placeholder thresholds should be tuned by admins before wider rollout.',
+    description:
+      'Initial launch tier. Placeholder thresholds should be tuned by admins before wider rollout.',
     sortOrder: 1,
     thresholds: {
       completedPlatformBookings: 0,
@@ -56,7 +62,8 @@ const defaultTierDefinitions: Array<{
   {
     key: 'tier_2',
     name: 'Tier 2',
-    description: 'Placeholder mid-tier for dependable artists. Thresholds are configurable in admin.',
+    description:
+      'Placeholder mid-tier for dependable artists. Thresholds are configurable in admin.',
     sortOrder: 2,
     thresholds: {
       completedPlatformBookings: 10,
@@ -78,7 +85,8 @@ const defaultTierDefinitions: Array<{
   {
     key: 'tier_3',
     name: 'Tier 3',
-    description: 'Placeholder high-performance tier. Tune before launch waves expand.',
+    description:
+      'Placeholder high-performance tier. Tune before launch waves expand.',
     sortOrder: 3,
     thresholds: {
       completedPlatformBookings: 25,
@@ -101,7 +109,8 @@ const defaultTierDefinitions: Array<{
   {
     key: 'tier_4',
     name: 'Tier 4',
-    description: 'Placeholder top tier for launch-era routing and payout rewards.',
+    description:
+      'Placeholder top tier for launch-era routing and payout rewards.',
     sortOrder: 4,
     thresholds: {
       completedPlatformBookings: 60,
@@ -128,7 +137,9 @@ const defaultTierDefinitions: Array<{
 export class ArtistTierService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listDefinitions(db: DbClient = this.prisma): Promise<SharedArtistTierDefinition[]> {
+  async listDefinitions(
+    db: DbClient = this.prisma,
+  ): Promise<SharedArtistTierDefinition[]> {
     await this.ensureDefaults(db);
     const records = await db.artistTierDefinition.findMany({
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -205,14 +216,17 @@ export class ArtistTierService {
     );
 
     const evaluatedTier = this.resolveEvaluatedTier(definitions, metrics);
-    const manualTier =
-      artist.tierSnapshot?.manualTierId
-        ? definitions.find((definition) => definition.id === artist.tierSnapshot?.manualTierId) ?? null
-        : null;
+    const manualTier = artist.tierSnapshot?.manualTierId
+      ? (definitions.find(
+          (definition) => definition.id === artist.tierSnapshot?.manualTierId,
+        ) ?? null)
+      : null;
     const currentTier = manualTier ?? evaluatedTier;
     const nextTier = this.getNextTier(definitions, currentTier?.sortOrder ?? 0);
     const progressPercent = this.calculateProgressPercent(nextTier, metrics);
-    const reasons = nextTier ? this.getUnmetThresholdReasons(nextTier.thresholds, metrics) : [];
+    const reasons = nextTier
+      ? this.getUnmetThresholdReasons(nextTier.thresholds, metrics)
+      : [];
     const now = new Date();
 
     await db.artistTierSnapshot.upsert({
@@ -314,11 +328,19 @@ export class ArtistTierService {
       where: { id: tierId },
       data: {
         ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-        ...(input.description !== undefined ? { description: input.description?.trim() || null } : {}),
-        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        ...(input.description !== undefined
+          ? { description: input.description?.trim() || null }
+          : {}),
+        ...(input.sortOrder !== undefined
+          ? { sortOrder: input.sortOrder }
+          : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-        ...(input.thresholds !== undefined ? { thresholds: input.thresholds as Prisma.InputJsonValue } : {}),
-        ...(input.benefits !== undefined ? { benefits: input.benefits as Prisma.InputJsonValue } : {}),
+        ...(input.thresholds !== undefined
+          ? { thresholds: input.thresholds as Prisma.InputJsonValue }
+          : {}),
+        ...(input.benefits !== undefined
+          ? { benefits: input.benefits as Prisma.InputJsonValue }
+          : {}),
       },
       select: {
         id: true,
@@ -337,7 +359,9 @@ export class ArtistTierService {
     return this.toDefinition(updated);
   }
 
-  async listArtistRows(db: DbClient = this.prisma): Promise<ArtistTierAdminRow[]> {
+  async listArtistRows(
+    db: DbClient = this.prisma,
+  ): Promise<ArtistTierAdminRow[]> {
     const artists = await db.artist.findMany({
       orderBy: [{ createdAt: 'asc' }],
       select: {
@@ -408,7 +432,10 @@ export class ArtistTierService {
       artistId,
       paymentStatus: PaymentStatus.PAID,
       verificationStatus: {
-        in: [BookingVerificationStatus.VERIFIED, BookingVerificationStatus.MANUAL_OVERRIDE],
+        in: [
+          BookingVerificationStatus.VERIFIED,
+          BookingVerificationStatus.MANUAL_OVERRIDE,
+        ],
       },
       status: {
         in: [
@@ -419,42 +446,62 @@ export class ArtistTierService {
       },
     };
 
-    const [verifiedCount, revenueAggregate, totalBookings, cancellationCount, disputeCount, repeatGroups, responseTimeMinutes] =
-      await Promise.all([
-        db.booking.count({ where: verifiedCompletedWhere }),
-        db.booking.aggregate({
-          where: verifiedCompletedWhere,
-          _sum: {
-            totalAmount: true,
-          },
-        }),
-        db.booking.count({ where: { artistId } }),
-        db.booking.count({
-          where: {
-            artistId,
-            status: BookingStatus.CANCELLED,
-          },
-        }),
-        db.booking.count({
-          where: {
-            artistId,
-            OR: [{ status: BookingStatus.DISPUTED }, { disputeOpenedAt: { not: null } }],
-          },
-        }),
-        db.booking.groupBy({
-          by: ['clientId'],
-          where: verifiedCompletedWhere,
-          _count: {
-            clientId: true,
-          },
-        }),
-        this.computeAverageResponseTimeMinutes(artistId, artistUserId, db),
-      ]);
+    const [
+      verifiedCount,
+      revenueAggregate,
+      totalBookings,
+      cancellationCount,
+      disputeCount,
+      repeatGroups,
+      responseTimeMinutes,
+    ] = await Promise.all([
+      db.booking.count({ where: verifiedCompletedWhere }),
+      db.booking.aggregate({
+        where: verifiedCompletedWhere,
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+      db.booking.count({ where: { artistId } }),
+      db.booking.count({
+        where: {
+          artistId,
+          status: BookingStatus.CANCELLED,
+        },
+      }),
+      db.booking.count({
+        where: {
+          artistId,
+          OR: [
+            { status: BookingStatus.DISPUTED },
+            { disputeOpenedAt: { not: null } },
+          ],
+        },
+      }),
+      db.booking.groupBy({
+        by: ['clientId'],
+        where: verifiedCompletedWhere,
+        _count: {
+          clientId: true,
+        },
+      }),
+      this.computeAverageResponseTimeMinutes(artistId, artistUserId, db),
+    ]);
 
-    const repeatBookings = repeatGroups.filter((entry) => entry._count.clientId >= 2).length;
-    const revenue = Number(revenueAggregate._sum.totalAmount?.toString() ?? '0');
-    const reliabilityScore = totalBookings === 0 ? 100 : Number((100 - (cancellationCount / totalBookings) * 100).toFixed(2));
-    const disputeRate = verifiedCount === 0 ? 0 : Number(((disputeCount / verifiedCount) * 100).toFixed(2));
+    const repeatBookings = repeatGroups.filter(
+      (entry) => entry._count.clientId >= 2,
+    ).length;
+    const revenue = Number(
+      revenueAggregate._sum.totalAmount?.toString() ?? '0',
+    );
+    const reliabilityScore =
+      totalBookings === 0
+        ? 100
+        : Number((100 - (cancellationCount / totalBookings) * 100).toFixed(2));
+    const disputeRate =
+      verifiedCount === 0
+        ? 0
+        : Number(((disputeCount / verifiedCount) * 100).toFixed(2));
 
     return {
       completedPlatformBookings: verifiedCount,
@@ -530,7 +577,9 @@ export class ArtistTierService {
       if (firstClientMessageAt && artistReplyAt) {
         const diffMinutes = Math.max(
           0,
-          Math.round((artistReplyAt.getTime() - firstClientMessageAt.getTime()) / 60000),
+          Math.round(
+            (artistReplyAt.getTime() - firstClientMessageAt.getTime()) / 60000,
+          ),
         );
         deltas.push(diffMinutes);
       }
@@ -540,7 +589,9 @@ export class ArtistTierService {
       return null;
     }
 
-    return Math.round(deltas.reduce((sum, value) => sum + value, 0) / deltas.length);
+    return Math.round(
+      deltas.reduce((sum, value) => sum + value, 0) / deltas.length,
+    );
   }
 
   private computeProfileCompleteness(profile: {
@@ -572,7 +623,9 @@ export class ArtistTierService {
     definitions: SharedArtistTierDefinition[],
     metrics: ArtistTierMetrics,
   ): SharedArtistTierDefinition | null {
-    const activeDefinitions = definitions.filter((definition) => definition.isActive);
+    const activeDefinitions = definitions.filter(
+      (definition) => definition.isActive,
+    );
     let current: SharedArtistTierDefinition | null = null;
     for (const definition of activeDefinitions) {
       if (this.meetsThresholds(definition.thresholds, metrics)) {
@@ -588,7 +641,8 @@ export class ArtistTierService {
   ): SharedArtistTierDefinition | null {
     return (
       definitions.find(
-        (definition) => definition.isActive && definition.sortOrder > currentSortOrder,
+        (definition) =>
+          definition.isActive && definition.sortOrder > currentSortOrder,
       ) ?? null
     );
   }
@@ -618,37 +672,71 @@ export class ArtistTierService {
     const ratios: number[] = [];
 
     if (thresholds.completedPlatformBookings !== undefined) {
-      ratios.push(this.safeRatio(metrics.completedPlatformBookings, thresholds.completedPlatformBookings));
+      ratios.push(
+        this.safeRatio(
+          metrics.completedPlatformBookings,
+          thresholds.completedPlatformBookings,
+        ),
+      );
     }
     if (thresholds.verifiedPlatformBookings !== undefined) {
-      ratios.push(this.safeRatio(metrics.verifiedPlatformBookings, thresholds.verifiedPlatformBookings));
+      ratios.push(
+        this.safeRatio(
+          metrics.verifiedPlatformBookings,
+          thresholds.verifiedPlatformBookings,
+        ),
+      );
     }
     if (thresholds.platformRevenue !== undefined) {
-      ratios.push(this.safeRatio(metrics.platformRevenue, thresholds.platformRevenue));
+      ratios.push(
+        this.safeRatio(metrics.platformRevenue, thresholds.platformRevenue),
+      );
     }
     if (thresholds.averageRating !== undefined) {
-      ratios.push(this.safeRatio(metrics.averageRating, thresholds.averageRating));
+      ratios.push(
+        this.safeRatio(metrics.averageRating, thresholds.averageRating),
+      );
     }
     if (thresholds.minReliabilityScore !== undefined) {
-      ratios.push(this.safeRatio(metrics.reliabilityScore, thresholds.minReliabilityScore));
+      ratios.push(
+        this.safeRatio(
+          metrics.reliabilityScore,
+          thresholds.minReliabilityScore,
+        ),
+      );
     }
     if (thresholds.maxDisputeRate !== undefined) {
-      ratios.push(metrics.disputeRate <= thresholds.maxDisputeRate ? 1 : thresholds.maxDisputeRate / Math.max(metrics.disputeRate, 1));
+      ratios.push(
+        metrics.disputeRate <= thresholds.maxDisputeRate
+          ? 1
+          : thresholds.maxDisputeRate / Math.max(metrics.disputeRate, 1),
+      );
     }
     if (thresholds.minProfileCompleteness !== undefined) {
-      ratios.push(this.safeRatio(metrics.profileCompleteness, thresholds.minProfileCompleteness));
+      ratios.push(
+        this.safeRatio(
+          metrics.profileCompleteness,
+          thresholds.minProfileCompleteness,
+        ),
+      );
     }
     if (thresholds.minRepeatBookings !== undefined) {
-      ratios.push(this.safeRatio(metrics.repeatBookings, thresholds.minRepeatBookings));
+      ratios.push(
+        this.safeRatio(metrics.repeatBookings, thresholds.minRepeatBookings),
+      );
     }
     if (thresholds.maxResponseTimeMinutes !== undefined) {
-      if (metrics.responseTimeMinutes === null || metrics.responseTimeMinutes === undefined) {
+      if (
+        metrics.responseTimeMinutes === null ||
+        metrics.responseTimeMinutes === undefined
+      ) {
         ratios.push(0);
       } else {
         ratios.push(
           metrics.responseTimeMinutes <= thresholds.maxResponseTimeMinutes
             ? 1
-            : thresholds.maxResponseTimeMinutes / Math.max(metrics.responseTimeMinutes, 1),
+            : thresholds.maxResponseTimeMinutes /
+                Math.max(metrics.responseTimeMinutes, 1),
         );
       }
     }
@@ -656,7 +744,10 @@ export class ArtistTierService {
     return ratios.map((ratio) => Math.max(0, Math.min(1, ratio)));
   }
 
-  private meetsThresholds(thresholds: ArtistTierThresholds, metrics: ArtistTierMetrics): boolean {
+  private meetsThresholds(
+    thresholds: ArtistTierThresholds,
+    metrics: ArtistTierMetrics,
+  ): boolean {
     return this.getUnmetThresholdReasons(thresholds, metrics).length === 0;
   }
 
@@ -670,43 +761,65 @@ export class ArtistTierService {
       thresholds.completedPlatformBookings !== undefined &&
       metrics.completedPlatformBookings < thresholds.completedPlatformBookings
     ) {
-      reasons.push(`Complete ${thresholds.completedPlatformBookings} verified platform bookings.`);
+      reasons.push(
+        `Complete ${thresholds.completedPlatformBookings} verified platform bookings.`,
+      );
     }
     if (
       thresholds.verifiedPlatformBookings !== undefined &&
       metrics.verifiedPlatformBookings < thresholds.verifiedPlatformBookings
     ) {
-      reasons.push(`Reach ${thresholds.verifiedPlatformBookings} verified bookings.`);
+      reasons.push(
+        `Reach ${thresholds.verifiedPlatformBookings} verified bookings.`,
+      );
     }
     if (
       thresholds.platformRevenue !== undefined &&
       metrics.platformRevenue < thresholds.platformRevenue
     ) {
-      reasons.push(`Generate ${thresholds.platformRevenue.toFixed(0)} in platform revenue.`);
+      reasons.push(
+        `Generate ${thresholds.platformRevenue.toFixed(0)} in platform revenue.`,
+      );
     }
-    if (thresholds.averageRating !== undefined && metrics.averageRating < thresholds.averageRating) {
-      reasons.push(`Maintain an average rating of ${thresholds.averageRating.toFixed(1)} or higher.`);
+    if (
+      thresholds.averageRating !== undefined &&
+      metrics.averageRating < thresholds.averageRating
+    ) {
+      reasons.push(
+        `Maintain an average rating of ${thresholds.averageRating.toFixed(1)} or higher.`,
+      );
     }
     if (
       thresholds.minReliabilityScore !== undefined &&
       metrics.reliabilityScore < thresholds.minReliabilityScore
     ) {
-      reasons.push(`Keep reliability at ${thresholds.minReliabilityScore.toFixed(0)}% or higher.`);
+      reasons.push(
+        `Keep reliability at ${thresholds.minReliabilityScore.toFixed(0)}% or higher.`,
+      );
     }
-    if (thresholds.maxDisputeRate !== undefined && metrics.disputeRate > thresholds.maxDisputeRate) {
-      reasons.push(`Reduce dispute rate below ${thresholds.maxDisputeRate.toFixed(1)}%.`);
+    if (
+      thresholds.maxDisputeRate !== undefined &&
+      metrics.disputeRate > thresholds.maxDisputeRate
+    ) {
+      reasons.push(
+        `Reduce dispute rate below ${thresholds.maxDisputeRate.toFixed(1)}%.`,
+      );
     }
     if (
       thresholds.minProfileCompleteness !== undefined &&
       metrics.profileCompleteness < thresholds.minProfileCompleteness
     ) {
-      reasons.push(`Raise profile completeness to ${thresholds.minProfileCompleteness}% or higher.`);
+      reasons.push(
+        `Raise profile completeness to ${thresholds.minProfileCompleteness}% or higher.`,
+      );
     }
     if (
       thresholds.minRepeatBookings !== undefined &&
       metrics.repeatBookings < thresholds.minRepeatBookings
     ) {
-      reasons.push(`Secure ${thresholds.minRepeatBookings} repeat-booking clients.`);
+      reasons.push(
+        `Secure ${thresholds.minRepeatBookings} repeat-booking clients.`,
+      );
     }
     if (
       thresholds.maxResponseTimeMinutes !== undefined &&
@@ -714,7 +827,9 @@ export class ArtistTierService {
         metrics.responseTimeMinutes === undefined ||
         metrics.responseTimeMinutes > thresholds.maxResponseTimeMinutes)
     ) {
-      reasons.push(`Respond within ${thresholds.maxResponseTimeMinutes} minutes on average.`);
+      reasons.push(
+        `Respond within ${thresholds.maxResponseTimeMinutes} minutes on average.`,
+      );
     }
 
     return reasons;

@@ -73,11 +73,42 @@ export interface AdminBookingReviewItem {
   clientName: string;
 }
 
+export type PrelaunchInsiderUserTypeValue = 'CLIENT' | 'ARTIST';
+export type PrelaunchInsiderStatusValue = 'PENDING' | 'VERIFIED';
+
+export interface AdminInsiderItem {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  userType: PrelaunchInsiderUserTypeValue;
+  insiderStatus: PrelaunchInsiderStatusValue;
+  instagramFollowed: boolean;
+  tiktokFollowed: boolean;
+  referralCode: string;
+  referredBy?: string | null;
+  referralCount: number;
+  createdAt: string;
+  verifiedAt?: string | null;
+}
+
+export interface AdminInsiderSummary {
+  items: AdminInsiderItem[];
+  leaderboard: AdminInsiderItem[];
+  total: number;
+  pending: number;
+  verified: number;
+  clients: number;
+  artists: number;
+}
+
 export interface AdminDashboardData {
   settings: PlatformSettings;
   artistApplications: AdminArtistApplicationSummary;
   supportThreads: AdminSupportThreadItem[];
   manualReviewBookings: AdminBookingReviewItem[];
+  insiders: AdminInsiderSummary;
   tierDefinitions: ArtistTierDefinition[];
   tierRows: ArtistTierAdminRow[];
 }

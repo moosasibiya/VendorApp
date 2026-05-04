@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type {
-  Agency,
   Artist,
   ArtistProfileInput,
   OnboardingAgencyInput,

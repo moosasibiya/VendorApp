@@ -1,5 +1,17 @@
-import { Body, Controller, Delete, Get, Patch, Req, UseGuards } from '@nestjs/common';
-import type { DashboardStats, UpcomingBookingItem, User } from '@vendorapp/shared';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type {
+  DashboardStats,
+  UpcomingBookingItem,
+  User,
+} from '@vendorapp/shared';
 import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
 import { AuthGuard } from '../auth/auth.guard';
 import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
@@ -24,7 +36,9 @@ export class UsersController {
   }
 
   @Get('me/upcoming-bookings')
-  async getUpcomingBookings(@Req() request: AuthRequest): Promise<UpcomingBookingItem[]> {
+  async getUpcomingBookings(
+    @Req() request: AuthRequest,
+  ): Promise<UpcomingBookingItem[]> {
     return this.usersService.getUpcomingBookings(request.auth.userId);
   }
 

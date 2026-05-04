@@ -426,15 +426,10 @@ function ArtistCard({
       <div className={styles.artistCardMedia}>
         <div className={styles.artistCardGradient} style={{ background: getGradient(index) }} />
         {previewImage ? (
-          <img
-            src={previewImage}
-            alt=""
+          <div
             aria-hidden="true"
-            loading="lazy"
             className={styles.artistCardImage}
-            onError={(event) => {
-              event.currentTarget.style.opacity = "0";
-            }}
+            style={{ backgroundImage: `url(${previewImage})` }}
           />
         ) : null}
         <div className={styles.artistCardOverlay} />
@@ -873,7 +868,7 @@ export default function PublicHomePage() {
 
             <p className={styles.heroSub}>
               Search with intent. Browse like an editor. Every profile on
-              VendrMan is manually reviewed before it reaches you, so you are
+              Vendr Studios is manually reviewed before it reaches you, so you are
               always looking at real talent.
             </p>
 
@@ -923,14 +918,10 @@ export default function PublicHomePage() {
                   style={{ background: getGradient(2) }}
                 />
                 {spotlightImage ? (
-                  <img
-                    src={spotlightImage}
-                    alt=""
+                  <div
                     aria-hidden="true"
                     className={styles.spotlightImage}
-                    onError={(event) => {
-                      event.currentTarget.style.opacity = "0";
-                    }}
+                    style={{ backgroundImage: `url(${spotlightImage})` }}
                   />
                 ) : null}
                 <div className={styles.spotlightAvatarLarge}>

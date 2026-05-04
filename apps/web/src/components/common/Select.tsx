@@ -17,7 +17,8 @@ type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, helperText, options, className, id, ...props }, ref) => {
-    const selectId = id ?? React.useId();
+    const generatedId = React.useId();
+    const selectId = id ?? generatedId;
 
     return (
       <label className="flex w-full flex-col gap-1.5 text-sm font-medium text-current">

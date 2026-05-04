@@ -42,7 +42,10 @@ export class UpdateClientOnboardingDto {
   @Min(0)
   budgetMin?: number | null;
 
-  @ValidateIf((value: UpdateClientOnboardingDto) => value.budgetMax !== null && value.budgetMax !== undefined)
+  @ValidateIf(
+    (value: UpdateClientOnboardingDto) =>
+      value.budgetMax !== null && value.budgetMax !== undefined,
+  )
   @Type(() => Number)
   @IsNumber()
   @Min(0)

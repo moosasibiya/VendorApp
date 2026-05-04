@@ -1,6 +1,11 @@
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
-const artistApplicationActions = ['under_review', 'approve', 'reject', 'go_live'] as const;
+const artistApplicationActions = [
+  'under_review',
+  'approve',
+  'reject',
+  'go_live',
+] as const;
 
 export class UpdateArtistApplicationDto {
   @IsString()

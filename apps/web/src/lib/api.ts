@@ -27,7 +27,6 @@ import type {
   NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
-  PaymentCheckoutSession,
   PlatformSettings,
   PayoutStatusValue,
   ReviewItem,
@@ -61,7 +60,6 @@ export type {
   NotificationItem,
   OnboardingAgencyInput,
   OnboardingClientInput,
-  PaymentCheckoutSession,
   PlatformSettings,
   PayoutStatusValue,
   ReviewItem,
@@ -464,18 +462,6 @@ export async function applyAdminBookingOverride(input: {
   return response.data;
 }
 
-export async function initiateBookingPayment(
-  bookingId: string,
-): Promise<PaymentCheckoutSession> {
-  const response = await getJson<ApiEnvelope<PaymentCheckoutSession>>(
-    `/bookings/${encodeURIComponent(bookingId)}/payment/initiate`,
-    {
-      method: "POST",
-    },
-  );
-  return response.data;
-}
-
 export async function fetchNotifications(query?: {
   cursor?: string | null;
   limit?: number;
@@ -502,6 +488,98 @@ export async function markAllNotificationsRead(): Promise<{ success: true }> {
   return getJson<{ success: true }>("/notifications/read-all", {
     method: "PATCH",
   });
+}
+
+export type PrelaunchLeadInterest = "CREATIVE" | "CLIENT" | "AGENCY" | "GENERAL";
+
+export type CreatePrelaunchLeadInput = {
+  email: string;
+  name?: string;
+  interestType?: PrelaunchLeadInterest;
+  source?: "PRELAUNCH_PAGE";
+};
+
+export type PrelaunchLeadResponse = {
+  id: string;
+  email: string;
+  interestType: PrelaunchLeadInterest;
+  source: string;
+  createdAt: string;
+};
+
+export async function createPrelaunchLead(
+  input: CreatePrelaunchLeadInput,
+): Promise<PrelaunchLeadResponse> {
+  const response = await getJson<ApiEnvelope<PrelaunchLeadResponse> & { message?: string }>(
+    "/prelaunch/leads",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        ...input,
+        source: input.source ?? "PRELAUNCH_PAGE",
+      }),
+    },
+  );
+  return response.data;
+}
+
+export type InsiderUserType = "CLIENT" | "ARTIST";
+export type InsiderSignupInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  userType: InsiderUserType;
+  referredBy?: string;
+};
+
+export type InsiderSignupResponse = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  userType: InsiderUserType;
+  referralCode: string;
+  inviteLink: string;
+  referredBy?: string | null;
+  insiderStatus: "PENDING" | "VERIFIED";
+  instagramFollowed: boolean;
+  tiktokFollowed: boolean;
+  referralCount: number;
+  createdAt: string;
+  verifiedAt?: string | null;
+  duplicate: boolean;
+};
+
+export async function createInsiderSignup(
+  input: InsiderSignupInput,
+): Promise<InsiderSignupResponse> {
+  const response = await getJson<ApiEnvelope<InsiderSignupResponse> & { message?: string }>(
+    "/prelaunch/insiders",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+  return response.data;
+}
+
+export async function fetchReferral(code: string): Promise<{
+  valid: boolean;
+  referralCode: string;
+  referrerFirstName?: string;
+  referrerType?: InsiderUserType;
+  referrerVerified?: boolean;
+}> {
+  const response = await getJson<ApiEnvelope<{
+    valid: boolean;
+    referralCode: string;
+    referrerFirstName?: string;
+    referrerType?: InsiderUserType;
+    referrerVerified?: boolean;
+  }>>(`/prelaunch/referrals/${encodeURIComponent(code)}`);
+  return response.data;
 }
 
 export async function signup(input: SignupRequest): Promise<AuthResponse> {
@@ -602,6 +680,31 @@ export async function createAgency(input: OnboardingAgencyInput): Promise<Agency
 
 export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
   return getJson<AdminDashboardData>("/admin/dashboard");
+}
+
+export async function updateInsider(input: {
+  insiderId: string;
+  instagramFollowed?: boolean;
+  tiktokFollowed?: boolean;
+  verified?: boolean;
+}): Promise<AdminDashboardData> {
+  return getJson<AdminDashboardData>(
+    `/admin/insiders/${encodeURIComponent(input.insiderId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        ...(input.instagramFollowed !== undefined
+          ? { instagramFollowed: input.instagramFollowed }
+          : {}),
+        ...(input.tiktokFollowed !== undefined ? { tiktokFollowed: input.tiktokFollowed } : {}),
+        ...(input.verified !== undefined ? { verified: input.verified } : {}),
+      }),
+    },
+  );
+}
+
+export function buildAdminInsiderExportUrl(): string {
+  return `${API_BASE_URL}/admin/insiders/export`;
 }
 
 export async function updatePlatformSettings(

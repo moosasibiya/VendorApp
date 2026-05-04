@@ -99,7 +99,8 @@ export class AuthController {
   ): void {
     const url = this.authService.getGoogleAuthorizationUrl({
       mode: query.mode ?? 'login',
-      nextPath: query.next ?? (query.mode === 'signup' ? '/onboarding' : '/dashboard'),
+      nextPath:
+        query.next ?? (query.mode === 'signup' ? '/onboarding' : '/dashboard'),
       accountType: query.accountType,
     });
     response.redirect(url);
@@ -113,21 +114,33 @@ export class AuthController {
     @Res() response: Response,
   ): Promise<void> {
     if (!code || !state) {
-      response.redirect(this.buildErrorRedirectUrl('login', '/login', 'missing_code_or_state'));
+      response.redirect(
+        this.buildErrorRedirectUrl('login', '/login', 'missing_code_or_state'),
+      );
       return;
     }
 
     try {
-      const result = await this.authService.completeGoogleAuthorization(code, state, {
-        ipAddress: req.ip,
-        requestId: req.headers['x-request-id'],
-      });
+      const result = await this.authService.completeGoogleAuthorization(
+        code,
+        state,
+        {
+          ipAddress: req.ip,
+          requestId: req.headers['x-request-id'],
+        },
+      );
       this.setAuthCookie(response, result.token);
       this.setCsrfCookie(response);
       response.redirect(this.buildWebRedirectUrl(result.nextPath));
     } catch {
       const fallback = this.authService.getGoogleFallbackFromState(state);
-      response.redirect(this.buildErrorRedirectUrl(fallback.mode, fallback.nextPath, 'google_auth'));
+      response.redirect(
+        this.buildErrorRedirectUrl(
+          fallback.mode,
+          fallback.nextPath,
+          'google_auth',
+        ),
+      );
     }
   }
 
@@ -161,7 +174,10 @@ export class AuthController {
       ipAddress: req.ip,
       requestId: req.headers['x-request-id'],
     });
-    return { success: true, ...(result.resetToken ? { resetToken: result.resetToken } : {}) };
+    return {
+      success: true,
+      ...(result.resetToken ? { resetToken: result.resetToken } : {}),
+    };
   }
 
   @Post('password/forgot')
@@ -223,7 +239,9 @@ export class AuthController {
 
     if (!token) {
       if (shouldRedirect) {
-        response.redirect(this.buildWebRedirectUrl('/verify-email?error=missing_token'));
+        response.redirect(
+          this.buildWebRedirectUrl('/verify-email?error=missing_token'),
+        );
         return;
       }
       throw new BadRequestException('Email verification token is required');
@@ -240,7 +258,9 @@ export class AuthController {
           verified: '1',
           email: result.email,
         });
-        response.redirect(this.buildWebRedirectUrl(`/login?${params.toString()}`));
+        response.redirect(
+          this.buildWebRedirectUrl(`/login?${params.toString()}`),
+        );
         return;
       }
 
@@ -250,7 +270,9 @@ export class AuthController {
         const params = new URLSearchParams({
           error: this.getVerifyEmailErrorCode(error),
         });
-        response.redirect(this.buildWebRedirectUrl(`/verify-email?${params.toString()}`));
+        response.redirect(
+          this.buildWebRedirectUrl(`/verify-email?${params.toString()}`),
+        );
         return;
       }
       throw error;
@@ -287,10 +309,14 @@ export class AuthController {
     @Body() input: MfaEnableDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ backupCodes: string[] }> {
-    const result = await this.authService.enableMfa(req.auth.userId, input.code, {
-      ipAddress: req.ip,
-      requestId: req.headers['x-request-id'],
-    });
+    const result = await this.authService.enableMfa(
+      req.auth.userId,
+      input.code,
+      {
+        ipAddress: req.ip,
+        requestId: req.headers['x-request-id'],
+      },
+    );
     this.setAuthCookie(response, result.token);
     return { backupCodes: result.backupCodes };
   }
@@ -336,7 +362,11 @@ export class AuthController {
   }
 
   private setAuthCookie(response: Response, token: string): void {
-    response.cookie(this.getAuthCookieName(), token, this.getAuthCookieOptions());
+    response.cookie(
+      this.getAuthCookieName(),
+      token,
+      this.getAuthCookieOptions(),
+    );
   }
 
   private clearAuthCookie(response: Response): void {
@@ -345,7 +375,11 @@ export class AuthController {
 
   private setCsrfCookie(response: Response): string {
     const csrfToken = randomBytes(32).toString('hex');
-    response.cookie(this.getCsrfCookieName(), csrfToken, this.getCsrfCookieOptions());
+    response.cookie(
+      this.getCsrfCookieName(),
+      csrfToken,
+      this.getCsrfCookieOptions(),
+    );
     return csrfToken;
   }
 
@@ -354,12 +388,16 @@ export class AuthController {
   }
 
   private getBaseCookieOptions(): Omit<CookieOptions, 'httpOnly'> {
-    const sameSiteRaw = (process.env.AUTH_COOKIE_SAME_SITE ?? 'lax').toLowerCase();
+    const sameSiteRaw = (
+      process.env.AUTH_COOKIE_SAME_SITE ?? 'lax'
+    ).toLowerCase();
     const sameSite: Omit<CookieOptions, 'httpOnly'>['sameSite'] =
       sameSiteRaw === 'strict' || sameSiteRaw === 'none' ? sameSiteRaw : 'lax';
     const secureRaw = process.env.AUTH_COOKIE_SECURE;
     const secure =
-      secureRaw === undefined ? process.env.NODE_ENV === 'production' : secureRaw === 'true';
+      secureRaw === undefined
+        ? process.env.NODE_ENV === 'production'
+        : secureRaw === 'true';
     const domain = process.env.AUTH_COOKIE_DOMAIN?.trim();
 
     return {
@@ -394,9 +432,7 @@ export class AuthController {
 
   private getPrimaryWebOrigin(): string {
     return (
-      process.env.WEB_ORIGIN?.split(',')[0]?.trim() ||
-      process.env.NEXT_PUBLIC_WEB_ORIGIN?.trim() ||
-      'http://localhost:3000'
+      process.env.WEB_ORIGIN?.split(',')[0]?.trim() || 'http://localhost:3000'
     );
   }
 

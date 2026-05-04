@@ -46,13 +46,14 @@ export const Avatar = ({
 }: AvatarProps) => (
   <div className={cn("relative inline-flex items-center justify-center", className)}>
     {src ? (
-      <img
-        src={src}
-        alt={alt ?? name ?? "Avatar"}
+      <div
+        role="img"
+        aria-label={alt ?? name ?? "Avatar"}
         className={cn(
-          "rounded-full object-cover ring-2 ring-[var(--panel)]",
+          "rounded-full bg-cover bg-center ring-2 ring-[var(--panel)]",
           sizeClasses[size],
         )}
+        style={{ backgroundImage: `url(${src})` }}
       />
     ) : (
       <div

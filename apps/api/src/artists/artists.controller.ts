@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Put, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ArtistsService } from './artists.service';
 import type { ApiResponse, Artist } from '@vendorapp/shared';
 import { AllowIncompleteOnboarding } from '../auth/allow-incomplete-onboarding.decorator';
@@ -18,7 +27,9 @@ export class ArtistsController {
   constructor(private readonly artistsService: ArtistsService) {}
 
   @Get()
-  async findAll(@Query() query: ListArtistsQueryDto): Promise<ApiResponse<Artist[]>> {
+  async findAll(
+    @Query() query: ListArtistsQueryDto,
+  ): Promise<ApiResponse<Artist[]>> {
     return this.artistsService.findAll(query);
   }
 

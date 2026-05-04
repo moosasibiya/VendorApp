@@ -1,6 +1,6 @@
-# VendorApp API
+# Vendr Studios API
 
-NestJS API for VendorApp, backed by PostgreSQL via Prisma.
+NestJS API for Vendr Studios, backed by PostgreSQL via Prisma.
 
 ## Prerequisites
 
@@ -55,22 +55,47 @@ NestJS API for VendorApp, backed by PostgreSQL via Prisma.
 5. Start local infrastructure:
 
    ```bash
-   docker compose up -d --wait
+   docker compose up -d --wait postgres redis
    ```
 
-6. Apply database migrations:
+   PowerShell:
+
+   ```powershell
+   docker compose up -d --wait postgres redis
+   docker compose ps
+   ```
+
+   The `postgres` service exposes PostgreSQL at `localhost:5432` with:
+
+   ```text
+   postgresql://postgres:postgres@localhost:5432/vendorapp?schema=public
+   ```
+
+6. Generate Prisma Client:
+
+   ```bash
+   pnpm --filter @vendorapp/api run prisma:generate
+   ```
+
+   PowerShell:
+
+   ```powershell
+   pnpm --filter @vendorapp/api run prisma:generate
+   ```
+
+7. Apply database migrations:
 
    ```bash
    pnpm --filter @vendorapp/api run db:migrate
    ```
 
-7. Seed the database:
+8. Seed the database:
 
    ```bash
    pnpm --filter @vendorapp/api run db:seed:core
    ```
 
-8. Start the apps from the repository root:
+9. Start the apps from the repository root:
 
    ```bash
    pnpm dev
@@ -89,6 +114,32 @@ NestJS API for VendorApp, backed by PostgreSQL via Prisma.
 - API: `http://localhost:4000/api`
 - Web: `http://localhost:3000`
 - Health: `http://localhost:4000/api/health`
+
+## Windows PowerShell Quick Start
+
+From a clean terminal:
+
+```powershell
+cd C:\Users\moosa\Desktop\Dev\VendorApp
+pnpm install
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+if (!(Test-Path apps/api/.env)) { Copy-Item apps/api/.env.example apps/api/.env }
+if (!(Test-Path apps/web/.env.local)) { Copy-Item apps/web/.env.example apps/web/.env.local }
+docker compose up -d --wait postgres redis
+pnpm --filter @vendorapp/api run prisma:generate
+pnpm --filter @vendorapp/api run db:migrate
+pnpm --filter @vendorapp/api run db:seed:core
+pnpm dev
+```
+
+In another PowerShell window, verify:
+
+```powershell
+docker compose ps
+pnpm --filter @vendorapp/api run migrate:status
+Invoke-RestMethod http://localhost:4000/api/health
+Invoke-WebRequest http://localhost:3000
+```
 
 ## Environment Variables
 
@@ -161,6 +212,7 @@ pnpm test
 ## Troubleshooting
 
 - If `docker compose up -d --wait` fails, start Docker Desktop first.
-- If Prisma cannot connect to `localhost:5432`, confirm the `db` container is healthy.
+- If Prisma cannot connect to `localhost:5432`, confirm the `postgres` container is healthy with `docker compose ps`.
+- If port `5432` is already taken, set `POSTGRES_PORT=5433` in root `.env`, then set `DATABASE_URL=postgresql://postgres:postgres@localhost:5433/vendorapp?schema=public` and `DIRECT_URL=postgresql://postgres:postgres@localhost:5433/vendorapp?schema=public` in `apps/api/.env`. Restart with `docker compose up -d --wait postgres`.
 - If auth fails on startup, confirm `apps/api/.env` contains `JWT_SECRET` or `SESSION_SECRET`.
 - If Google sign-in fails, verify the callback URL matches both the Google console and `apps/api/.env`.

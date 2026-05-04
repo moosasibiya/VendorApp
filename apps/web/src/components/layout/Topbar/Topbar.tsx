@@ -22,7 +22,6 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
   "/support": { title: "Support", subtitle: "Guided help that escalates into the central support queue." },
   "/calendar": { title: "Calendar", subtitle: "Availability, upcoming shoots, and booking timing in one view." },
   "/reviews": { title: "Reviews", subtitle: "Ratings, public feedback, and booking-linked testimonials." },
-  "/payments": { title: "Payments", subtitle: "Payment tracking, payout release states, and platform fees." },
   "/settings": { title: "Settings", subtitle: "Manage profile, notifications, and account controls." },
   "/onboarding": { title: "Onboarding", subtitle: "Complete verification and rollout-ready profile details." },
   "/admin": { title: "Admin", subtitle: "Applications, support triage, and rollout configuration." },

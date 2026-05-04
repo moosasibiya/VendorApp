@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(vercel --version)",
+      "Bash(npx vercel *)",
+      "Bash(vercel whoami *)",
+      "Bash(vercel --prod --yes)",
+      "Bash(vercel --prod --yes --name vendorapp-web)",
+      "Bash(vercel project *)",
+      "Read(//c/Users/moosa/.local/share/com.vercel.cli/**)",
+      "Read(//c/Users/moosa/.config/vercel/**)",
+      "Read(//c/Users/moosa/**)",
+      "PowerShell(Get-Content \"$env:APPDATA\\\\vercel\\\\auth.json\" -ErrorAction SilentlyContinue)",
+      "Bash(pnpm install *)"
+    ]
+  }
+}

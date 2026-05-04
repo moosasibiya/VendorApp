@@ -163,7 +163,7 @@ function buildQuickActions(role: DashboardStats["role"]): Array<{
       ];
     case "ARTIST":
       return [
-        { href: "/payments", icon: "payments", label: "Payouts" },
+        { href: "/bookings", icon: "event", label: "Bookings" },
         { href: "/calendar", icon: "calendar_month", label: "Calendar" },
         { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/messages", icon: "forum", label: "Messages" },
@@ -171,7 +171,7 @@ function buildQuickActions(role: DashboardStats["role"]): Array<{
     case "AGENCY":
       return [
         { href: "/bookings", icon: "event", label: "Bookings" },
-        { href: "/payments", icon: "payments", label: "Payments" },
+        { href: "/calendar", icon: "calendar_month", label: "Calendar" },
         { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/settings", icon: "settings", label: "Settings" },
       ];
@@ -419,8 +419,8 @@ export default function DashboardPage() {
                   Verified platform work drives progression. Off-platform work does not count.
                 </div>
               </div>
-              <Link href="/payments" className={styles.ghostBtn}>
-                View payouts
+              <Link href="/bookings" className={styles.ghostBtn}>
+                View bookings
               </Link>
             </div>
 

@@ -23,19 +23,28 @@ export async function configureApp(app: INestApplication): Promise<void> {
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Request-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-CSRF-Token',
+      'X-Request-Id',
+    ],
   });
 
   const httpAdapter = app.getHttpAdapter().getInstance();
   if (typeof httpAdapter.disable === 'function') {
     httpAdapter.disable('x-powered-by');
   }
-  if (process.env.TRUST_PROXY === 'true' && typeof httpAdapter.set === 'function') {
+  if (
+    process.env.TRUST_PROXY === 'true' &&
+    typeof httpAdapter.set === 'function'
+  ) {
     httpAdapter.set('trust proxy', 1);
   }
 
   app.use((request, response, next) => {
-    const requestId = normalizeHeaderString(request.headers['x-request-id']) || randomUUID();
+    const requestId =
+      normalizeHeaderString(request.headers['x-request-id']) || randomUUID();
     request.headers['x-request-id'] = requestId;
     response.setHeader('X-Request-Id', requestId);
     const start = Date.now();
@@ -62,15 +71,23 @@ export async function configureApp(app: INestApplication): Promise<void> {
     response.setHeader('X-Frame-Options', 'DENY');
     response.setHeader('Referrer-Policy', 'no-referrer');
     response.setHeader('X-DNS-Prefetch-Control', 'off');
-    response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    response.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=()',
+    );
     if (process.env.NODE_ENV === 'production') {
-      response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      response.setHeader(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains',
+      );
     }
     next();
   });
 
-  const authCookieName = process.env.AUTH_COOKIE_NAME?.trim() || 'vendrman_auth';
-  const csrfCookieName = process.env.CSRF_COOKIE_NAME?.trim() || 'vendrman_csrf';
+  const authCookieName =
+    process.env.AUTH_COOKIE_NAME?.trim() || 'vendrman_auth';
+  const csrfCookieName =
+    process.env.CSRF_COOKIE_NAME?.trim() || 'vendrman_csrf';
   app.use((request, response, next) => {
     if (isSafeHttpMethod(request.method)) {
       next();
@@ -85,7 +102,9 @@ export async function configureApp(app: INestApplication): Promise<void> {
 
     const csrfCookieToken = cookies[csrfCookieName];
     const csrfHeaderRaw = request.headers['x-csrf-token'];
-    const csrfHeaderToken = Array.isArray(csrfHeaderRaw) ? csrfHeaderRaw[0] : csrfHeaderRaw;
+    const csrfHeaderToken = Array.isArray(csrfHeaderRaw)
+      ? csrfHeaderRaw[0]
+      : csrfHeaderRaw;
 
     if (
       !csrfCookieToken ||
@@ -116,7 +135,7 @@ async function bootstrap() {
   const port = process.env.PORT ? Number(process.env.PORT) : 4000;
   await app.listen(port);
 
-  console.log(`VendorApp API running on http://localhost:${port}/api`);
+  console.log(`Vendr Studios API running on http://localhost:${port}/api`);
 }
 if (require.main === module) {
   void bootstrap();
@@ -126,7 +145,9 @@ function isSafeHttpMethod(method: string): boolean {
   return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
 }
 
-function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+function parseCookies(
+  cookieHeader: string | undefined,
+): Record<string, string> {
   if (!cookieHeader) {
     return {};
   }
@@ -160,5 +181,5 @@ function constantTimeStringEquals(a: string, b: string): boolean {
 
 function normalizeHeaderString(value: string | string[] | undefined): string {
   if (!value) return '';
-  return Array.isArray(value) ? value[0] ?? '' : value;
+  return Array.isArray(value) ? (value[0] ?? '') : value;
 }

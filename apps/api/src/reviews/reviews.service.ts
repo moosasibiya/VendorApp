@@ -6,7 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BookingStatus, NotificationType, Prisma } from '@prisma/client';
-import type { ApiResponse, MyReviewsOverview, ReviewItem } from '@vendorapp/shared';
+import type {
+  ApiResponse,
+  MyReviewsOverview,
+  ReviewItem,
+} from '@vendorapp/shared';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -53,7 +57,10 @@ export class ReviewsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async create(userId: string, input: CreateReviewDto): Promise<ApiResponse<ReviewItem>> {
+  async create(
+    userId: string,
+    input: CreateReviewDto,
+  ): Promise<ApiResponse<ReviewItem>> {
     const booking = await this.prisma.booking.findUnique({
       where: { id: input.bookingId },
       select: {
@@ -83,13 +90,19 @@ export class ReviewsService {
       throw new NotFoundException('Booking not found');
     }
     if (booking.clientId !== userId) {
-      throw new ForbiddenException('Only the booking client can leave a review');
+      throw new ForbiddenException(
+        'Only the booking client can leave a review',
+      );
     }
     if (booking.status !== BookingStatus.COMPLETED) {
-      throw new BadRequestException('Reviews can only be left for completed bookings');
+      throw new BadRequestException(
+        'Reviews can only be left for completed bookings',
+      );
     }
     if (booking.review) {
-      throw new ConflictException('A review has already been submitted for this booking');
+      throw new ConflictException(
+        'A review has already been submitted for this booking',
+      );
     }
 
     let createdReview!: ReviewRecord;

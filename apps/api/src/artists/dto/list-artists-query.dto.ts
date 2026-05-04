@@ -11,7 +11,12 @@ import {
   Min,
 } from 'class-validator';
 
-const ARTIST_SORT_VALUES = ['rating', 'rate_asc', 'rate_desc', 'newest'] as const;
+const ARTIST_SORT_VALUES = [
+  'rating',
+  'rate_asc',
+  'rate_desc',
+  'newest',
+] as const;
 
 function toOptionalString(value: unknown): string | undefined {
   if (typeof value !== 'string') {

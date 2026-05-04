@@ -1,4 +1,8 @@
-import type { AccountType, UserNotificationPreferences, UserRoleValue } from '@vendorapp/shared';
+import type {
+  AccountType,
+  UserNotificationPreferences,
+  UserRoleValue,
+} from '@vendorapp/shared';
 
 export interface StoredUser {
   id: string;

@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { BookingStatus, PaymentStatus, Prisma, UserRole } from '@prisma/client';
 import type {
   DashboardStats,
@@ -14,12 +19,13 @@ import type { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly defaultNotificationPreferences: UserNotificationPreferences = {
-    email: true,
-    bookingUpdates: true,
-    newMessages: true,
-    marketing: false,
-  };
+  private readonly defaultNotificationPreferences: UserNotificationPreferences =
+    {
+      email: true,
+      bookingUpdates: true,
+      newMessages: true,
+      marketing: false,
+    };
 
   async getStats(userId: string): Promise<DashboardStats> {
     const user = await this.prisma.user.findUnique({
@@ -49,7 +55,12 @@ export class UsersService {
 
     switch (user.role) {
       case UserRole.CLIENT: {
-        const [totalBookings, upcomingBookings, spentAggregate, favouriteArtists] = await Promise.all([
+        const [
+          totalBookings,
+          upcomingBookings,
+          spentAggregate,
+          favouriteArtists,
+        ] = await Promise.all([
           this.prisma.booking.count({
             where: { clientId: user.id },
           }),
@@ -91,7 +102,9 @@ export class UsersService {
           role: 'CLIENT',
           totalBookings,
           upcomingBookings,
-          totalSpent: Number(spentAggregate._sum.totalAmount?.toString() ?? '0'),
+          totalSpent: Number(
+            spentAggregate._sum.totalAmount?.toString() ?? '0',
+          ),
           favouriteArtists: favouriteArtists.length,
         };
       }
@@ -109,32 +122,35 @@ export class UsersService {
           };
         }
 
-        const [totalBookings, pendingBookings, earnedAggregate] = await Promise.all([
-          this.prisma.booking.count({
-            where: { artistId: artistProfile.id },
-          }),
-          this.prisma.booking.count({
-            where: {
-              artistId: artistProfile.id,
-              status: BookingStatus.PENDING,
-            },
-          }),
-          this.prisma.booking.aggregate({
-            where: {
-              artistId: artistProfile.id,
-              paymentStatus: PaymentStatus.PAID,
-            },
-            _sum: {
-              artistPayout: true,
-            },
-          }),
-        ]);
+        const [totalBookings, pendingBookings, earnedAggregate] =
+          await Promise.all([
+            this.prisma.booking.count({
+              where: { artistId: artistProfile.id },
+            }),
+            this.prisma.booking.count({
+              where: {
+                artistId: artistProfile.id,
+                status: BookingStatus.PENDING,
+              },
+            }),
+            this.prisma.booking.aggregate({
+              where: {
+                artistId: artistProfile.id,
+                paymentStatus: PaymentStatus.PAID,
+              },
+              _sum: {
+                artistPayout: true,
+              },
+            }),
+          ]);
 
         return {
           role: 'ARTIST',
           totalBookings,
           pendingBookings,
-          totalEarned: Number(earnedAggregate._sum.artistPayout?.toString() ?? '0'),
+          totalEarned: Number(
+            earnedAggregate._sum.artistPayout?.toString() ?? '0',
+          ),
           averageRating: artistProfile.averageRating,
           totalReviews: artistProfile.totalReviews,
           profileViews: artistProfile.profileViews,
@@ -184,27 +200,33 @@ export class UsersService {
           role: 'AGENCY',
           totalArtists: artists.length,
           activeBookings,
-          totalRevenue: Number(revenueAggregate._sum.totalAmount?.toString() ?? '0'),
+          totalRevenue: Number(
+            revenueAggregate._sum.totalAmount?.toString() ?? '0',
+          ),
         };
       }
       case UserRole.SUB_ADMIN:
       case UserRole.ADMIN:
       default: {
-        const [totalUsers, totalBookings, revenueAggregate] = await Promise.all([
-          this.prisma.user.count(),
-          this.prisma.booking.count(),
-          this.prisma.booking.aggregate({
-            _sum: {
-              totalAmount: true,
-            },
-          }),
-        ]);
+        const [totalUsers, totalBookings, revenueAggregate] = await Promise.all(
+          [
+            this.prisma.user.count(),
+            this.prisma.booking.count(),
+            this.prisma.booking.aggregate({
+              _sum: {
+                totalAmount: true,
+              },
+            }),
+          ],
+        );
 
         return {
           role: user.role,
           totalUsers,
           totalBookings,
-          totalRevenue: Number(revenueAggregate._sum.totalAmount?.toString() ?? '0'),
+          totalRevenue: Number(
+            revenueAggregate._sum.totalAmount?.toString() ?? '0',
+          ),
         };
       }
     }
@@ -281,10 +303,12 @@ export class UsersService {
       paymentStatus: booking.paymentStatus,
       totalAmount: Number(booking.totalAmount.toString()),
       counterpartName:
-        user.role === UserRole.CLIENT ? booking.artist.displayName : booking.client.fullName,
+        user.role === UserRole.CLIENT
+          ? booking.artist.displayName
+          : booking.client.fullName,
       counterpartAvatarUrl:
         user.role === UserRole.CLIENT
-          ? booking.artist.user?.avatarUrl ?? null
+          ? (booking.artist.user?.avatarUrl ?? null)
           : booking.client.avatarUrl,
       artistSlug: booking.artist.slug,
     }));
@@ -348,7 +372,10 @@ export class UsersService {
     return this.toPublicUser(updated);
   }
 
-  async updateClientOnboarding(userId: string, input: UpdateClientOnboardingDto): Promise<User> {
+  async updateClientOnboarding(
+    userId: string,
+    input: UpdateClientOnboardingDto,
+  ): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -368,7 +395,9 @@ export class UsersService {
       throw new UnauthorizedException('User not found for token');
     }
     if (user.accountType !== 'CLIENT') {
-      throw new ForbiddenException('Only client accounts can complete client onboarding');
+      throw new ForbiddenException(
+        'Only client accounts can complete client onboarding',
+      );
     }
     if (
       input.budgetMin !== null &&
@@ -377,7 +406,9 @@ export class UsersService {
       input.budgetMax !== undefined &&
       input.budgetMin > input.budgetMax
     ) {
-      throw new BadRequestException('budgetMin cannot be greater than budgetMax');
+      throw new BadRequestException(
+        'budgetMin cannot be greater than budgetMax',
+      );
     }
 
     const eventTypes = this.uniqueValues(input.eventTypes);
@@ -398,8 +429,8 @@ export class UsersService {
             ? null
             : input.budgetMax.toFixed(2),
         onboardingCompletedAt: new Date(),
-        notificationPreferences:
-          this.defaultNotificationPreferences as unknown as Prisma.InputJsonObject,
+        notificationPreferences: this
+          .defaultNotificationPreferences as unknown as Prisma.InputJsonObject,
       },
     });
 
@@ -448,7 +479,9 @@ export class UsersService {
     return output;
   }
 
-  private normalizeOptionalString(value: string | null | undefined): string | null {
+  private normalizeOptionalString(
+    value: string | null | undefined,
+  ): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
   }
@@ -463,9 +496,13 @@ export class UsersService {
       case UserRole.CLIENT:
         return { clientId: user.id };
       case UserRole.ARTIST:
-        return user.artistProfile?.id ? { artistId: user.artistProfile.id } : { id: '__no_bookings__' };
+        return user.artistProfile?.id
+          ? { artistId: user.artistProfile.id }
+          : { id: '__no_bookings__' };
       case UserRole.AGENCY:
-        return user.ownedAgency?.id ? { agencyId: user.ownedAgency.id } : { id: '__no_bookings__' };
+        return user.ownedAgency?.id
+          ? { agencyId: user.ownedAgency.id }
+          : { id: '__no_bookings__' };
       case UserRole.ADMIN:
       default:
         return {};
@@ -529,8 +566,12 @@ export class UsersService {
       avatarUrl: user.avatarUrl,
       location: user.location,
       clientEventTypes: user.clientEventTypes,
-      clientBudgetMin: user.clientBudgetMin ? Number(user.clientBudgetMin.toString()) : null,
-      clientBudgetMax: user.clientBudgetMax ? Number(user.clientBudgetMax.toString()) : null,
+      clientBudgetMin: user.clientBudgetMin
+        ? Number(user.clientBudgetMin.toString())
+        : null,
+      clientBudgetMax: user.clientBudgetMax
+        ? Number(user.clientBudgetMax.toString())
+        : null,
       notificationPreferences:
         this.toNotificationPreferences(user.notificationPreferences ?? null) ??
         this.defaultNotificationPreferences,

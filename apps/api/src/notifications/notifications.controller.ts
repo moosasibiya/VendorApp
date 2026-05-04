@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Patch, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import type { NotificationFeed, NotificationItem } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
 import { OnboardingCompleteGuard } from '../auth/onboarding-complete.guard';
@@ -22,7 +31,10 @@ export class NotificationsController {
     @Req() request: AuthenticatedRequest,
     @Query() query: ListNotificationsQueryDto,
   ): Promise<NotificationFeed> {
-    return this.notificationsService.listForUser(this.getUserId(request), query);
+    return this.notificationsService.listForUser(
+      this.getUserId(request),
+      query,
+    );
   }
 
   @Patch(':id/read')
@@ -30,11 +42,16 @@ export class NotificationsController {
     @Req() request: AuthenticatedRequest,
     @Param() params: NotificationIdParamDto,
   ): Promise<NotificationItem> {
-    return this.notificationsService.markRead(this.getUserId(request), params.id);
+    return this.notificationsService.markRead(
+      this.getUserId(request),
+      params.id,
+    );
   }
 
   @Patch('read-all')
-  async markAllRead(@Req() request: AuthenticatedRequest): Promise<{ success: true }> {
+  async markAllRead(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<{ success: true }> {
     return this.notificationsService.markAllRead(this.getUserId(request));
   }
 

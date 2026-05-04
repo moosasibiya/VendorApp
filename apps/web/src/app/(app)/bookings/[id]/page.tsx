@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Booking, User } from "@vendorapp/shared";
-import { PaymentForm } from "@/components/PaymentForm";
 import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   applyAdminBookingOverride,
@@ -45,7 +44,6 @@ export default function BookingDetailPage() {
   const { onboardingLocked } = useAppSession();
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const bookingId = typeof params.id === "string" ? params.id : "";
 
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -146,7 +144,6 @@ export default function BookingDetailPage() {
     }
   };
 
-  const paymentState = searchParams.get("payment");
   const isAdmin = viewer?.role === "ADMIN" || viewer?.role === "SUB_ADMIN";
   const canVerifyStartCode =
     !!booking &&
@@ -155,14 +152,7 @@ export default function BookingDetailPage() {
       viewer.role === "SUB_ADMIN" ||
       viewer.id === booking.artist.userId ||
       viewer.id === booking.agency?.ownerId) &&
-    (booking.status === "BOOKED" || booking.status === "AWAITING_START_CODE") &&
-    booking.paymentStatus === "PAID";
-  const canPay =
-    !!booking &&
-    !!viewer &&
-    viewer.id === booking.client.id &&
-    booking.status === "CONFIRMED" &&
-    (booking.paymentStatus === "UNPAID" || booking.paymentStatus === "FAILED");
+    (booking.status === "BOOKED" || booking.status === "AWAITING_START_CODE");
 
   const submitStartCode = async () => {
     if (!booking || !startCode.trim()) {
@@ -282,17 +272,6 @@ export default function BookingDetailPage() {
 
       {loading ? <p className={styles.subtle}>Loading booking...</p> : null}
       {error ? <div className={styles.error}>{error}</div> : null}
-      {paymentState === "returned" ? (
-        <div className={styles.infoBanner}>
-          Returned from Payfast. Payment confirmation is finalized when the ITN webhook reaches
-          the API, so refresh if the paid status does not appear immediately.
-        </div>
-      ) : null}
-      {paymentState === "cancelled" ? (
-        <div className={styles.infoBanner}>
-          Payfast checkout was cancelled before payment completed.
-        </div>
-      ) : null}
 
       {booking ? (
         <section className={styles.layout}>
@@ -350,21 +329,6 @@ export default function BookingDetailPage() {
               <p className={styles.label}>Description</p>
               <p>{booking.description}</p>
             </div>
-
-            {canPay ? (
-              <div className={styles.section}>
-                <p className={styles.label}>Payment</p>
-                <p className={styles.subtle}>
-                  This booking is confirmed and ready for Payfast checkout.
-                </p>
-                <PaymentForm
-                  bookingId={booking.id}
-                  className={styles.primaryBtn}
-                  disabled={onboardingLocked}
-                  onError={(message) => setError(message)}
-                />
-              </div>
-            ) : null}
 
             {canVerifyStartCode ? (
               <div className={styles.section}>
@@ -614,7 +578,7 @@ export default function BookingDetailPage() {
             </div>
 
             <div className={styles.sidebarCard}>
-              <p className={styles.kicker}>Payment breakdown</p>
+              <p className={styles.kicker}>Booking value</p>
               <div className={styles.totalRow}>
                 <span>Total amount</span>
                 <strong>{formatCurrency(booking.totalAmount)}</strong>
@@ -633,18 +597,6 @@ export default function BookingDetailPage() {
                 <span>Artist payout</span>
                 <strong>{formatCurrency(booking.artistPayout)}</strong>
               </div>
-              {booking.paymentProvider ? (
-                <div className={styles.totalRow}>
-                  <span>Provider</span>
-                  <strong>{humanize(booking.paymentProvider)}</strong>
-                </div>
-              ) : null}
-              {booking.paymentReference ? (
-                <div className={styles.totalRow}>
-                  <span>Reference</span>
-                  <strong>{booking.paymentReference}</strong>
-                </div>
-              ) : null}
             </div>
 
             <div className={styles.sidebarCard}>

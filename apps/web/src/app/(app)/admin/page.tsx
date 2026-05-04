@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   AdminArtistApplicationItem,
   AdminDashboardData,
+  AdminInsiderItem,
   ArtistApplicationStatusValue,
   ArtistTierAdminRow,
   ArtistTierDefinition,
@@ -15,8 +16,10 @@ import { useAppSession } from "@/components/session/AppSessionContext";
 import {
   ApiError,
   fetchAdminDashboard,
+  buildAdminInsiderExportUrl,
   updateArtistApplication,
   updateArtistTier,
+  updateInsider,
   updatePlatformSettings,
   updateSupportThread,
   updateTierDefinition,
@@ -161,6 +164,8 @@ export default function AdminPage() {
     useState<TierDefinitionDrafts>({});
   const [statusFilter, setStatusFilter] =
     useState<ArtistApplicationStatusValue | "ALL">("ALL");
+  const [insiderFilter, setInsiderFilter] = useState<"ALL" | "CLIENT" | "ARTIST" | "PENDING" | "VERIFIED">("ALL");
+  const [insiderSearch, setInsiderSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -199,6 +204,22 @@ export default function AdminPage() {
     return items.filter((item) => item.applicationStatus === statusFilter);
   }, [dashboard?.artistApplications.items, statusFilter]);
 
+  const filteredInsiders = useMemo(() => {
+    const query = insiderSearch.trim().toLowerCase();
+    return (dashboard?.insiders.items ?? []).filter((item) => {
+      const matchesFilter =
+        insiderFilter === "ALL" ||
+        item.userType === insiderFilter ||
+        item.insiderStatus === insiderFilter;
+      const matchesSearch =
+        !query ||
+        `${item.firstName} ${item.lastName} ${item.email} ${item.phoneNumber} ${item.referralCode} ${item.referredBy ?? ""}`
+          .toLowerCase()
+          .includes(query);
+      return matchesFilter && matchesSearch;
+    });
+  }, [dashboard?.insiders.items, insiderFilter, insiderSearch]);
+
   const summaryCards = useMemo(() => {
     if (!dashboard) {
       return [];
@@ -227,6 +248,11 @@ export default function AdminPage() {
             .length,
         ),
         hint: "Open, awaiting user, or escalated threads",
+      },
+      {
+        label: "Insiders",
+        value: `${dashboard.insiders.verified}/${dashboard.insiders.total}`,
+        hint: `${dashboard.insiders.clients} clients, ${dashboard.insiders.artists} artists`,
       },
       {
         label: "Manual review bookings",
@@ -323,6 +349,22 @@ export default function AdminPage() {
           ? err.message
           : "Unable to update the support thread.",
       );
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const runInsiderUpdate = async (
+    insider: AdminInsiderItem,
+    patch: { instagramFollowed?: boolean; tiktokFollowed?: boolean; verified?: boolean },
+  ) => {
+    setBusyKey(`insider:${insider.id}`);
+    setError(null);
+    try {
+      const next = await updateInsider({ insiderId: insider.id, ...patch });
+      setDashboard(next);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Unable to update Insider.");
     } finally {
       setBusyKey(null);
     }
@@ -512,6 +554,105 @@ export default function AdminPage() {
                   <option value="UPFRONT">Upfront fee</option>
                 </select>
               </label>
+            </div>
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <h2>VendrStudio Insider Programme</h2>
+                <p className={styles.subtle}>
+                  Manual social verification, referral tracking, leaderboard, and CSV export.
+                </p>
+              </div>
+              <a className={styles.primaryBtn} href={buildAdminInsiderExportUrl()}>
+                Export CSV
+              </a>
+            </div>
+
+            <div className={styles.fieldGridCompact}>
+              <label className={styles.field}>
+                Filter
+                <select
+                  value={insiderFilter}
+                  onChange={(event) =>
+                    setInsiderFilter(event.target.value as typeof insiderFilter)
+                  }
+                >
+                  <option value="ALL">All insiders</option>
+                  <option value="CLIENT">Clients</option>
+                  <option value="ARTIST">Artists</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="VERIFIED">Verified</option>
+                </select>
+              </label>
+              <label className={styles.field}>
+                Search
+                <input
+                  value={insiderSearch}
+                  onChange={(event) => setInsiderSearch(event.target.value)}
+                  placeholder="Name, email, phone, referral code"
+                />
+              </label>
+            </div>
+
+            <div className={styles.metrics}>
+              <div><span>Total</span><strong>{dashboard.insiders.total}</strong></div>
+              <div><span>Pending</span><strong>{dashboard.insiders.pending}</strong></div>
+              <div><span>Verified</span><strong>{dashboard.insiders.verified}</strong></div>
+              <div><span>Top referral count</span><strong>{dashboard.insiders.leaderboard[0]?.referralCount ?? 0}</strong></div>
+            </div>
+
+            <div className={styles.stack}>
+              {filteredInsiders.map((insider) => (
+                <article key={insider.id} className={styles.rowCard}>
+                  <div className={styles.rowHeader}>
+                    <div>
+                      <h3>{insider.firstName} {insider.lastName}</h3>
+                      <p className={styles.subtle}>
+                        {insider.email} / {insider.phoneNumber} / {insider.referralCode}
+                      </p>
+                    </div>
+                    <span className={styles.statusPill} data-tone={insider.insiderStatus === "VERIFIED" ? "success" : "pending"}>
+                      {humanize(insider.insiderStatus)}
+                    </span>
+                  </div>
+                  <div className={styles.metrics}>
+                    <div><span>Type</span><strong>{humanize(insider.userType)}</strong></div>
+                    <div><span>Instagram</span><strong>{insider.instagramFollowed ? "Followed" : "Pending"}</strong></div>
+                    <div><span>TikTok</span><strong>{insider.tiktokFollowed ? "Followed" : "Pending"}</strong></div>
+                    <div><span>Referrals</span><strong>{insider.referralCount}</strong></div>
+                    <div><span>Referred by</span><strong>{insider.referredBy ?? "Direct"}</strong></div>
+                    <div><span>Verified at</span><strong>{formatDate(insider.verifiedAt)}</strong></div>
+                  </div>
+                  <div className={styles.actions}>
+                    <button
+                      type="button"
+                      className={styles.ghostBtn}
+                      onClick={() => void runInsiderUpdate(insider, { instagramFollowed: !insider.instagramFollowed })}
+                      disabled={busyKey === `insider:${insider.id}`}
+                    >
+                      {insider.instagramFollowed ? "Unset Instagram" : "Set Instagram"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ghostBtn}
+                      onClick={() => void runInsiderUpdate(insider, { tiktokFollowed: !insider.tiktokFollowed })}
+                      disabled={busyKey === `insider:${insider.id}`}
+                    >
+                      {insider.tiktokFollowed ? "Unset TikTok" : "Set TikTok"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.primaryBtn}
+                      onClick={() => void runInsiderUpdate(insider, { verified: true, instagramFollowed: true, tiktokFollowed: true })}
+                      disabled={busyKey === `insider:${insider.id}` || insider.insiderStatus === "VERIFIED"}
+                    >
+                      {insider.insiderStatus === "VERIFIED" ? "Verified" : "Mark verified"}
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
 

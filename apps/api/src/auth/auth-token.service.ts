@@ -36,7 +36,8 @@ export class AuthTokenService {
     payload: TPayload,
     options?: { expiresInSeconds?: number },
   ): string {
-    const expiresInSeconds = options?.expiresInSeconds ?? this.getExpiresInSeconds();
+    const expiresInSeconds =
+      options?.expiresInSeconds ?? this.getExpiresInSeconds();
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + expiresInSeconds;
     const tokenPayload = { ...payload, iat, exp };
@@ -48,7 +49,9 @@ export class AuthTokenService {
     return `${unsigned}.${signature}`;
   }
 
-  verifyPayload<TPayload extends object>(token: string): TPayload & {
+  verifyPayload<TPayload extends object>(
+    token: string,
+  ): TPayload & {
     iat: number;
     exp: number;
   } {
@@ -59,14 +62,19 @@ export class AuthTokenService {
 
     const unsigned = `${header}.${payloadPart}`;
     const expectedSignature = this.computeSignature(unsigned);
-    const validSignature = this.constantTimeStringCompare(signature, expectedSignature);
+    const validSignature = this.constantTimeStringCompare(
+      signature,
+      expectedSignature,
+    );
     if (!validSignature) {
       throw new UnauthorizedException('Invalid token');
     }
 
     let payload: TPayload & { iat: number; exp: number };
     try {
-      payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8')) as TPayload & {
+      payload = JSON.parse(
+        Buffer.from(payloadPart, 'base64url').toString('utf8'),
+      ) as TPayload & {
         iat: number;
         exp: number;
       };
@@ -82,13 +90,17 @@ export class AuthTokenService {
   }
 
   private computeSignature(unsigned: string): string {
-    return createHmac('sha256', this.getSecret()).update(unsigned).digest('base64url');
+    return createHmac('sha256', this.getSecret())
+      .update(unsigned)
+      .digest('base64url');
   }
 
   private getSecret(): string {
     const secret = process.env.AUTH_TOKEN_SECRET?.trim();
     if (!secret || secret.length < 32) {
-      throw new Error('AUTH_TOKEN_SECRET must be set and at least 32 characters');
+      throw new Error(
+        'AUTH_TOKEN_SECRET must be set and at least 32 characters',
+      );
     }
     return secret;
   }

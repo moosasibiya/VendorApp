@@ -49,7 +49,13 @@ export class OnboardingCompleteGuard implements CanActivate {
       return true;
     }
 
-    if (await this.isOnboardingComplete(user.id, user.role, user.onboardingCompletedAt ?? null)) {
+    if (
+      await this.isOnboardingComplete(
+        user.id,
+        user.role,
+        user.onboardingCompletedAt ?? null,
+      )
+    ) {
       return true;
     }
 
