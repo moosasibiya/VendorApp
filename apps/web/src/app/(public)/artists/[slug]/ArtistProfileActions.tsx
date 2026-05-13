@@ -171,6 +171,7 @@ export function ArtistProfileActions({
     );
   }
 
+
   return (
     <>
       <button type="button" className={bookNowClassName} onClick={() => void bookNow()}>
@@ -188,3 +189,4 @@ export function ArtistProfileActions({
     </>
   );
 }
+

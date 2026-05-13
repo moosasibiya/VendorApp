@@ -206,10 +206,8 @@ export class AuthService {
     }
 
     const verificationToken = this.createEmailVerificationToken(user);
-    await this.mailerService.sendVerificationEmail(
-      user.email,
-      verificationToken,
-    );
+    // Fire-and-forget — never block signup on email delivery; MailerService logs failures
+    this.mailerService.sendVerificationEmail(user.email, verificationToken).catch(() => undefined);
 
     await this.audit('signup_success', true, {
       userId: user.id,
@@ -551,7 +549,8 @@ export class AuthService {
       passwordResetExpiry: null,
     });
 
-    await this.mailerService.sendPasswordReset(user.email, resetToken);
+    // Fire-and-forget — never block password reset on email delivery
+    this.mailerService.sendPasswordReset(user.email, resetToken).catch(() => undefined);
 
     await this.audit('password_reset_requested', true, {
       userId: user.id,
@@ -779,7 +778,8 @@ export class AuthService {
     }
 
     const token = this.createEmailVerificationToken(user);
-    await this.mailerService.sendVerificationEmail(user.email, token);
+    // Fire-and-forget — never block resend on email delivery
+    this.mailerService.sendVerificationEmail(user.email, token).catch(() => undefined);
 
     await this.audit('verification_email_resent', true, {
       userId: user.id,

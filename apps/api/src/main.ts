@@ -1,10 +1,15 @@
 import { loadEnvironment } from './env';
+import { validateEnv } from './config/env.validation';
 import { randomUUID, timingSafeEqual } from 'crypto';
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 loadEnvironment();
+validateEnv();
 
 export async function configureApp(app: INestApplication): Promise<void> {
   const logger = new Logger('HTTP');
@@ -119,23 +124,31 @@ export async function configureApp(app: INestApplication): Promise<void> {
   });
 
   app.setGlobalPrefix('api');
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseInterceptor());
 }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await configureApp(app);
 
+  // Enables graceful shutdown so Prisma.$disconnect() fires on SIGTERM/SIGINT
+  app.enableShutdownHooks();
+
   const port = process.env.PORT ? Number(process.env.PORT) : 4000;
   await app.listen(port);
 
-  console.log(`Vendr Studios API running on http://localhost:${port}/api`);
+  Logger.log(`API running on http://localhost:${port}/api`, 'Bootstrap');
 }
 if (require.main === module) {
   void bootstrap();

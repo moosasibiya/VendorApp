@@ -21,6 +21,7 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
+  timingSafeEqual,
 } from 'crypto';
 import { ArtistTierService } from '../artists/artist-tier.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -474,7 +475,13 @@ export class BookingsService {
     const expectedCode = this.decryptVerificationCode(
       booking.verificationCodeCiphertext,
     );
-    if (normalizedCode !== expectedCode) {
+    // Constant-time comparison to prevent timing attacks on verification codes
+    const normalizedBuf = Buffer.from(normalizedCode, 'utf8');
+    const expectedBuf = Buffer.from(expectedCode, 'utf8');
+    const codeMatches =
+      normalizedBuf.length === expectedBuf.length &&
+      timingSafeEqual(normalizedBuf, expectedBuf);
+    if (!codeMatches) {
       await this.prisma.booking.update({
         where: { id: booking.id },
         data: {

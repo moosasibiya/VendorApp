@@ -24,7 +24,10 @@ type HandshakeAuthPayload = {
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: true,
+    origin: (process.env.WEB_ORIGIN ?? 'http://localhost:3000')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
     credentials: true,
   },
 })

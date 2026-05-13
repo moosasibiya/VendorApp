@@ -9,8 +9,10 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import type { AdminDashboardData, PlatformSettings } from '@vendorapp/shared';
 import { AuthGuard } from '../auth/auth.guard';
+import { Roles, RolesGuard } from '../common/guards/roles.guard';
 import { AdminService } from './admin.service';
 import { UpdateArtistApplicationDto } from './dto/update-artist-application.dto';
 import { UpdateArtistTierDefinitionDto } from './dto/update-artist-tier-definition.dto';
@@ -25,7 +27,8 @@ type AuthenticatedRequest = {
 };
 
 @Controller('admin')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.SUB_ADMIN)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

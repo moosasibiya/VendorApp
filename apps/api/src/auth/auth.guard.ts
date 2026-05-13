@@ -15,6 +15,7 @@ type RequestWithAuth = {
   auth?: {
     userId: string;
     email: string;
+    role: string;
   };
 };
 
@@ -51,6 +52,7 @@ export class AuthGuard implements CanActivate {
     request.auth = {
       userId: payload.sub,
       email: payload.email,
+      role: user.role,
     };
 
     return true;

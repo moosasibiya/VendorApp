@@ -1,8 +1,38 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, DM_Serif_Display, Manrope } from "next/font/google";
+import { Bebas_Neue, DM_Sans, DM_Serif_Display, Instrument_Serif, Manrope, Outfit, Space_Grotesk } from "next/font/google";
 import CursorEffects from "@/components/global/CursorEffects";
 import "material-symbols/outlined.css";
 import "./globals.css";
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "600", "700", "800", "900"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  style: ["normal", "italic"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -58,7 +88,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable}`}
+      className={`${instrumentSerif.variable} ${spaceGrotesk.variable} ${outfit.variable} ${dmSans.variable} ${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable}`}
       suppressHydrationWarning
     >
       <body>
