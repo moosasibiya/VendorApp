@@ -14,11 +14,11 @@ export default function PublicFooter() {
         </div>
 
         <div className={styles.column}>
-          <div className={styles.columnTitle}>Insider Programme</div>
-          <Link href="/join">Join as Client</Link>
-          <Link href="/artists">Join as Creative</Link>
-          <Link href="/insider-rules">Insider rules</Link>
-          <Link href="/#faq">FAQ</Link>
+          <div className={styles.columnTitle}>Marketplace</div>
+          <Link href="/explore">Explore</Link>
+          <Link href="/how-it-works">How It Works</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/join">Join as Creative</Link>
         </div>
 
         <div className={styles.column}>
@@ -29,11 +29,11 @@ export default function PublicFooter() {
         </div>
 
         <div className={styles.column}>
-          <div className={styles.columnTitle}>Rewards</div>
-          <Link href="/insider-rules">Referral rewards</Link>
-          <Link href="/join">Client early access</Link>
-          <Link href="/artists">Creative early access</Link>
-          <Link href="/#faq">Programme FAQ</Link>
+          <div className={styles.columnTitle}>Company</div>
+          <Link href="/about">About</Link>
+          <Link href="/faq">FAQ</Link>
+          <Link href="/contact">Contact</Link>
+          <Link href="/privacy">Privacy</Link>
         </div>
       </div>
 

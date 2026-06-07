@@ -29,13 +29,13 @@ const artistSteps = [
   { title: "Review", hint: "Check the profile before you publish it." },
 ];
 const clientSteps = [
-  { title: "Profile", hint: "Set the profile details tied to your bookings." },
+  { title: "Profile", hint: "Set the profile details tied to your projects." },
   { title: "Preferences", hint: "Add event types and your budget range." },
   { title: "Done", hint: "Review the profile before finishing onboarding." },
 ];
 const agencySteps = [
   { title: "Agency", hint: "Define the public identity for your agency." },
-  { title: "Contact", hint: "Add the contact details clients and artists need." },
+  { title: "Contact", hint: "Add the contact details clients and creatives need." },
   { title: "Done", hint: "Review the agency profile before publishing it." },
 ];
 const serviceOptions = ["Photography", "Videography", "Content Creation", "Graphic Design", "Event Coverage", "Creative Direction"];
@@ -130,17 +130,6 @@ export default function OnboardingPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    setIsPreviewMode(
-      new URLSearchParams(window.location.search).get("preview") === "1",
-    );
-  }, []);
-
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -284,7 +273,7 @@ export default function OnboardingPage() {
     if (!user) return null;
     if (user.accountType === "CREATIVE") {
       return {
-        kicker: "Artist application",
+        kicker: "Creative application",
         title: "Submit your profile for review",
         subtitle:
           "There is no upfront onboarding payment in the current rollout. Complete your profile, enter the review queue, and move live when an admin approves your launch slot.",
@@ -293,7 +282,7 @@ export default function OnboardingPage() {
       };
     }
     if (user.accountType === "AGENCY") return { kicker: "Agency onboarding", title: "Launch the agency profile your team will operate from", subtitle: "Set up the agency identity, contact details, and publish the account in one pass.", steps: agencySteps, totalRequired: 2 };
-    return { kicker: "Client onboarding", title: "Set up the profile you will use to book artists", subtitle: "Add your booking preferences once so discovery and bookings start from the right context.", steps: clientSteps, totalRequired: 2 };
+    return { kicker: "Client onboarding", title: "Set up the profile you will use to book creatives", subtitle: "Add your project preferences once so discovery and projects start from the right context.", steps: clientSteps, totalRequired: 2 };
   }, [user]);
 
   const validateStep = (targetStep: number): string | null => {
@@ -459,19 +448,8 @@ export default function OnboardingPage() {
         </aside>
 
         <section className={styles.content}>
-          {isPreviewMode ? (
-            <div className={styles.previewBanner}>
-              <div>
-                <strong>Preview mode is on</strong>
-                <p>You can open onboarding even after completion and jump to the public home page at any time.</p>
-              </div>
-              <Link href="/home" className={styles.previewLink}>
-                Public home
-              </Link>
-            </div>
-          ) : null}
           {error ? <div className={styles.errorBanner}>{error}</div> : null}
-          {successMessage ? <div className={styles.successBanner}><div><strong>{successMessage}</strong><p>Your account is now using this onboarding data.</p></div>{savedSlug && user.accountType === "CREATIVE" ? <Link href={`/artists/${savedSlug}`} className={styles.successLink}>View profile</Link> : null}</div> : null}
+          {successMessage ? <div className={styles.successBanner}><div><strong>{successMessage}</strong><p>Your account is now using this onboarding data.</p></div>{savedSlug && user.accountType === "CREATIVE" ? <Link href={`/creatives/${savedSlug}`} className={styles.successLink}>View profile</Link> : null}</div> : null}
           <div className={styles.formCard}>
             <div className={styles.sectionHeader} data-scroll-text data-motion-travel="26"><div><p className={styles.sectionEyebrow}>Step {step + 1} of {flow.steps.length}</p><h2>{flow.steps[step].title}</h2><p>{flow.steps[step].hint}</p></div><span className={styles.accountBadge}>{user.accountType === "CREATIVE" ? "Creative account" : user.accountType === "AGENCY" ? "Agency account" : "Client account"}</span></div>
             {user.accountType === "CREATIVE" ? renderArtistStep(step, artistForm, setArtistForm) : user.accountType === "CLIENT" ? renderClientStep(step, clientForm, setClientForm) : renderAgencyStep(step, agencyForm, setAgencyForm, isAgencySlugEdited, setIsAgencySlugEdited)}
@@ -487,12 +465,12 @@ function renderArtistStep(step: number, form: ArtistProfileInput, setForm: Dispa
   if (step === 0) return <div className={styles.fieldGrid}><label className={styles.field}>Display name<input value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Studio Kuhle" /></label><label className={styles.field}>Primary role<input value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} placeholder="Wedding Photographer" /></label><label className={styles.field}>Location<input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Cape Town" /></label><label className={`${styles.field} ${styles.fieldFull}`}>Bio<textarea value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} placeholder="Tell clients what you shoot, how you work, and what sets your style apart." /></label></div>;
   if (step === 1) return <div className={styles.sectionStack}><ChoiceGroup title="Services" lead="Select every service you actively want inquiries for." options={serviceOptions} values={form.services} onToggle={(value) => setForm((current) => ({ ...current, services: current.services.includes(value) ? current.services.filter((item) => item !== value) : [...current.services, value] }))} /><ChoiceGroup title="Specialties" lead="Add the work you want to become known for." options={specialtyOptions} values={form.specialties} onToggle={(value) => setForm((current) => ({ ...current, specialties: current.specialties.includes(value) ? current.specialties.filter((item) => item !== value) : [...current.specialties, value] }))} /></div>;
   if (step === 2) return <div className={styles.sectionStack}><div className={styles.fieldGrid}><label className={styles.field}>Pricing summary<input value={form.pricingSummary} onChange={(event) => setForm((current) => ({ ...current, pricingSummary: event.target.value }))} placeholder="Portraits from R3,500. Weddings from R12,000." /></label><label className={styles.field}>Availability summary<input value={form.availabilitySummary} onChange={(event) => setForm((current) => ({ ...current, availabilitySummary: event.target.value }))} placeholder="Available in Gauteng and Western Cape with 2 weeks notice." /></label></div><div className={styles.portfolioGrid}>{form.portfolioLinks.map((value, index) => <label key={index} className={styles.field}>Portfolio link {index + 1}<input value={value} onChange={(event) => setForm((current) => { const nextLinks = [...current.portfolioLinks]; nextLinks[index] = event.target.value; return { ...current, portfolioLinks: nextLinks }; })} placeholder="https://yourportfolio.com/project" /></label>)}</div><div className={styles.rolloutNote} data-scroll-text data-motion-travel="22"><strong>Current rollout policy</strong><p>No upfront onboarding payment is collected right now. Profiles are reviewed manually, and approved artists go live in limited rollout slots.</p></div></div>;
-  return <div className={styles.reviewGrid}><SummaryCard label="Public identity" title={summaryValue(form.displayName)} lines={[summaryValue(form.role), summaryValue(form.location)]} /><SummaryCard label="About" lines={[summaryValue(form.bio)]} /><SummaryCard label="Services" lines={[summaryValue(form.services)]} /><SummaryCard label="Specialties" lines={[summaryValue(form.specialties)]} /><SummaryCard label="Booking summary" lines={[summaryValue(form.pricingSummary), summaryValue(form.availabilitySummary)]} /><SummaryCard label="Rollout" lines={["Application review happens before launch approval.", "No upfront onboarding payment in the current rollout.", "If enabled, onboarding recovery is taken from the first completed booking only."]} /><SummaryCard label="Portfolio" lines={uniqueValues(form.portfolioLinks).length ? uniqueValues(form.portfolioLinks) : ["No links added yet."]} /></div>;
+  return <div className={styles.reviewGrid}><SummaryCard label="Public identity" title={summaryValue(form.displayName)} lines={[summaryValue(form.role), summaryValue(form.location)]} /><SummaryCard label="About" lines={[summaryValue(form.bio)]} /><SummaryCard label="Services" lines={[summaryValue(form.services)]} /><SummaryCard label="Specialties" lines={[summaryValue(form.specialties)]} /><SummaryCard label="Project summary" lines={[summaryValue(form.pricingSummary), summaryValue(form.availabilitySummary)]} /><SummaryCard label="Rollout" lines={["Application review happens before launch approval.", "No upfront onboarding payment in the current rollout.", "If enabled, onboarding recovery is taken from the first completed project only."]} /><SummaryCard label="Portfolio" lines={uniqueValues(form.portfolioLinks).length ? uniqueValues(form.portfolioLinks) : ["No links added yet."]} /></div>;
 }
 
 function renderClientStep(step: number, form: ClientForm, setForm: Dispatch<SetStateAction<ClientForm>>) {
   if (step === 0) return <div className={styles.fieldGrid}><label className={styles.field}>Full name<input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Sarah Daniels" /></label><label className={styles.field}>Avatar URL<input value={form.avatarUrl} onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} placeholder="https://cdn.example.com/avatar.webp" /></label><label className={`${styles.field} ${styles.fieldFull}`}>Location<input value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} placeholder="Johannesburg" /></label></div>;
-  if (step === 1) return <div className={styles.sectionStack}><ChoiceGroup title="Event types you usually book" lead="These preferences shape discovery and booking suggestions later." options={clientEventOptions} values={form.eventTypes} onToggle={(value) => setForm((current) => ({ ...current, eventTypes: current.eventTypes.includes(value) ? current.eventTypes.filter((item) => item !== value) : [...current.eventTypes, value] }))} /><div className={styles.fieldGrid}><label className={styles.field}>Budget minimum<input type="number" min="0" value={form.budgetMin} onChange={(event) => setForm((current) => ({ ...current, budgetMin: event.target.value }))} placeholder="5000" /></label><label className={styles.field}>Budget maximum<input type="number" min="0" value={form.budgetMax} onChange={(event) => setForm((current) => ({ ...current, budgetMax: event.target.value }))} placeholder="25000" /></label></div></div>;
+  if (step === 1) return <div className={styles.sectionStack}><ChoiceGroup title="Event types you usually book" lead="These preferences shape discovery and project suggestions later." options={clientEventOptions} values={form.eventTypes} onToggle={(value) => setForm((current) => ({ ...current, eventTypes: current.eventTypes.includes(value) ? current.eventTypes.filter((item) => item !== value) : [...current.eventTypes, value] }))} /><div className={styles.fieldGrid}><label className={styles.field}>Budget minimum<input type="number" min="0" value={form.budgetMin} onChange={(event) => setForm((current) => ({ ...current, budgetMin: event.target.value }))} placeholder="5000" /></label><label className={styles.field}>Budget maximum<input type="number" min="0" value={form.budgetMax} onChange={(event) => setForm((current) => ({ ...current, budgetMax: event.target.value }))} placeholder="25000" /></label></div></div>;
   return <div className={styles.reviewGrid}><SummaryCard label="Profile" title={summaryValue(form.fullName)} lines={[summaryValue(form.location), summaryValue(form.avatarUrl)]} /><SummaryCard label="Preferences" lines={[summaryValue(form.eventTypes), form.budgetMin.trim() || form.budgetMax.trim() ? `Budget: ${form.budgetMin.trim() || "0"} to ${form.budgetMax.trim() || "Not set"}` : "Budget: Not set"]} /></div>;
 }
 

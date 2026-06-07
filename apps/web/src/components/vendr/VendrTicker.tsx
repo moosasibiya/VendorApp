@@ -46,7 +46,7 @@ export function VendrTicker() {
           <span
             key={i}
             style={{
-              fontFamily: "var(--display)", fontSize: 22, letterSpacing: "0.04em",
+              fontFamily: "var(--display)", fontSize: "clamp(14px, 3vw, 22px)", letterSpacing: "0.04em",
               color: "rgba(207,233,255,0.85)", textTransform: "uppercase",
               fontWeight: 300,
               display: "inline-flex", alignItems: "center", gap: 8,
@@ -58,7 +58,7 @@ export function VendrTicker() {
               fontFamily: "var(--display)",
               fontWeight: 300,
               color: "var(--violet)",
-              fontSize: 22,
+              fontSize: "clamp(14px, 3vw, 22px)",
               letterSpacing: "0.04em",
               textTransform: "uppercase",
             }}>

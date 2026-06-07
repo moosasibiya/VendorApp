@@ -117,7 +117,7 @@ export function VendrCTA() {
           }}
         >
           A curated marketplace for South Africa&apos;s working creatives.
-          Whether you&apos;re booking the shoot or behind the camera — your
+          Whether you&apos;re planning the shoot or behind the camera — your
           next chapter starts here.
         </p>
 

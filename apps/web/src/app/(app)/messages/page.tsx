@@ -562,7 +562,7 @@ export default function MessagesPage() {
           {!activeConversation ? (
             <div className={styles.emptyThread}>
               <h2>Select a conversation</h2>
-              <p>Booking-linked conversations will appear here once you start messaging.</p>
+              <p>Project-linked conversations will appear here once you start messaging.</p>
             </div>
           ) : (
             <>
@@ -575,7 +575,7 @@ export default function MessagesPage() {
                           activeConversation.supportStatus,
                         ) || "Open"}`
                       : activeConversation.booking
-                        ? `Booking: ${activeConversation.booking.title}`
+                        ? `Project: ${activeConversation.booking.title}`
                         : "Direct conversation"}
                   </p>
                 </div>
@@ -587,10 +587,10 @@ export default function MessagesPage() {
                   ) : null}
                   {activeConversation.booking ? (
                     <Link
-                      href={`/bookings/${activeConversation.booking.id}`}
+                      href={`/projects/${activeConversation.booking.id}`}
                       className={styles.threadLink}
                     >
-                      View booking
+                      View project
                     </Link>
                   ) : null}
                 </div>
@@ -679,9 +679,9 @@ export default function MessagesPage() {
               <p>{humanize(activeConversation.supportStatus) || "Open"}</p>
               {activeConversation.booking ? (
                 <>
-                  <p className={styles.detailLabel}>Linked booking</p>
+                  <p className={styles.detailLabel}>Linked project</p>
                   <Link
-                    href={`/bookings/${activeConversation.booking.id}`}
+                    href={`/projects/${activeConversation.booking.id}`}
                     className={styles.detailLink}
                   >
                     {activeConversation.booking.title}
@@ -705,14 +705,14 @@ export default function MessagesPage() {
               <p className={styles.detailLabel}>Budget</p>
               <p>{formatMoney(activeConversation.booking.totalAmount)}</p>
               <Link
-                href={`/bookings/${activeConversation.booking.id}`}
+                href={`/projects/${activeConversation.booking.id}`}
                 className={styles.detailLink}
               >
-                Open booking
+                Open project
               </Link>
             </div>
           ) : (
-            <p className={styles.empty}>Select a conversation to view the booking context.</p>
+            <p className={styles.empty}>Select a conversation to view the project context.</p>
           )}
         </aside>
       </div>

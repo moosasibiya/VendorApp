@@ -43,7 +43,7 @@ export default function CreativesPage() {
 
           <div className={styles.cardBottom}>
             <div className={styles.stat}>
-              <div className={styles.statLabel}>Bookings</div>
+              <div className={styles.statLabel}>Projects</div>
               <div className={styles.statValue}>14</div>
             </div>
             <div className={styles.stat}>
@@ -76,7 +76,7 @@ export default function CreativesPage() {
 
           <div className={styles.cardBottom}>
             <div className={styles.stat}>
-              <div className={styles.statLabel}>Bookings</div>
+              <div className={styles.statLabel}>Projects</div>
               <div className={styles.statValue}>6</div>
             </div>
             <div className={styles.stat}>

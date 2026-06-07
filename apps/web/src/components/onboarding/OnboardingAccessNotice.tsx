@@ -17,8 +17,8 @@ export function OnboardingAccessNotice({
             : "You can browse, but editing is locked until onboarding is complete."}
         </strong>
         <p>
-          Finish onboarding to create bookings, send messages, manage settings,
-          and run booking or payment actions.
+          Finish onboarding to create projects, send messages, manage settings,
+          and run project or payment actions.
         </p>
       </div>
       <Link href="/onboarding" className={styles.link}>

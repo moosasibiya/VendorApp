@@ -74,7 +74,7 @@ export default function CalendarPage() {
         setError(
           err instanceof ApiError
             ? err.message
-            : "Unable to load calendar bookings right now.",
+            : "Unable to load calendar projects right now.",
         );
       } finally {
         if (!cancelled) {
@@ -114,7 +114,7 @@ export default function CalendarPage() {
       <header className={styles.header}>
         <div>
           <h1>Calendar</h1>
-          <p>Confirmed and in-progress bookings across your current month view.</p>
+          <p>Confirmed and in-progress projects across your current month view.</p>
         </div>
         <div className={styles.controls}>
           <button
@@ -171,7 +171,7 @@ export default function CalendarPage() {
               <div className={styles.cellHeader}>
                 <span>{date.getDate()}</span>
                 {dayBookings.length > 0 ? (
-                  <small>{dayBookings.length} booking{dayBookings.length > 1 ? "s" : ""}</small>
+                  <small>{dayBookings.length} project{dayBookings.length > 1 ? "s" : ""}</small>
                 ) : null}
               </div>
 
@@ -183,7 +183,7 @@ export default function CalendarPage() {
                     {dayBookings.slice(0, 2).map((booking) => (
                       <Link
                         key={booking.id}
-                        href={`/bookings/${booking.id}`}
+                        href={`/projects/${booking.id}`}
                         className={styles.event}
                       >
                         <strong>{booking.title}</strong>

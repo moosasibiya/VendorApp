@@ -66,7 +66,7 @@ export default function LoginPage() {
         <p className={styles.kicker}>Welcome back</p>
         <h1 className={styles.title}>Log in to your workspace</h1>
         <p className={styles.muted}>
-          Manage bookings, messages, and payments with your creative team.
+          Manage projects, messages, and payments with your creative team.
         </p>
       </div>
 

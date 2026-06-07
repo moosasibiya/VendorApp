@@ -5,7 +5,7 @@ import { ApiError, createPrelaunchLead, type PrelaunchLeadInterest } from "@/lib
 import styles from "./page.module.css";
 
 const interestOptions: Array<{ value: PrelaunchLeadInterest; label: string }> = [
-  { value: "CREATIVE", label: "Artist / creative" },
+  { value: "CREATIVE", label: "Creative" },
   { value: "CLIENT", label: "Client / event booker" },
   { value: "AGENCY", label: "Agency / team" },
   { value: "GENERAL", label: "Just updates" },
@@ -60,7 +60,7 @@ export default function PrelaunchWaitlistForm() {
           });
           setStatus("success");
           setMessage(
-            "You are on the Vendr Studios launch list. We will send updates before bookings open.",
+            "You are on the Vendr Studios launch list. We will send updates before projects open.",
           );
         } catch (error) {
           setStatus("error");

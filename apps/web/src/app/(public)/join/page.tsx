@@ -4,7 +4,7 @@ import styles from "../page.module.css";
 
 export const metadata: Metadata = {
   title: "Join as a client",
-  description: "Join the VendrStudio Insider Programme as a client before launch.",
+  description: "Join Vendr Studio early access before launch.",
   alternates: { canonical: "https://vendr.studio/join" },
 };
 
@@ -16,7 +16,7 @@ export default function JoinPage() {
           <span className={styles.sectionLabelBlue}>Client access</span>
           <h1>Book creatives before the public launch</h1>
           <p>
-            Join the VendrStudio Insider Programme for early access to trusted photographers and videographers.
+            Join Vendr Studio early access for trusted creatives, project planning, and launch availability.
           </p>
         </div>
         <div className={styles.signupPanel}>

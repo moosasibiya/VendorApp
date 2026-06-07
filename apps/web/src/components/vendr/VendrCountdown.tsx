@@ -26,9 +26,13 @@ const UNITS = [
 ];
 
 export function VendrCountdown() {
+  // Placeholder keeps server and client HTML identical until the first effect runs.
+  // Calling setTime synchronously on mount is intentional: we need the real clock value
+  // only after hydration, so the SSR output is always "-- -- -- --".
   const [time, setTime] = useState<Time>({ d: "--", h: "--", m: "--", s: "--" });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTime(calc());
     const id = setInterval(() => setTime(calc()), 1000);
     return () => clearInterval(id);
@@ -39,15 +43,15 @@ export function VendrCountdown() {
       {/* Label */}
       <div
         style={{
-          fontFamily: "var(--display)", fontSize: 20, fontWeight: 600, letterSpacing: "0.45em",
+          fontFamily: "var(--display)", fontSize: "clamp(10px,3vw,16px)", fontWeight: 600, letterSpacing: "0.3em",
           color: "rgba(207,233,255,0.85)", textTransform: "uppercase",
           marginBottom: 24,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
         }}
       >
-        <span style={{ width: 42, height: 1, background: "rgba(207,233,255,0.3)", display: "inline-block" }} />
+        <span className="vendr-countdown-label-deco" style={{ width: 42, height: 1, background: "rgba(207,233,255,0.3)", display: "inline-block" }} />
         Until the spotlight turns on
-        <span style={{ width: 42, height: 1, background: "rgba(207,233,255,0.3)", display: "inline-block" }} />
+        <span className="vendr-countdown-label-deco" style={{ width: 42, height: 1, background: "rgba(207,233,255,0.3)", display: "inline-block" }} />
       </div>
 
       {/* Grid */}
@@ -75,7 +79,7 @@ export function VendrCountdown() {
               <div
                 style={{
                   fontFamily: "var(--display)", fontWeight: 300,
-                  fontSize: "clamp(36px, 5vw, 64px)",
+                  fontSize: "clamp(24px, 5vw, 64px)",
                   lineHeight: 1, letterSpacing: "-0.04em",
                   color: "var(--ice)", fontVariantNumeric: "tabular-nums",
                   filter: "drop-shadow(0 0 12px rgba(207,233,255,0.5))",

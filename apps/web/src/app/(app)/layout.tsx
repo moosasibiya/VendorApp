@@ -6,6 +6,7 @@ import AppShell from "../../components/layout/AppShell/AppShell";
 import type { User } from "@vendorapp/shared";
 import { AppSessionProvider } from "@/components/session/AppSessionContext";
 import { defaultAppPathForUser, fetchMe } from "@/lib/api";
+import { createPreviewUser, getStoredPreviewRole, isDevPreviewMode } from "@/lib/preview/devPreview";
 
 function getRequestedPath(pathname: string | null): string {
   const basePath = pathname || "/dashboard";
@@ -13,13 +14,6 @@ function getRequestedPath(pathname: string | null): string {
     return basePath;
   }
   return `${basePath}${window.location.search || ""}`;
-}
-
-function isOnboardingPreviewPath(pathname: string | null): boolean {
-  if (typeof window === "undefined" || pathname !== "/onboarding") {
-    return false;
-  }
-  return new URLSearchParams(window.location.search).get("preview") === "1";
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -31,6 +25,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     void (async () => {
+      if (isDevPreviewMode()) {
+        setUser(createPreviewUser(getStoredPreviewRole()));
+        return;
+      }
+
       try {
         const currentUser = await fetchMe();
         if (!cancelled) setUser(currentUser);
@@ -45,6 +44,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
+    if (!isDevPreviewMode()) {
+      return;
+    }
+
+    const handleRoleChange = () => {
+      setUser(createPreviewUser(getStoredPreviewRole()));
+    };
+
+    window.addEventListener("vendr-preview-role-change", handleRoleChange);
+    return () => window.removeEventListener("vendr-preview-role-change", handleRoleChange);
+  }, []);
+
+  useEffect(() => {
     if (user === null) {
       const next = encodeURIComponent(getRequestedPath(pathname));
       router.replace(`/login?next=${next}`);
@@ -57,8 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     if (
       user.onboardingCompleted &&
-      pathname === "/onboarding" &&
-      !isOnboardingPreviewPath(pathname)
+      pathname === "/onboarding"
     ) {
       router.replace(defaultAppPathForUser(user));
     }

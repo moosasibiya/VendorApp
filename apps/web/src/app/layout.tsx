@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, DM_Sans, DM_Serif_Display, Instrument_Serif, Manrope, Outfit, Space_Grotesk } from "next/font/google";
+import { DevRouteDrawer } from "@/components/dev/DevRouteDrawer";
 import CursorEffects from "@/components/global/CursorEffects";
 import "material-symbols/outlined.css";
 import "./globals.css";
@@ -94,6 +95,7 @@ export default function RootLayout({
       <body>
         <CursorEffects />
         {children}
+        <DevRouteDrawer />
       </body>
     </html>
   );

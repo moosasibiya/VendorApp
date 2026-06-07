@@ -48,6 +48,11 @@ export class PrelaunchController {
     };
   }
 
+  @Get('stats')
+  async getStats() {
+    return { data: await this.prelaunchService.getStats() };
+  }
+
   @Get('referrals/:code')
   async getReferral(@Param('code') code: string) {
     return {

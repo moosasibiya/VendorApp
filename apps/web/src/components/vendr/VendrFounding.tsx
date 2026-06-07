@@ -1,29 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { fetchInsiderStats } from "@/lib/api";
 import { useScrollReveal } from "./useScrollReveal";
 
-const FOUNDING_TARGET = 37;
 const FOUNDING_TOTAL = 100;
-
-const PERKS = [
-  { ix: "01", title: "Priority Placement", body: "" },
-  { ix: "02", title: "Reduced Commission", body: "" },
-  { ix: "03", title: "Featured at Launch", body: "" },
-] as const;
 
 export function VendrFounding() {
   const sectionRef = useScrollReveal<HTMLElement>();
   const fillRef = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLSpanElement>(null);
+  type CountState = { status: "loading" } | { status: "ready"; value: number } | { status: "error"; value: number };
+  const [countState, setCountState] = useState<CountState>({ status: "loading" });
+  const count = countState.status !== "loading" ? countState.value : null;
+
+  const loadCount = () => {
+    fetchInsiderStats()
+      .then(({ insiderCount }) => setCountState({ status: "ready", value: insiderCount }))
+      .catch(() => setCountState({ status: "error", value: 37 }));
+  };
 
   useEffect(() => {
+    loadCount();
+    window.addEventListener("vendr:insider-signup", loadCount);
+    return () => window.removeEventListener("vendr:insider-signup", loadCount);
+  }, []);
+
+  useEffect(() => {
+    if (count === null) return;
+    const target = count;
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;
-        // Animate progress bar
-        if (fillRef.current) fillRef.current.style.width = `${FOUNDING_TARGET}%`;
-        // Count up
+        if (fillRef.current) fillRef.current.style.width = `${(target / FOUNDING_TOTAL) * 100}%`;
         if (countRef.current) {
           const el = countRef.current;
           const dur = 2200;
@@ -31,9 +40,9 @@ export function VendrFounding() {
           const step = (t: number) => {
             const p = Math.min(1, (t - start) / dur);
             const ease = 1 - Math.pow(1 - p, 3);
-            el.textContent = String(Math.floor(FOUNDING_TARGET * ease));
+            el.textContent = String(Math.floor(target * ease));
             if (p < 1) requestAnimationFrame(step);
-            else el.textContent = String(FOUNDING_TARGET);
+            else el.textContent = String(target);
           };
           requestAnimationFrame(step);
         }
@@ -43,7 +52,7 @@ export function VendrFounding() {
     );
     if (fillRef.current) io.observe(fillRef.current);
     return () => io.disconnect();
-  }, []);
+  }, [count]);
 
   return (
     <section
@@ -51,7 +60,7 @@ export function VendrFounding() {
       id="founding"
       className="vendr-reveal"
       style={{
-        position: "relative", padding: "60px 36px 20px",
+        position: "relative", padding: "clamp(40px,6vw,60px) clamp(20px,5vw,36px) 20px",
         textAlign: "center", isolation: "isolate", overflow: "hidden",
       }}
     >
@@ -92,7 +101,7 @@ export function VendrFounding() {
       <h2
         style={{
           fontFamily: "var(--display)", fontWeight: 300,
-          fontSize: "clamp(48px, 6vw, 96px)", lineHeight: 0.95,
+          fontSize: "clamp(32px, 6vw, 96px)", lineHeight: 0.95,
           letterSpacing: "-0.025em", textTransform: "uppercase",
           margin: "0 auto 28px", maxWidth: "14ch", color: "var(--ice)",
         }}
@@ -108,7 +117,8 @@ export function VendrFounding() {
 
       {/* Lede */}
       <p
-        style={{ fontFamily: "var(--body)", fontSize: 20, lineHeight: 1.7, color: "rgba(231,236,243,.8)", maxWidth: "54ch", margin: "0 auto 64px" }}
+        className="vendr-founding-lede"
+        style={{ fontFamily: "var(--body)", fontSize: "clamp(15px,3vw,20px)", lineHeight: 1.7, color: "rgba(231,236,243,.8)", maxWidth: "54ch", margin: "0 auto 64px" }}
       >
         Priority placement. Reduced commission. Featured at launch.
       </p>
@@ -124,14 +134,16 @@ export function VendrFounding() {
         <span
           ref={countRef}
           style={{
-            fontSize: "clamp(80px, 12vw, 180px)", lineHeight: 1, letterSpacing: "-0.045em",
+            fontSize: "clamp(48px, 12vw, 180px)", lineHeight: 1, letterSpacing: "-0.045em",
             background: "linear-gradient(180deg, #ffffff 0%, #cfe9ff 50%, #7aa8d6 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text",
             color: "transparent", WebkitTextFillColor: "transparent",
             filter: "drop-shadow(0 4px 30px rgba(207,233,255,.25))",
+            opacity: countState.status === "loading" ? 0.3 : 1,
+            transition: "opacity 0.4s ease",
           }}
         >
-          0
+          {countState.status === "loading" ? "—" : "0"}
         </span>
         <span style={{ fontSize: "clamp(60px, 8vw, 120px)", color: "rgba(207,233,255,.3)", lineHeight: 1 }}>/</span>
         <span style={{ fontSize: "clamp(60px, 8vw, 120px)", color: "rgba(207,233,255,.55)", lineHeight: 1, letterSpacing: "-0.04em" }}>100</span>

@@ -38,7 +38,7 @@ const MARQUEE_FALLBACK = [
 
 const TRUST_PILLS = [
   { icon: "verified", label: "Verified profiles", tone: "green" },
-  { icon: "shield_locked", label: "Secure booking", tone: "blue" },
+  { icon: "shield_locked", label: "Secure projects", tone: "blue" },
   { icon: "payments", label: "Pricing transparency", tone: "gold" },
   { icon: "support_agent", label: "Centralized support", tone: "violet" },
 ] as const;
@@ -48,27 +48,27 @@ const TRUST_MOMENTUM = [
     number: "01",
     icon: "verified_user",
     title: "Verified profiles stay visible",
-    body: "Every artist in this feed has passed manual identity and quality review before appearing here.",
+    body: "Every creative in this feed has passed manual identity and quality review before appearing here.",
     tone: "violet",
   },
   {
     number: "02",
     icon: "event_available",
     title: "Availability is easy to read",
-    body: "Live availability indicators are surfaced up front so you are not guessing who can take the booking now.",
+    body: "Live availability indicators are surfaced up front so you are not guessing who can take the project now.",
     tone: "blue",
   },
   {
     number: "03",
     icon: "trending_up",
     title: "Trending specialties surface first",
-    body: "Discovery is shaped by recent bookings, ratings, and real marketplace engagement rather than vanity ordering.",
+    body: "Discovery is shaped by recent projects, ratings, and real marketplace engagement rather than vanity ordering.",
     tone: "green",
   },
   {
     number: "04",
     icon: "bolt",
-    title: "Optimized toward faster booking",
+    title: "Optimized toward faster projects",
     body: "Pricing, availability, trust, and role signals are all visible before you click into a profile.",
     tone: "gold",
   },
@@ -88,12 +88,12 @@ const HOW_STEPS = [
   {
     icon: "lock",
     title: "Book",
-    body: "Move into booking with secure payment handling, clearer approval states, and centralized support when a project needs attention.",
+    body: "Move into a project with secure payment handling, clearer approval states, and centralized support when attention is needed.",
   },
   {
     icon: "auto_awesome",
     title: "Create",
-    body: "Your creative gets to work while the platform keeps delivery, payout, and verified review signals tied to the booking journey.",
+    body: "Your creative gets to work while the platform keeps delivery, payout, and verified review signals tied to the project journey.",
   },
 ] as const;
 
@@ -208,7 +208,7 @@ function buildDiscoveryHref(params: {
   if (params.sortBy) query.set("sortBy", params.sortBy);
 
   const suffix = query.toString();
-  return suffix ? `/artists?${suffix}` : "/artists";
+  return suffix ? `/explore?${suffix}` : "/explore";
 }
 
 function dedupeArtists(artists: Artist[]): Artist[] {
@@ -471,7 +471,7 @@ function ArtistCard({
 
         <p className={styles.artistCardBio}>
           {artist.bio ??
-            "A premium creative profile with cleaner presentation, clearer trust cues, and better booking context."}
+            "A premium creative profile with cleaner presentation, clearer trust cues, and better project context."}
         </p>
 
         <div className={styles.artistCardTags}>
@@ -489,7 +489,7 @@ function ArtistCard({
       </div>
 
       <div className={styles.artistCardFooter}>
-        <Link href={`/artists/${artist.slug}`} className={styles.artistCardPrimary}>
+        <Link href={`/creatives/${artist.slug}`} className={styles.artistCardPrimary}>
           View profile
         </Link>
         <Link
@@ -966,7 +966,7 @@ export default function PublicHomePage() {
                   </div>
 
                   <Link
-                    href={`/artists/${spotlightArtist.slug}`}
+                    href={`/creatives/${spotlightArtist.slug}`}
                     className={styles.spotlightButton}
                   >
                     View profile
@@ -1078,7 +1078,7 @@ export default function PublicHomePage() {
               ))}
             </div>
 
-            <Link href="/artists" className={styles.commandBrowse}>
+            <Link href="/explore" className={styles.commandBrowse}>
               Browse all creatives
             </Link>
           </div>
@@ -1113,7 +1113,7 @@ export default function PublicHomePage() {
               <h2 className={styles.lightSectionTitle}>Category jump</h2>
             </div>
 
-            <Link href="/artists" className={styles.categorySeeAll}>
+            <Link href="/explore" className={styles.categorySeeAll}>
               See all categories
             </Link>
           </div>
@@ -1200,7 +1200,7 @@ export default function PublicHomePage() {
         <div className={styles.sectionInner}>
           <div className={styles.howHeader} data-reveal>
             <div className={styles.sectionLabel} data-surface="light">
-              The booking flow
+              The project flow
             </div>
             <h2 className={styles.lightSectionTitle}>How it works</h2>
             <p className={styles.lightSectionSub}>

@@ -36,6 +36,23 @@ import type {
   UpdateUserProfileInput,
   User,
 } from "@vendorapp/shared";
+import {
+  getPreviewConversations,
+  getPreviewMessages,
+  getPreviewNotifications,
+  getPreviewReviews,
+  getPreviewStats,
+  getPreviewUpcomingBookings,
+  previewApiEnvelope,
+  previewArtists,
+  previewBookings,
+  previewCategories,
+} from "@/lib/preview/mockData";
+import {
+  createPreviewUser,
+  getStoredPreviewRole,
+  isDevPreviewMode,
+} from "@/lib/preview/devPreview";
 export type {
   AdminDashboardData,
   Agency,
@@ -194,6 +211,31 @@ async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
 export async function fetchArtists(
   query?: ArtistSearchParams,
 ): Promise<ApiEnvelope<Artist[]>> {
+  if (isDevPreviewMode()) {
+    let data = [...previewArtists];
+    if (query?.category) {
+      data = data.filter((artist) => artist.category?.slug === query.category);
+    }
+    if (query?.location) {
+      data = data.filter((artist) =>
+        artist.location.toLowerCase().includes(query.location!.toLowerCase()),
+      );
+    }
+    if (query?.available !== undefined) {
+      data = data.filter((artist) => Boolean(artist.isAvailable) === query.available);
+    }
+    if (query?.q) {
+      const term = query.q.toLowerCase();
+      data = data.filter((artist) =>
+        [artist.name, artist.role, artist.location, ...(artist.services ?? []), ...(artist.specialties ?? [])]
+          .join(" ")
+          .toLowerCase()
+          .includes(term),
+      );
+    }
+    return previewApiEnvelope(data.slice(0, query?.limit ?? data.length));
+  }
+
   const params = new URLSearchParams();
   if (query?.category) params.set("category", query.category);
   if (query?.location) params.set("location", query.location);
@@ -215,15 +257,27 @@ export async function fetchArtists(
 }
 
 export async function fetchCategories(): Promise<ArtistCategory[]> {
+  if (isDevPreviewMode()) {
+    return previewCategories;
+  }
+
   const response = await getJson<ApiEnvelope<ArtistCategory[]>>("/categories");
   return response.data;
 }
 
 export async function fetchArtistBySlug(slug: string): Promise<Artist> {
+  if (isDevPreviewMode()) {
+    return previewArtists.find((artist) => artist.slug === slug) ?? previewArtists[0];
+  }
+
   return getJson<Artist>(`/artists/${slug}`);
 }
 
 export async function fetchMyArtistProfile(): Promise<Artist | null> {
+  if (isDevPreviewMode()) {
+    return previewArtists[0];
+  }
+
   return getJson<Artist | null>("/artists/me/profile");
 }
 
@@ -245,6 +299,14 @@ export async function fetchBookings(query?: {
   startDate?: string;
   endDate?: string;
 }): Promise<ApiEnvelope<Booking[]>> {
+  if (isDevPreviewMode()) {
+    let data = [...previewBookings];
+    if (query?.status) {
+      data = data.filter((booking) => booking.status === query.status);
+    }
+    return previewApiEnvelope(data.slice(0, query?.limit ?? data.length));
+  }
+
   const params = new URLSearchParams();
   if (query?.status) {
     params.set("status", query.status);
@@ -273,6 +335,24 @@ export async function fetchBookings(query?: {
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
+  if (isDevPreviewMode()) {
+    return {
+      ...previewBookings[0],
+      id: `preview-project-${Date.now()}`,
+      artistId: input.artistId,
+      title: input.title,
+      description: input.description,
+      eventDate: input.eventDate,
+      eventEndDate: input.eventEndDate ?? null,
+      location: input.location,
+      notes: input.notes ?? null,
+      status: "PENDING",
+      paymentStatus: "UNPAID",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   const response = await getJson<ApiEnvelope<Booking>>("/bookings", {
     method: "POST",
     body: JSON.stringify(input),
@@ -281,6 +361,10 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
 }
 
 export async function fetchBooking(id: string): Promise<Booking> {
+  if (isDevPreviewMode()) {
+    return previewBookings.find((booking) => booking.id === id) ?? previewBookings[0];
+  }
+
   const response = await getJson<ApiEnvelope<Booking>>(`/bookings/${id}`);
   return response.data;
 }
@@ -312,6 +396,10 @@ export async function createReview(input: CreateReviewInput): Promise<ReviewItem
 }
 
 export async function fetchMyReviews(): Promise<MyReviewsOverview> {
+  if (isDevPreviewMode()) {
+    return getPreviewReviews();
+  }
+
   return getJson<MyReviewsOverview>("/reviews/me");
 }
 
@@ -326,6 +414,10 @@ export async function createConversation(
 }
 
 export async function fetchConversations(): Promise<ConversationSummary[]> {
+  if (isDevPreviewMode()) {
+    return getPreviewConversations().data;
+  }
+
   const response = await getJson<ApiEnvelope<ConversationSummary[]>>("/conversations");
   return response.data;
 }
@@ -367,6 +459,10 @@ export async function fetchConversationMessages(input: {
   cursor?: string | null;
   limit?: number;
 }): Promise<CursorApiResponse<ConversationMessage[]>> {
+  if (isDevPreviewMode()) {
+    return getPreviewMessages();
+  }
+
   const params = new URLSearchParams();
   if (input.cursor) {
     params.set("cursor", input.cursor);
@@ -466,6 +562,10 @@ export async function fetchNotifications(query?: {
   cursor?: string | null;
   limit?: number;
 }): Promise<NotificationFeed> {
+  if (isDevPreviewMode()) {
+    return getPreviewNotifications();
+  }
+
   const params = new URLSearchParams();
   if (query?.cursor) {
     params.set("cursor", query.cursor);
@@ -565,6 +665,11 @@ export async function createInsiderSignup(
   return response.data;
 }
 
+export async function fetchInsiderStats(): Promise<{ insiderCount: number; total: number }> {
+  const response = await getJson<{ data: { insiderCount: number; total: number } }>("/prelaunch/stats");
+  return response.data;
+}
+
 export async function fetchReferral(code: string): Promise<{
   valid: boolean;
   referralCode: string;
@@ -597,6 +702,10 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
 }
 
 export async function fetchMe(): Promise<User> {
+  if (isDevPreviewMode()) {
+    return createPreviewUser(getStoredPreviewRole());
+  }
+
   return getJson<User>("/auth/me");
 }
 
@@ -610,10 +719,18 @@ export async function changePassword(
 }
 
 export async function fetchMyStats(): Promise<DashboardStats> {
+  if (isDevPreviewMode()) {
+    return getPreviewStats(createPreviewUser(getStoredPreviewRole()).role);
+  }
+
   return getJson<DashboardStats>("/users/me/stats");
 }
 
 export async function fetchMyUpcomingBookings(): Promise<UpcomingBookingItem[]> {
+  if (isDevPreviewMode()) {
+    return getPreviewUpcomingBookings();
+  }
+
   return getJson<UpcomingBookingItem[]>("/users/me/upcoming-bookings");
 }
 
@@ -809,7 +926,7 @@ export function defaultAppPathForUser(user: User): string {
     case "CLIENT":
       return "/explore";
     case "AGENCY":
-      return "/agency/dashboard";
+      return "/dashboard";
     case "SUB_ADMIN":
     case "ADMIN":
       return "/admin";

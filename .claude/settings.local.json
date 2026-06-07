@@ -18,7 +18,13 @@
       "Bash(docker compose *)",
       "PowerShell(cd \"c:\\\\Users\\\\moosa\\\\Desktop\\\\Dev\\\\VendorApp\" ; $job = Start-Job { cd \"c:\\\\Users\\\\moosa\\\\Desktop\\\\Dev\\\\VendorApp\" ; node apps/api/dist/main.js 2>&1 } ; Start-Sleep -Seconds 6 ; Receive-Job $job ; Stop-Job $job ; Remove-Job $job)",
       "Bash(npx tsc *)",
-      "Bash(node_modules/.bin/tsc --noEmit)"
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(Get-ChildItem -Path \"apps/web\" -Name \"tsconfig*.json\" -Recurse)",
+      "PowerShell(& \"c:\\\\Users\\\\moosa\\\\Desktop\\\\Dev\\\\VendorApp\\\\node_modules\\\\.bin\\\\tsc.cmd\" --noEmit -p \"c:\\\\Users\\\\moosa\\\\Desktop\\\\Dev\\\\VendorApp\\\\apps\\\\web\\\\tsconfig.json\" 2>&1)",
+      "PowerShell(pnpm --filter @vendorapp/web run lint 2>&1)",
+      "PowerShell(pnpm --filter @vendorapp/web run build 2>&1)",
+      "Bash(pnpm --filter api run build)",
+      "Bash(pnpm --filter @vendorapp/web add gsap @studio-freight/lenis)"
     ]
   }
 }

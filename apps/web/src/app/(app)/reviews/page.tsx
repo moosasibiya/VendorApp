@@ -40,8 +40,8 @@ function ReviewCard({
       </div>
       <p>{review.comment}</p>
       <div className={styles.reviewActions}>
-        <Link href={`/bookings/${review.bookingId}`}>View booking</Link>
-        <Link href={`/artists/${review.artist.slug}`}>Artist profile</Link>
+        <Link href={`/projects/${review.bookingId}`}>View project</Link>
+        <Link href={`/creatives/${review.artist.slug}`}>Creative profile</Link>
       </div>
     </article>
   );
@@ -91,7 +91,7 @@ export default function ReviewsPage() {
       <header className={styles.header}>
         <div>
           <h1>Ratings & Reviews</h1>
-          <p>Track reviews you have received and feedback you have left on completed bookings.</p>
+          <p>Track reviews you have received and feedback you have left on completed projects.</p>
         </div>
       </header>
 

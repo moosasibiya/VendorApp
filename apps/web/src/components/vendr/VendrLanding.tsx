@@ -7,7 +7,6 @@ import { VendrNav } from "./VendrNav";
 import { VendrHero } from "./VendrHero";
 import { VendrTicker } from "./VendrTicker";
 import { VendrPromise } from "./VendrPromise";
-import { VendrScrollScene } from "./VendrScrollScene";
 import { VendrFounding } from "./VendrFounding";
 import { VendrSignup } from "./VendrSignup";
 import { VendrFooter } from "./VendrFooter";
@@ -66,7 +65,7 @@ export function VendrLanding() {
         {/* 03 — Founding 100 */}
         <VendrFounding />
 
-        {/* 04 — Insider signup */}
+        {/* 04 — Early-access signup */}
         <VendrSignup />
       </main>
 

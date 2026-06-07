@@ -10,7 +10,7 @@ const ITEMS = [
   },
   {
     ix: "/ 02",
-    title: "Escrow on every booking.",
+    title: "Escrow on every project.",
     desc: "Funds are held until milestones are signed off. Creatives never chase invoices. Clients never pay for work that didn't happen.",
   },
   {
@@ -80,7 +80,7 @@ export function VendrWhy() {
           style={{ fontFamily: "var(--body)", fontWeight: 300, fontSize: 15, lineHeight: 1.6, color: "rgba(231,236,243,.6)", maxWidth: "42ch" }}
         >
           We don&apos;t list everyone. We curate the few who can deliver — and
-          we stand behind every booking.
+          we stand behind every project.
         </p>
       </div>
 

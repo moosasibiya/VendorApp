@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Vendr<span>Man</span>
           </Link>
           <p className={styles.kicker}>Trusted creative marketplace</p>
-          <h1 className={styles.title}>Built for premium bookings, trust, and rollout control.</h1>
+          <h1 className={styles.title}>Built for premium projects, trust, and rollout control.</h1>
           <p className={styles.copy}>
             Secure onboarding, verified identities, payment visibility, and
             centralized support all live in one premium workspace.

@@ -171,9 +171,11 @@ export default function SettingsPage() {
           <h1>Settings</h1>
           <nav>
             <button className={styles.navBtn}>Profile</button>
+            <button className={styles.navBtn}>Account</button>
             <button className={styles.navBtn}>Notifications</button>
-            <button className={styles.navBtn}>Security</button>
-            <button className={styles.navBtn}>Danger zone</button>
+            <button className={styles.navBtn}>Billing</button>
+            <button className={styles.navBtn}>Referrals</button>
+            <button className={styles.navBtn}>Privacy</button>
           </nav>
         </aside>
 
@@ -251,7 +253,7 @@ export default function SettingsPage() {
                   onChange={(event) => setBookingNotifications(event.target.checked)}
                   disabled={onboardingLocked}
                 />
-                Booking updates
+                Project updates
               </label>
               <label className={styles.toggle}>
                 <input
@@ -275,7 +277,8 @@ export default function SettingsPage() {
           </div>
 
           <div className={styles.section}>
-            <h2>Password</h2>
+            <h2>Account</h2>
+            <p className={styles.muted}>Update password and security details for this workspace account.</p>
             <div className={styles.formGrid}>
               <label>
                 Current password
@@ -309,7 +312,21 @@ export default function SettingsPage() {
           </div>
 
           <div className={styles.section}>
-            <h2>Danger zone</h2>
+            <h2>Billing</h2>
+            <p className={styles.muted}>
+              Project payments, payout receipts, and invoices will be connected here as billing workflows open.
+            </p>
+          </div>
+
+          <div className={styles.section}>
+            <h2>Referrals</h2>
+            <p className={styles.muted}>
+              Invite collaborators and preferred creatives once referral tracking moves into the workspace.
+            </p>
+          </div>
+
+          <div className={styles.section}>
+            <h2>Privacy</h2>
             <p className={styles.muted}>
               Deleting your account will deactivate it and block future logins until restored.
             </p>

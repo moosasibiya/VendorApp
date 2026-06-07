@@ -25,24 +25,24 @@ const accountTypeHeadlines: Record<
   { title: string; copy: string; button: string; notes: string[] }
 > = {
   CREATIVE: {
-    title: "Apply as an artist",
+    title: "Apply as a creative",
     copy:
       "Create your account, submit your profile, and move through the controlled prelaunch review flow. There is no upfront onboarding payment in the current rollout.",
     button: "Create account to start application",
     notes: [
-      "The first 100 valid artist applications enter the prelaunch pool automatically.",
+      "The first 100 valid creative applications enter the prelaunch pool automatically.",
       "Later applications are still accepted but join a waitlist for future rollout waves.",
-      "Approved artists go live gradually through limited launch slots.",
-      "If onboarding recovery applies, it is taken once from the first completed booking only.",
+      "Approved creatives go live gradually through limited launch slots.",
+      "If onboarding recovery applies, it is taken once from the first completed project only.",
     ],
   },
   CLIENT: {
     title: "Create your client account",
     copy:
-      "Set up the account you will use to discover artists, book securely, and keep support inside the platform messaging flow.",
+      "Set up the account you will use to discover creatives, start projects securely, and keep support inside the platform messaging flow.",
     button: "Create client account",
     notes: [
-      "Browse artist profiles and send messages inside the platform.",
+      "Browse creative profiles and send messages inside the platform.",
       "Track payment, job approval, and support from one place.",
       "Disputes and refunds route into the centralized support flow.",
       "You will finish profile preferences during onboarding.",
@@ -51,13 +51,13 @@ const accountTypeHeadlines: Record<
   AGENCY: {
     title: "Create your agency account",
     copy:
-      "Launch the workspace your team will use to manage represented artists, bookings, and platform operations from one account.",
+      "Launch the workspace your team will use to manage represented creatives, projects, and platform operations from one account.",
     button: "Create agency account",
     notes: [
       "Set up your agency identity and contact details during onboarding.",
-      "Manage represented talent and booking activity in one place.",
+      "Manage represented talent and project activity in one place.",
       "Use messaging and support without leaving the platform.",
-      "Agency configuration stays separate from artist application review.",
+      "Agency configuration stays separate from creative application review.",
     ],
   },
 };

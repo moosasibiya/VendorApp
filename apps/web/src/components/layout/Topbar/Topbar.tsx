@@ -17,11 +17,12 @@ import styles from "./Topbar.module.css";
 const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Overview of your workspace and live platform activity." },
   "/creatives": { title: "Creatives", subtitle: "Browse, verify, and manage creative profiles." },
-  "/bookings": { title: "Bookings", subtitle: "Track upcoming work, status changes, and next actions." },
+  "/projects": { title: "Projects", subtitle: "Track upcoming work, status changes, and next actions." },
   "/messages": { title: "Messages", subtitle: "Conversations, delivery updates, and support context." },
+  "/studio": { title: "Studio", subtitle: "Plan moodboards, briefs, files, shot lists, and references." },
   "/support": { title: "Support", subtitle: "Guided help that escalates into the central support queue." },
-  "/calendar": { title: "Calendar", subtitle: "Availability, upcoming shoots, and booking timing in one view." },
-  "/reviews": { title: "Reviews", subtitle: "Ratings, public feedback, and booking-linked testimonials." },
+  "/calendar": { title: "Calendar", subtitle: "Availability, upcoming shoots, and project timing in one view." },
+  "/reviews": { title: "Reviews", subtitle: "Ratings, public feedback, and project-linked testimonials." },
   "/settings": { title: "Settings", subtitle: "Manage profile, notifications, and account controls." },
   "/onboarding": { title: "Onboarding", subtitle: "Complete verification and rollout-ready profile details." },
   "/admin": { title: "Admin", subtitle: "Applications, support triage, and rollout configuration." },
@@ -68,10 +69,9 @@ export default function Topbar() {
 
   const { title, subtitle } = ROUTE_META[route];
   const initials = useMemo(() => getInitials(user.fullName || "VM"), [user.fullName]);
-  const isOnboardingRoute = route === "/onboarding";
-  const switchHref = isOnboardingRoute ? "/home" : "/";
-  const switchLabel = isOnboardingRoute ? "Public home" : "Onboarding";
-  const switchIcon = isOnboardingRoute ? "public" : "switch_access_shortcut";
+  const switchHref = "/home";
+  const switchLabel = "Public home";
+  const switchIcon = "public";
 
   useEffect(() => {
     let frame = 0;
@@ -212,7 +212,7 @@ export default function Topbar() {
     if (conversationId) {
       router.push(`/messages?conversationId=${encodeURIComponent(conversationId)}`);
     } else if (bookingId) {
-      router.push(`/bookings/${encodeURIComponent(bookingId)}`);
+      router.push(`/projects/${encodeURIComponent(bookingId)}`);
     }
 
     setNotificationsOpen(false);
@@ -247,7 +247,7 @@ export default function Topbar() {
           <span className="material-symbols-outlined">search</span>
           <span className={styles.searchSummary}>{searchQuery.trim() || "Search"}</span>
           <input
-            placeholder="Search creatives, bookings, messages..."
+            placeholder="Search creatives, projects, messages..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />

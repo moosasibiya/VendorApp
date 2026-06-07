@@ -780,7 +780,7 @@ body.csearch #app-cursor-ring {
   inset: 0;
   pointer-events: none;
   z-index: 8400;
-  opacity: 0.06;
+  opacity: 0.03;
   mix-blend-mode: overlay;
   background: repeating-linear-gradient(180deg, transparent 0 2px, rgba(207, 233, 255, 0.5) 2px 3px);
 }
@@ -1135,15 +1135,24 @@ body.csearch #app-cursor-ring {
   outline: none;
 }
 .vendr-landing input::placeholder,
-.vendr-landing select::placeholder { color: rgba(207, 233, 255, 0.2); }
+.vendr-landing select::placeholder { color: rgba(207, 233, 255, 0.35); }
 .vendr-landing select option { background: var(--stage); color: var(--ice); }
+.vendr-landing input:focus,
+.vendr-landing input[type="text"]:focus,
+.vendr-landing input[type="email"]:focus,
+.vendr-landing input[type="tel"]:focus {
+  outline: none;
+  border-color: rgba(207, 233, 255, 0.5) !important;
+  background: rgba(207, 233, 255, 0.1) !important;
+  box-shadow: 0 0 0 2px rgba(207, 233, 255, 0.08);
+}
 
 /* ── Prelaunch responsive ── */
 @media (max-width: 768px) {
-  .vendr-nav-right    { display: none !important; }
   .vendr-cards-grid   { grid-template-columns: 1fr !important; }
   .vendr-footer-inner { flex-direction: column !important; text-align: center !important; }
   .vendr-footer-links { flex-wrap: wrap !important; justify-content: center !important; }
+  .vendr-cu { padding: 14px 8px 10px !important; }
 }
 
 /* ── Responsive ── */
@@ -1161,6 +1170,59 @@ body.csearch #app-cursor-ring {
 }
 @media (max-width: 640px) {
   .vendr-featured-cards { grid-template-columns: 1fr !important; }
+  .vendr-featured-head  { grid-template-columns: 1fr !important; gap: 20px !important; }
   .vendr-foot-grid    { grid-template-columns: 1fr !important; }
-  .vendr-section-pad  { padding: 110px 22px !important; }
+  .vendr-section-pad  { padding: 60px 16px !important; }
+}
+
+/* ── Mobile landing fixes ── */
+@media (max-width: 640px) {
+  /* Nav */
+  .vendr-landing nav { padding: 14px 16px !important; }
+  .vendr-nav-cta { padding: 9px 14px !important; font-size: 9px !important; letter-spacing: 0.22em !important; gap: 7px !important; }
+
+  /* Hero — decorative lines in launching label */
+  .vendr-hero-label-deco { display: none !important; }
+
+  /* Hero — CTA buttons stack vertically */
+  .vendr-hero-ctas { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .vendr-hero-ctas > a { width: 100% !important; justify-content: center !important; box-sizing: border-box !important; }
+
+  /* Hero — countdown top spacing */
+  .vendr-countdown-wrap { margin-top: 32px !important; }
+
+  /* Countdown label decorative lines */
+  .vendr-countdown-label-deco { display: none !important; }
+
+  /* Promise header spacing */
+  .vendr-promise-header { margin-bottom: 36px !important; gap: 24px !important; }
+  .vendr-promise-subtitle { font-size: 15px !important; }
+
+  /* Promise cards */
+  .vendr-split-grid { grid-template-columns: 1fr !important; }
+
+  /* Founding lede spacing */
+  .vendr-founding-lede { margin-bottom: 36px !important; }
+
+  /* Submit button — full width */
+  .vendr-submit { width: 100% !important; padding: 16px 20px !important; font-size: 13px !important; }
+
+  /* Footer */
+  .vendr-footer-socials { gap: 20px !important; }
+  .vendr-landing footer { padding: 24px 16px 20px !important; }
+  .vendr-landing footer > div:first-child { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+  .vendr-landing footer > div:last-child { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; font-size: 9px !important; }
+}
+
+/* ── Extra-small phones (≤ 390px) ── */
+@media (max-width: 390px) {
+  /* Countdown cells tighter */
+  .vendr-cu { padding: 10px 4px 8px !important; }
+  .vendr-cu-colon { font-size: 18px !important; }
+
+  /* Nav brand tighter */
+  .vendr-landing nav { padding: 12px 14px !important; }
+
+  /* Hero headline stays readable */
+  .vendr-hero-ctas { gap: 10px !important; }
 }

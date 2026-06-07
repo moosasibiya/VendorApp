@@ -255,7 +255,7 @@ export default function AdminPage() {
         hint: `${dashboard.insiders.clients} clients, ${dashboard.insiders.artists} artists`,
       },
       {
-        label: "Manual review bookings",
+        label: "Manual review projects",
         value: String(dashboard.manualReviewBookings.length),
         hint: "Disputes or payout exceptions waiting on staff",
       },
@@ -485,7 +485,7 @@ export default function AdminPage() {
 
       {!loading && dashboard && settingsDraft ? (
         <>
-          <section className={styles.panel}>
+          <section id="settings" className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
                 <h2>Configurable rollout settings</h2>
@@ -513,10 +513,10 @@ export default function AdminPage() {
                   ["normalCommissionRate", "Normal commission rate"],
                   [
                     "temporaryFirstBookingCommissionRate",
-                    "First-booking adjusted commission rate",
+                    "First-project adjusted commission rate",
                   ],
                   ["disputeWindowDays", "Dispute window days"],
-                  ["bookingStartCodeLength", "Booking start code length"],
+                  ["bookingStartCodeLength", "Project start code length"],
                   ["startCodeActivationHours", "Start-code activation hours"],
                   ["clientApprovalGraceHours", "Client approval grace hours"],
                 ] as Array<[keyof SettingsDraft, string]>
@@ -550,14 +550,14 @@ export default function AdminPage() {
                     )
                   }
                 >
-                  <option value="FIRST_BOOKING_DEDUCTION">First booking deduction</option>
+                  <option value="FIRST_BOOKING_DEDUCTION">First project deduction</option>
                   <option value="UPFRONT">Upfront fee</option>
                 </select>
               </label>
             </div>
           </section>
 
-          <section className={styles.panel}>
+          <section id="users" className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
                 <h2>VendrStudio Insider Programme</h2>
@@ -727,7 +727,7 @@ export default function AdminPage() {
                       <span>Commission</span>
                       <strong>
                         {artist.normalCommissionRate}% normal /{" "}
-                        {artist.temporaryFirstBookingCommissionRate}% first booking
+                        {artist.temporaryFirstBookingCommissionRate}% first project
                       </strong>
                     </div>
                   </div>
@@ -791,7 +791,7 @@ export default function AdminPage() {
             </div>
           </section>
           <section className={styles.twoColumn}>
-            <div className={styles.panel}>
+            <div id="projects" className={styles.panel}>
               <div className={styles.panelHeader}>
                 <div>
                   <h2>Support queue</h2>
@@ -916,10 +916,10 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className={styles.panel}>
+            <div id="payouts" className={styles.panel}>
               <div className={styles.panelHeader}>
                 <div>
-                  <h2>Manual review bookings</h2>
+                <h2>Manual review projects</h2>
                   <p className={styles.subtle}>
                     Payout holds, disputes, and missing verification events that
                     require staff review.
@@ -937,8 +937,8 @@ export default function AdminPage() {
                           {booking.artistName} / {booking.clientName}
                         </p>
                       </div>
-                      <Link href={`/bookings/${booking.bookingId}`} className={styles.ghostBtn}>
-                        Review booking
+                      <Link href={`/projects/${booking.bookingId}`} className={styles.ghostBtn}>
+                        Review project
                       </Link>
                     </div>
                     <div className={styles.metrics}>
@@ -967,7 +967,7 @@ export default function AdminPage() {
               </div>
             </div>
           </section>
-          <section className={styles.panel}>
+          <section id="reports" className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
                 <h2>Tier definitions</h2>
@@ -1086,7 +1086,7 @@ export default function AdminPage() {
             </div>
           </section>
 
-          <section className={styles.panel}>
+          <section id="creatives" className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
                 <h2>Artist tier overrides</h2>
@@ -1129,7 +1129,7 @@ export default function AdminPage() {
                         <strong>{Math.round(row.progress.progressPercent)}%</strong>
                       </div>
                       <div>
-                        <span>Verified bookings</span>
+                        <span>Verified projects</span>
                         <strong>{row.progress.metrics.verifiedPlatformBookings}</strong>
                       </div>
                       <div>

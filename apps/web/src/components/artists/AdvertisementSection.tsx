@@ -20,7 +20,7 @@ export const AdvertisementSection = () => {
   return (
     <section className="rounded-card border border-[var(--border)] bg-[var(--panel)] p-6 shadow-md text-white">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Featured artists</h3>
+        <h3 className="text-lg font-semibold text-white">Featured creatives</h3>
         <span className="text-xs font-semibold uppercase text-white/50">
           Sponsored
         </span>

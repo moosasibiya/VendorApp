@@ -2,49 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { fetchMe, logout as logoutRequest } from "@/lib/api";
 import styles from "./PublicHeader.module.css";
 
 export default function PublicHeader() {
   const [open, setOpen] = useState(false);
-  const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolling, setScrolling] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const runAuthCheck = () => {
-      void (async () => {
-        try {
-          await fetchMe();
-          if (!cancelled) {
-            setAuthed(true);
-          }
-        } catch {
-          if (!cancelled) {
-            setAuthed(false);
-          }
-        }
-      })();
-    };
-
-    if ("requestIdleCallback" in window) {
-      const idleId = window.requestIdleCallback(runAuthCheck, { timeout: 1200 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback(idleId);
-      };
-    }
-
-    const timeoutId = globalThis.setTimeout(runAuthCheck, 250);
-
-    return () => {
-      cancelled = true;
-      globalThis.clearTimeout(timeoutId);
-    };
-  }, []);
 
   useEffect(() => {
     setScrolled(window.scrollY > 24);
@@ -96,16 +61,6 @@ export default function PublicHeader() {
     firstFocusable?.focus();
   }, [open]);
 
-  const logout = async () => {
-    try {
-      await logoutRequest();
-    } finally {
-      setAuthed(false);
-      setOpen(false);
-      window.location.assign("/");
-    }
-  };
-
   return (
     <header className={`${styles.header} ${scrolled ? styles.scrolled : ""} ${scrolling ? styles.scrolling : ""}`}>
       <div className={styles.inner}>
@@ -113,26 +68,22 @@ export default function PublicHeader() {
           Vendr<span>Studios</span>
         </Link>
 
-        <nav className={styles.nav} aria-label="Pre-launch navigation">
-          <a href="#how-it-works" onClick={(e) => {
-            e.preventDefault();
-            document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-          }}>How it works</a>
-          <Link href="/insider-rules">Insider programme</Link>
+        <nav className={styles.nav} aria-label="Public navigation">
+          <Link href="/explore">Explore</Link>
+          <Link href="/how-it-works">How It Works</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/about">About</Link>
+          <Link href="/join">Join</Link>
         </nav>
 
-        {authed ? (
-          <div className={styles.actions}>
-            <Link href="/dashboard" className={styles.ghostBtn}>
-              Dashboard
-            </Link>
-            <button type="button" className={styles.primaryBtn} onClick={() => void logout()}>
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className={styles.actions} />
-        )}
+        <div className={styles.actions}>
+          <Link href="/login" className={styles.ghostBtn}>
+            Login
+          </Link>
+          <Link href="/signup" className={styles.primaryBtn}>
+            Sign Up
+          </Link>
+        </div>
 
         <button
           type="button"
@@ -161,22 +112,13 @@ export default function PublicHeader() {
             </div>
 
             <div className={styles.drawerLinks}>
-              <a href="#how-it-works" onClick={(e) => { e.preventDefault(); setOpen(false); document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" }); }}>
-                How it works
-              </a>
-              <Link href="/insider-rules" onClick={() => setOpen(false)}>
-                Insider programme
-              </Link>
-              {authed ? (
-                <>
-                  <Link href="/dashboard" onClick={() => setOpen(false)}>
-                    Dashboard
-                  </Link>
-                  <button type="button" onClick={() => void logout()}>
-                    Logout
-                  </button>
-                </>
-              ) : null}
+              <Link href="/explore" onClick={() => setOpen(false)}>Explore</Link>
+              <Link href="/how-it-works" onClick={() => setOpen(false)}>How It Works</Link>
+              <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
+              <Link href="/about" onClick={() => setOpen(false)}>About</Link>
+              <Link href="/join" onClick={() => setOpen(false)}>Join</Link>
+              <Link href="/login" onClick={() => setOpen(false)}>Login</Link>
+              <Link href="/signup" onClick={() => setOpen(false)}>Sign Up</Link>
             </div>
           </div>
         </div>

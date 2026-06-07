@@ -2,9 +2,10 @@
 
 import { VendrCountdown } from "./VendrCountdown";
 
-const scrollTo = (id: string) => (e: React.MouseEvent) => {
+const scrollToSignup = (role: "client" | "creative") => (e: React.MouseEvent) => {
   e.preventDefault();
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  window.dispatchEvent(new CustomEvent("vendr:select-role", { detail: role }));
+  document.getElementById("signup")?.scrollIntoView({ behavior: "smooth" });
 };
 
 const BEAM_COUNT = 15;
@@ -26,8 +27,8 @@ export function VendrHero() {
     <section
       id="hero"
       style={{
-        position: "relative", minHeight: "100vh",
-        padding: "72px 36px 80px",
+        position: "relative", minHeight: "100svh",
+        padding: "clamp(80px, 10vw, 120px) clamp(16px, 5vw, 36px) clamp(40px, 7vw, 80px)",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "flex-start",
         textAlign: "center", isolation: "isolate", overflow: "hidden",
@@ -39,9 +40,10 @@ export function VendrHero() {
         style={{
           position: "absolute", inset: 0, zIndex: -2,
           background:
-            "radial-gradient(45% 50% at 50% 55%, rgba(31,45,107,.22), transparent 70%), " +
-            "radial-gradient(30% 25% at 50% 75%, rgba(101,34,99,.18), transparent 70%), " +
-            "linear-gradient(180deg, #000005 0%, #00001E 55%, #000003 100%)",
+            "radial-gradient(60% 55% at 50% 52%, rgba(31,45,107,.18) 0%, rgba(31,45,107,.08) 55%, transparent 80%), " +
+            "radial-gradient(50% 40% at 50% 80%, rgba(101,34,99,.22) 0%, rgba(101,34,99,.08) 50%, transparent 75%), " +
+            "radial-gradient(35% 25% at 20% 30%, rgba(31,45,107,.10) 0%, transparent 70%), " +
+            "linear-gradient(180deg, #000005 0%, #000010 20%, #00001A 45%, #00001E 60%, #000012 85%, #000005 100%)",
         }}
       />
 
@@ -104,39 +106,31 @@ export function VendrHero() {
             filter: "blur(20px)", mixBlendMode: "screen",
           }}
         />
-        <div
-          style={{
-            position: "absolute", inset: 0,
-            background: "repeating-linear-gradient(180deg, transparent 0 22px, rgba(207,233,255,.025) 22px 23px)",
-            WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 30%, #000 100%)",
-            maskImage: "linear-gradient(180deg, transparent 0%, #000 30%, #000 100%)",
-            animation: "vendr-horizon-shimmer 12s ease-in-out infinite",
-          }}
-        />
       </div>
 
       {/* Launching label */}
       <div
+        className="vendr-hero-label"
         style={{
           display: "inline-flex", alignItems: "center", gap: 18,
           marginBottom: 20,
           opacity: 0, animation: "vendr-rise-in 0.9s ease 4.0s forwards",
-          fontFamily: "var(--display)", fontSize: 16, letterSpacing: "0.5em",
+          fontFamily: "var(--display)", fontSize: "clamp(11px,3vw,16px)", letterSpacing: "0.4em",
           color: "rgba(207,233,255,0.7)", textTransform: "uppercase",
         }}
       >
-        <span style={{ width: 50, height: 1, background: "linear-gradient(90deg, transparent, rgba(207,233,255,.6), transparent)", display: "inline-block" }} />
+        <span className="vendr-hero-label-deco" style={{ width: 50, height: 1, background: "linear-gradient(90deg, transparent, rgba(207,233,255,.6), transparent)", display: "inline-block" }} />
         <span className="vendr-pulse-dot" aria-hidden="true" />
         <span>Launching 01 July 2026</span>
         <span className="vendr-pulse-dot" aria-hidden="true" />
-        <span style={{ width: 50, height: 1, background: "linear-gradient(90deg, transparent, rgba(207,233,255,.6), transparent)", display: "inline-block" }} />
+        <span className="vendr-hero-label-deco" style={{ width: 50, height: 1, background: "linear-gradient(90deg, transparent, rgba(207,233,255,.6), transparent)", display: "inline-block" }} />
       </div>
 
       {/* Headline */}
       <h1
         style={{
           fontFamily: "var(--display)", fontWeight: 300,
-          fontSize: "clamp(48px, 7.5vw, 124px)",
+          fontSize: "clamp(32px, 7.5vw, 124px)",
           lineHeight: 0.92, letterSpacing: "-0.025em",
           textTransform: "uppercase", color: "var(--ice)",
           marginBottom: 20, maxWidth: "18ch",
@@ -152,12 +146,12 @@ export function VendrHero() {
       {/* Subtitle */}
       <p
         style={{
-          fontFamily: "var(--body)", fontWeight: 400, fontSize: 22, lineHeight: 1.7,
+          fontFamily: "var(--body)", fontWeight: 400, fontSize: "clamp(16px, 3vw, 22px)", lineHeight: 1.7,
           color: "rgba(207,233,255,0.88)", maxWidth: "54ch", marginBottom: 20,
           opacity: 0, animation: "vendr-rise-in 0.9s ease 4.5s forwards",
         }}
       >
-        The trusted marketplace for booking{" "}
+        The trusted marketplace for planning{" "}
         <strong style={{ color: "var(--ice)", fontWeight: 600 }}>verified</strong>{" "}
         photographers and videographers in South Africa. No more ghosting. No more scams.{" "}
         <strong style={{ color: "var(--ice)", fontWeight: 600 }}>Just craft.</strong>
@@ -165,15 +159,16 @@ export function VendrHero() {
 
       {/* CTA buttons */}
       <div
+        className="vendr-hero-ctas"
         style={{
-          display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap",
-          justifyContent: "center", marginBottom: 20,
+          display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+          justifyContent: "center", marginBottom: 20, width: "100%",
           opacity: 0, animation: "vendr-rise-in 0.9s ease 4.7s forwards",
         }}
       >
         <a
           href="#signup"
-          onClick={scrollTo("signup")}
+          onClick={scrollToSignup("client")}
           className="vendr-btn-primary vendr-magnetic"
           style={{
             display: "inline-flex", alignItems: "center", gap: 12,
@@ -192,7 +187,7 @@ export function VendrHero() {
         </a>
         <a
           href="#signup"
-          onClick={scrollTo("signup")}
+          onClick={scrollToSignup("creative")}
           className="vendr-btn-ghost vendr-magnetic"
           style={{
             display: "inline-flex", alignItems: "center", gap: 12,
@@ -211,11 +206,28 @@ export function VendrHero() {
         </a>
       </div>
 
+      {/* Countdown spotlight — static glow centred on the timer */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute", bottom: 0, left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(900px, 110vw)", height: 420,
+          zIndex: 0, pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse 55% 80% at 50% 100%, rgba(207,233,255,.28) 0%, rgba(101,34,99,.14) 38%, rgba(31,45,107,.08) 62%, transparent 80%)",
+          filter: "blur(24px)",
+          mixBlendMode: "screen",
+        }}
+      />
+
       {/* Countdown */}
       <div
+        className="vendr-countdown-wrap"
         style={{
           opacity: 0, animation: "vendr-rise-in 0.9s ease 4.9s forwards",
           width: "100%", maxWidth: 760, marginTop: 60, marginBottom: 20,
+          position: "relative", zIndex: 1,
         }}
       >
         <VendrCountdown />

@@ -19,12 +19,12 @@ const supportOptions: Array<{
 }> = [
   {
     category: "BOOKING_HELP",
-    title: "Booking help",
-    summary: "Clarify booking status, confirmations, timelines, and next steps.",
+    title: "Project help",
+    summary: "Clarify project status, confirmations, timelines, and next steps.",
     steps: [
-      "Open the booking detail page and check the current status timeline.",
-      "After confirmation, the booking moves into the booked state and later awaits the safety code.",
-      "Use the booking messages thread for work updates tied to that booking.",
+      "Open the project detail page and check the current status timeline.",
+      "After confirmation, the project moves into the booked state and later awaits the safety code.",
+      "Use the project messages thread for work updates tied to that project.",
     ],
   },
   {
@@ -32,29 +32,29 @@ const supportOptions: Array<{
     title: "Payment issue",
     summary: "Escalate payment questions for manual support review.",
     steps: [
-      "Open the related booking and review the status timeline.",
-      "Include the booking reference and a concise description of the payment question.",
+      "Open the related project and review the status timeline.",
+      "Include the project reference and a concise description of the payment question.",
       "Support will route the thread to the owner of the new payment process.",
     ],
   },
   {
     category: "PROFILE_ISSUE",
     title: "Profile issue",
-    summary: "Help with artist applications, onboarding, profile visibility, or account setup.",
+    summary: "Help with creative applications, onboarding, profile visibility, or account setup.",
     steps: [
       "Finish all onboarding fields and save your profile application.",
-      "If you are an artist, your dashboard shows whether you are in the prelaunch pool, under review, or waitlisted.",
+      "If you are a creative, your dashboard shows whether you are in the prelaunch pool, under review, or waitlisted.",
       "Escalate if profile information is missing, approval status looks wrong, or identity checks need help.",
     ],
   },
   {
     category: "DISPUTE_HELP",
     title: "Dispute help",
-    summary: "Escalate booking disputes, missed safety-code usage, or delivery issues.",
+    summary: "Escalate project disputes, missed safety-code usage, or delivery issues.",
     steps: [
-      "Open the booking and review the dispute window and verification timeline.",
+      "Open the project and review the dispute window and verification timeline.",
       "If the safety code was not used, support may need extra verification before payout can move.",
-      "Create a support thread so the team can review the full booking and message context.",
+      "Create a support thread so the team can review the full project and message context.",
     ],
     shouldEscalateByDefault: true,
   },
@@ -63,8 +63,8 @@ const supportOptions: Array<{
     title: "Refund help",
     summary: "Escalate refund requests or payment reversals for human review.",
     steps: [
-      "Gather the booking reference and explain why the refund is requested.",
-      "Include whether the artist arrived, completed work, or the booking was cancelled.",
+      "Gather the project reference and explain why the refund is requested.",
+      "Include whether the creative arrived, completed work, or the project was cancelled.",
       "Create a support thread so the team can review payment and dispute history.",
     ],
     shouldEscalateByDefault: true,
@@ -75,7 +75,7 @@ const supportOptions: Array<{
     summary: "Use this when your issue does not fit the categories above.",
     steps: [
       "Write a concise summary of the problem.",
-      "Add the relevant booking reference if one exists.",
+      "Add the relevant project reference if one exists.",
       "Support will review and route the thread to the right owner.",
     ],
     shouldEscalateByDefault: true,
@@ -118,7 +118,7 @@ export default function SupportPage() {
     } catch (err) {
       setBookingsLoaded(true);
       setError(
-        err instanceof ApiError ? err.message : "Unable to load related bookings right now.",
+        err instanceof ApiError ? err.message : "Unable to load related projects right now.",
       );
     }
   };
@@ -160,7 +160,7 @@ export default function SupportPage() {
           <p className={styles.subtle}>
             Use the guided FAQ flow first. If your issue needs human review, we
             will open a labeled support thread in the messaging area so nothing
-            gets lost across email, chat, and booking notes.
+            gets lost across email, chat, and project notes.
           </p>
         </div>
       </section>
@@ -221,13 +221,13 @@ export default function SupportPage() {
                 />
               </label>
               <label className={styles.field}>
-                Related booking
+                Related project
                 <select
                   value={bookingId}
                   onFocus={() => void loadBookings()}
                   onChange={(event) => setBookingId(event.target.value)}
                 >
-                  <option value="">No booking selected</option>
+                  <option value="">No project selected</option>
                   {bookings.map((booking) => (
                     <option key={booking.id} value={booking.id}>
                       {booking.title} · {formatDate(booking.eventDate)}

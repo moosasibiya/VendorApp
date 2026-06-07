@@ -72,7 +72,7 @@ export default function InsiderSignupForm({ defaultUserType, referredBy }: Props
           setStatus("success");
           setMessage(
             insider.duplicate
-              ? "You are already in the VendrStudio Insider Programme. Follow Instagram and TikTok, then reply Done."
+              ? "You are already on the Vendr Studio early-access list. Follow Instagram and TikTok, then reply Done."
               : "You are in. Follow Instagram and TikTok, then reply Done so the team can manually verify you.",
           );
         } catch (error) {
@@ -102,13 +102,13 @@ export default function InsiderSignupForm({ defaultUserType, referredBy }: Props
           I am joining as
           <select value={userType} onChange={(event) => setUserType(event.target.value as InsiderUserType)}>
             <option value="CLIENT">Client</option>
-            <option value="ARTIST">Artist / creative</option>
+            <option value="ARTIST">Creative</option>
           </select>
         </label>
       </div>
 
       <button type="submit" className={styles.primaryHeroBtn} disabled={!canSubmit}>
-        {status === "submitting" ? "Joining..." : "Join the Insider Programme"}
+        {status === "submitting" ? "Joining..." : "Join early access"}
       </button>
 
       {message ? (

@@ -21,8 +21,8 @@ export const TopSearchPill = ({ resultsCount, className }: TopSearchPillProps) =
       <div className="flex flex-1 items-center gap-3 text-white">
         <span className="text-xl text-white/70">🔎</span>
         <TextInput
-          aria-label="Search artists"
-          placeholder="Search artists, services, or styles..."
+          aria-label="Search creatives"
+          placeholder="Search creatives, services, or styles..."
           className="h-10 border-none bg-transparent px-0 text-white placeholder:text-white/60 shadow-none focus:ring-0"
         />
       </div>

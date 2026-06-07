@@ -49,18 +49,30 @@ export default function Sidebar() {
       <div className={styles.sectionTitle}>Workspace</div>
       <nav className={styles.nav}>
         <NavItem href="/dashboard" icon="dashboard" label="Dashboard" />
-        <NavItem href="/bookings" icon="event" label="Bookings" />
-        <NavItem href="/messages" icon="chat" label="Messages" />
-        <NavItem href="/support" icon="support_agent" label="Support" />
+        <NavItem href="/projects" icon="assignment" label="Projects" />
         <NavItem href="/calendar" icon="calendar_month" label="Calendar" />
-        <NavItem href="/reviews" icon="star" label="Reviews" />
         <NavItem href="/creatives" icon="groups" label="Creatives" />
+        <NavItem href="/messages" icon="chat" label="Messages" />
+        <NavItem href="/studio" icon="dashboard_customize" label="Studio" />
+        <NavItem href="/reviews" icon="star" label="Reviews" />
         <NavItem href="/settings" icon="settings" label="Settings" />
-        <NavItem href="/onboarding" icon="checklist" label="Onboarding" />
-        {user.role === "ADMIN" || user.role === "SUB_ADMIN" ? (
-          <NavItem href="/admin" icon="shield_person" label="Admin" />
-        ) : null}
+        <NavItem href="/support" icon="support_agent" label="Support" />
       </nav>
+
+      {user?.role === "ADMIN" || user?.role === "SUB_ADMIN" ? (
+        <>
+          <div className={styles.sectionTitle}>Admin</div>
+          <nav className={styles.nav}>
+            <NavItem href="/admin" icon="shield_person" label="Admin Dashboard" />
+            <NavItem href="/admin/users" icon="manage_accounts" label="Users" />
+            <NavItem href="/admin/creatives" icon="groups" label="Creatives" />
+            <NavItem href="/admin/projects" icon="assignment" label="Projects" />
+            <NavItem href="/admin/payouts" icon="payments" label="Payouts" />
+            <NavItem href="/admin/reports" icon="monitoring" label="Reports" />
+            <NavItem href="/admin/settings" icon="admin_panel_settings" label="Settings" />
+          </nav>
+        </>
+      ) : null}
 
       <div className={styles.spacer} />
 

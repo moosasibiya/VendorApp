@@ -2,6 +2,14 @@
 
 import { useScrollReveal } from "./useScrollReveal";
 
+function scrollToSignupWithRole(role: "client" | "creative") {
+  return (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("vendr:select-role", { detail: role }));
+    document.getElementById("signup")?.scrollIntoView({ behavior: "smooth" });
+  };
+}
+
 const ARROW = (
   <svg viewBox="0 0 14 10" width="14" height="10" fill="none" aria-hidden="true">
     <path d="M1 5 H13 M9 1 L13 5 L9 9" stroke="currentColor" strokeWidth="1.4" />
@@ -27,6 +35,7 @@ const CARDS = [
       "One brief, multiple curated shortlists",
     ],
     cta: "Join as a client",
+    ctaRole: "client" as const,
     bg: "radial-gradient(120% 80% at 0% 0%, rgba(31,45,107,.45), transparent 60%), linear-gradient(180deg, #04062a, #00001E)",
   },
   {
@@ -49,6 +58,7 @@ const CARDS = [
       "Community of South Africa's working creatives",
     ],
     cta: "Join as a creative",
+    ctaRole: "creative" as const,
     bg: "radial-gradient(120% 80% at 100% 0%, rgba(101,34,99,.45), transparent 60%), linear-gradient(180deg, #0a0a2a, #00001E)",
   },
 ] as const;
@@ -63,11 +73,11 @@ export function VendrPromise() {
   return (
     <section
       id="promise"
-      style={{ position: "relative", zIndex: 2, padding: "60px 36px", background: "linear-gradient(180deg, #000005 0%, #00001e 100%)" }}
+      style={{ position: "relative", zIndex: 2, padding: "clamp(40px,6vw,60px) clamp(20px,5vw,36px)", background: "linear-gradient(180deg, #000005 0%, #00001e 100%)" }}
     >
       {/* Header */}
       <div
-        className="vendr-featured-head"
+        className="vendr-featured-head vendr-promise-header"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "end", gap: 60, marginBottom: 72 }}
       >
         <div className="vendr-reveal" ref={headerRef}>
@@ -86,7 +96,7 @@ export function VendrPromise() {
             .
           </h2>
         </div>
-        <p className="vendr-reveal d1" ref={subtitleRef} style={{ fontFamily: "var(--body)", fontWeight: 400, fontSize: 20, lineHeight: 1.7, color: "rgba(231,236,243,.8)", maxWidth: "52ch" }}>
+        <p className="vendr-reveal d1 vendr-promise-subtitle" ref={subtitleRef} style={{ fontFamily: "var(--body)", fontWeight: 400, fontSize: "clamp(15px,3vw,20px)", lineHeight: 1.7, color: "rgba(231,236,243,.8)", maxWidth: "52ch" }}>
           Built in South Africa, for South Africa.<br />Where verified portfolios and real contracts replace ghosting, surprise quotes, and chasing invoices.
         </p>
       </div>
@@ -103,7 +113,7 @@ export function VendrPromise() {
             className={`vendr-reveal vendr-pcard${i > 0 ? " d1" : ""}`}
             data-card
             style={{
-              padding: "64px 52px 52px", minHeight: 520,
+              padding: "clamp(32px,5vw,64px) clamp(24px,4vw,52px) clamp(32px,5vw,52px)", minHeight: "clamp(320px,40vw,520px)" as unknown as number,
               border: "1px solid rgba(207,233,255,.10)",
               borderRadius: 8, overflow: "hidden", isolation: "isolate",
               background: card.bg,
@@ -126,7 +136,7 @@ export function VendrPromise() {
             </div>
 
             {/* Heading */}
-            <h3 style={{ fontFamily: "var(--display)", fontWeight: 300, fontSize: "clamp(30px, 3.4vw, 46px)", letterSpacing: "-0.02em", lineHeight: 1.05, textTransform: "uppercase", marginBottom: 24, maxWidth: "14ch", position: "relative", zIndex: 2, color: "var(--ice)" }}>
+            <h3 style={{ fontFamily: "var(--display)", fontWeight: 300, fontSize: "clamp(22px, 3.4vw, 46px)", letterSpacing: "-0.02em", lineHeight: 1.05, textTransform: "uppercase", marginBottom: 24, maxWidth: "14ch", position: "relative", zIndex: 2, color: "var(--ice)" }}>
               {card.titleBefore}
               {card.titleEm && <em style={{ fontStyle: "normal", fontWeight: 500 }}>{card.titleEm}</em>}
               {card.titleAfter}
@@ -144,13 +154,38 @@ export function VendrPromise() {
             </h3>
 
             {/* Body */}
-            <p style={{ fontFamily: "var(--body)", fontWeight: 300, color: "rgba(231,236,243,.72)", fontSize: 15, lineHeight: 1.65, maxWidth: "42ch", marginBottom: 44, position: "relative", zIndex: 2 }}>
+            <p style={{ fontFamily: "var(--body)", fontWeight: 300, color: "rgba(231,236,243,.72)", fontSize: 15, lineHeight: 1.65, maxWidth: "42ch", marginBottom: 24, position: "relative", zIndex: 2 }}>
               {card.body}
             </p>
 
+            {/* Feature list */}
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, marginBottom: 36, position: "relative", zIndex: 2 }}>
+              {card.items.map((item) => (
+                <li
+                  key={item}
+                  style={{
+                    display: "flex", alignItems: "flex-start", gap: 12,
+                    fontFamily: "var(--body)", fontSize: 13, fontWeight: 300,
+                    color: "rgba(207,233,255,.65)", lineHeight: 1.5,
+                    paddingBottom: 10,
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      flexShrink: 0, marginTop: 5,
+                      width: 5, height: 5, borderRadius: "50%",
+                      background: "linear-gradient(135deg, #cfe9ff, #b58bd6)",
+                      boxShadow: "0 0 6px rgba(207,233,255,.4)",
+                    }}
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
 
             {/* CTA */}
-            <a href="#signup" className="vendr-pcta" style={{ fontFamily: "var(--display)", fontSize: 16, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--ice)", paddingBottom: 10, borderBottom: "1px solid rgba(207,233,255,.3)", position: "relative", zIndex: 2 }}>
+            <a href="#signup" onClick={scrollToSignupWithRole(card.ctaRole)} className="vendr-pcta" style={{ fontFamily: "var(--display)", fontSize: 16, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--ice)", paddingBottom: 10, borderBottom: "1px solid rgba(207,233,255,.3)", position: "relative", zIndex: 2 }}>
               {card.cta} {ARROW}
             </a>
           </article>

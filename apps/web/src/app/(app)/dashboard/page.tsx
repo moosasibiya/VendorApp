@@ -15,6 +15,7 @@ import {
   fetchMyUpcomingBookings,
   fetchNotifications,
 } from "@/lib/api";
+import { useAppSession } from "@/components/session/AppSessionContext";
 import styles from "./page.module.css";
 
 function formatCurrency(amount: number): string {
@@ -51,34 +52,34 @@ function buildStatCards(stats: DashboardStats): Array<{
       return [
         {
           icon: "event",
-          label: "Total bookings",
+          label: "Total projects",
           value: String(stats.totalBookings),
-          hint: "All bookings on your account",
+          hint: "All projects on your account",
         },
         {
           icon: "schedule",
           label: "Upcoming",
           value: String(stats.upcomingBookings),
-          hint: "Future bookings currently scheduled",
+          hint: "Future projects currently scheduled",
         },
         {
           icon: "payments",
           label: "Total spent",
           value: formatCurrency(stats.totalSpent),
-          hint: "Paid bookings only",
+          hint: "Paid projects only",
         },
         {
           icon: "favorite",
-          label: "Favourite artists",
+          label: "Favourite creatives",
           value: String(stats.favouriteArtists),
-          hint: "Distinct artists you have booked",
+          hint: "Distinct creatives you have booked",
         },
       ];
     case "ARTIST":
       return [
         {
           icon: "event",
-          label: "Total bookings",
+          label: "Total projects",
           value: String(stats.totalBookings),
           hint: "Requests and confirmed work",
         },
@@ -86,7 +87,7 @@ function buildStatCards(stats: DashboardStats): Array<{
           icon: "pending_actions",
           label: "Pending",
           value: String(stats.pendingBookings),
-          hint: "Bookings awaiting action",
+          hint: "Projects awaiting action",
         },
         {
           icon: "payments",
@@ -105,13 +106,13 @@ function buildStatCards(stats: DashboardStats): Array<{
       return [
         {
           icon: "groups",
-          label: "Represented artists",
+          label: "Represented creatives",
           value: String(stats.totalArtists),
-          hint: "Distinct artists on agency bookings",
+          hint: "Distinct creatives on agency projects",
         },
         {
           icon: "event",
-          label: "Active bookings",
+          label: "Active projects",
           value: String(stats.activeBookings),
           hint: "Pending, confirmed, and in progress",
         },
@@ -119,7 +120,7 @@ function buildStatCards(stats: DashboardStats): Array<{
           icon: "payments",
           label: "Gross revenue",
           value: formatCurrency(stats.totalRevenue),
-          hint: "Agency booking value handled",
+          hint: "Agency project value handled",
         },
       ];
     case "SUB_ADMIN":
@@ -134,7 +135,7 @@ function buildStatCards(stats: DashboardStats): Array<{
         },
         {
           icon: "event",
-          label: "Bookings",
+          label: "Projects",
           value: String(stats.totalBookings),
           hint: "Across the full platform",
         },
@@ -142,7 +143,7 @@ function buildStatCards(stats: DashboardStats): Array<{
           icon: "payments",
           label: "Revenue",
           value: formatCurrency(stats.totalRevenue),
-          hint: "Gross booking value",
+          hint: "Gross project value",
         },
       ];
   }
@@ -156,21 +157,21 @@ function buildQuickActions(role: DashboardStats["role"]): Array<{
   switch (role) {
     case "CLIENT":
       return [
-        { href: "/artists", icon: "travel_explore", label: "Browse artists" },
-        { href: "/bookings/new", icon: "post_add", label: "New booking" },
+        { href: "/explore", icon: "travel_explore", label: "Explore creatives" },
+        { href: "/projects/new", icon: "post_add", label: "New project" },
         { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/messages", icon: "forum", label: "Messages" },
       ];
     case "ARTIST":
       return [
-        { href: "/bookings", icon: "event", label: "Bookings" },
+        { href: "/projects", icon: "assignment", label: "Projects" },
         { href: "/calendar", icon: "calendar_month", label: "Calendar" },
         { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/messages", icon: "forum", label: "Messages" },
       ];
     case "AGENCY":
       return [
-        { href: "/bookings", icon: "event", label: "Bookings" },
+        { href: "/projects", icon: "assignment", label: "Projects" },
         { href: "/calendar", icon: "calendar_month", label: "Calendar" },
         { href: "/support", icon: "support_agent", label: "Support" },
         { href: "/settings", icon: "settings", label: "Settings" },
@@ -180,7 +181,7 @@ function buildQuickActions(role: DashboardStats["role"]): Array<{
     default:
       return [
         { href: "/admin", icon: "admin_panel_settings", label: "Admin console" },
-        { href: "/bookings", icon: "event", label: "Bookings" },
+        { href: "/projects", icon: "assignment", label: "Projects" },
         { href: "/support", icon: "support_agent", label: "Support queue" },
         { href: "/messages", icon: "forum", label: "Messages" },
       ];
@@ -226,6 +227,7 @@ function applicationTone(
 }
 
 export default function DashboardPage() {
+  const { user } = useAppSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [artistProfile, setArtistProfile] = useState<Artist | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingBookingItem[]>([]);
@@ -278,6 +280,18 @@ export default function DashboardPage() {
 
   const statCards = stats ? buildStatCards(stats) : [];
   const quickActions = buildQuickActions(stats?.role ?? "CLIENT");
+  const dashboardTitle =
+    stats?.role === "ARTIST"
+      ? "Creative command room"
+      : stats?.role === "ADMIN" || stats?.role === "SUB_ADMIN"
+        ? "Marketplace control room"
+        : "Project home base";
+  const dashboardCopy =
+    stats?.role === "ARTIST"
+      ? "Track leads, earnings, upcoming shoots, reviews, and the production work that needs your attention."
+      : stats?.role === "ADMIN" || stats?.role === "SUB_ADMIN"
+        ? "Monitor marketplace health, project flow, support pressure, and rollout readiness."
+        : "Move from saved creatives to active projects, messages, upcoming work, and next decisions.";
 
   const tierMetrics = useMemo(() => {
     const metrics = artistProfile?.tierProgress?.metrics;
@@ -287,7 +301,7 @@ export default function DashboardPage() {
 
     return [
       {
-        label: "Verified bookings",
+        label: "Verified projects",
         value: String(metrics.verifiedPlatformBookings),
       },
       {
@@ -303,7 +317,7 @@ export default function DashboardPage() {
         value: `${metrics.profileCompleteness}%`,
       },
       {
-        label: "Repeat bookings",
+        label: "Repeat projects",
         value: String(metrics.repeatBookings),
       },
       {
@@ -316,6 +330,18 @@ export default function DashboardPage() {
   return (
     <main className={styles.page}>
       {error ? <div className={styles.error}>{error}</div> : null}
+
+      <section className={styles.hero}>
+        <div>
+          <p className={styles.kicker}>{user.fullName}</p>
+          <h1>{dashboardTitle}</h1>
+          <p>{dashboardCopy}</p>
+        </div>
+        <div className={styles.pathCard}>
+          <span>Journey</span>
+          <strong>Discover → Match → Plan → Book → Manage</strong>
+        </div>
+      </section>
 
       <section className={styles.stats}>
         {loading
@@ -344,7 +370,7 @@ export default function DashboardPage() {
           <article className={styles.featureCard}>
             <div className={styles.featureHeader}>
               <div>
-                <div className={styles.panelTitle}>Artist rollout status</div>
+                <div className={styles.panelTitle}>Creative rollout status</div>
                 <div className={styles.panelSub}>
                   Your application, live status, and onboarding recovery model.
                 </div>
@@ -394,11 +420,11 @@ export default function DashboardPage() {
                 <strong>{artistProfile.normalCommissionRate ?? 0}% standard</strong>
               </div>
               <div className={styles.metricCard}>
-                <span>First booking onboarding model</span>
+                <span>First project onboarding model</span>
                 <strong>
                   {artistProfile.firstBookingOnboardingDeductionApplied
                     ? "Recovered"
-                    : `${artistProfile.temporaryFirstBookingCommissionRate ?? 0}% on first completed booking`}
+                    : `${artistProfile.temporaryFirstBookingCommissionRate ?? 0}% on first completed project`}
                 </strong>
               </div>
             </div>
@@ -419,8 +445,8 @@ export default function DashboardPage() {
                   Verified platform work drives progression. Off-platform work does not count.
                 </div>
               </div>
-              <Link href="/bookings" className={styles.ghostBtn}>
-                View bookings
+              <Link href="/projects" className={styles.ghostBtn}>
+                View projects
               </Link>
             </div>
 
@@ -449,7 +475,7 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <div className={styles.emptyState}>
-                  Tier metrics will populate after your verified platform bookings and rating history grow.
+                  Tier metrics will populate after your verified platform projects and rating history grow.
                 </div>
               )}
             </div>
@@ -471,10 +497,10 @@ export default function DashboardPage() {
         <div className={styles.panel}>
           <div className={styles.panelHeader}>
             <div>
-              <div className={styles.panelTitle}>Upcoming bookings</div>
-              <div className={styles.panelSub}>Your next five scheduled bookings</div>
+              <div className={styles.panelTitle}>Upcoming projects</div>
+              <div className={styles.panelSub}>Your next five scheduled projects</div>
             </div>
-            <Link className={styles.ghostBtn} href="/bookings">
+            <Link className={styles.ghostBtn} href="/projects">
               View all
               <span className="material-symbols-outlined">chevron_right</span>
             </Link>
@@ -482,12 +508,12 @@ export default function DashboardPage() {
 
           <div className={styles.list}>
             {loading ? (
-              <div className={styles.emptyState}>Loading upcoming bookings...</div>
+              <div className={styles.emptyState}>Loading upcoming projects...</div>
             ) : upcoming.length > 0 ? (
               upcoming.map((booking) => (
                 <Link
                   key={booking.id}
-                  href={`/bookings/${booking.id}`}
+                  href={`/projects/${booking.id}`}
                   className={styles.listItem}
                 >
                   <span className="material-symbols-outlined">event</span>
@@ -501,7 +527,7 @@ export default function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className={styles.emptyState}>No upcoming bookings yet.</div>
+              <div className={styles.emptyState}>No upcoming projects yet.</div>
             )}
           </div>
         </div>
@@ -529,7 +555,7 @@ export default function DashboardPage() {
         <div className={styles.panelHeader}>
           <div>
             <div className={styles.panelTitle}>Recent notifications</div>
-            <div className={styles.panelSub}>Latest booking, message, support, and payment events</div>
+            <div className={styles.panelSub}>Latest project, message, support, and payment events</div>
           </div>
           <Link className={styles.ghostBtn} href="/messages">
             Messages

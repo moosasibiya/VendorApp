@@ -3,6 +3,9 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
+  background:
+    linear-gradient(180deg, rgba(207, 233, 255, 0.035), transparent 360px),
+    var(--black);
 }
 
 .shell::before {
@@ -11,8 +14,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 14% 16%, rgba(37, 99, 235, 0.08), transparent 22%),
-    radial-gradient(circle at 86% 10%, rgba(124, 58, 237, 0.1), transparent 24%);
+    radial-gradient(ellipse 38% 24% at 26% 0%, rgba(207, 233, 255, 0.08), transparent 68%),
+    linear-gradient(90deg, rgba(246, 238, 216, 0.025), transparent 34%, rgba(101, 34, 99, 0.055));
 }
 
 .main {
@@ -24,7 +27,7 @@
 .content {
   position: relative;
   z-index: 1;
-  padding: 24px 24px 40px;
+  padding: 24px clamp(18px, 3vw, 34px) 44px;
   display: grid;
   gap: 18px;
 }

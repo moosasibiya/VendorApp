@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { OnboardingAccessNotice } from "@/components/onboarding/OnboardingAccessNotice";
+import { PreviewRoleSwitcher } from "@/components/dev/PreviewRoleSwitcher";
 import { useAppSession } from "@/components/session/AppSessionContext";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
@@ -22,6 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
+      <PreviewRoleSwitcher />
     </div>
   );
 }

@@ -281,6 +281,13 @@ export class PrelaunchService {
     };
   }
 
+  async getStats(): Promise<{ insiderCount: number; total: number }> {
+    const insiderCount = await this.prisma.prelaunchLead.count({
+      where: { source: 'INSIDER_PROGRAMME' },
+    });
+    return { insiderCount, total: 100 };
+  }
+
   private getWebOrigin(): string {
     return (
       process.env.WEB_ORIGIN?.split(',')[0]?.trim() ||
