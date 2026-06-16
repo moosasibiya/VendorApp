@@ -308,6 +308,7 @@ export function VendrSignup() {
           background:
             "radial-gradient(40% 30% at 50% 50%, rgba(101,34,99,.35), transparent 65%), " +
             "radial-gradient(80% 60% at 50% 100%, rgba(31,45,107,.25), transparent 60%), " +
+            "radial-gradient(130% 100% at 50% 30%, transparent 45%, rgba(0,0,5,.5) 95%), " +
             "linear-gradient(180deg, #00001e, #00001e)",
         }}
       >

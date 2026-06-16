@@ -73,7 +73,14 @@ export function VendrPromise() {
   return (
     <section
       id="promise"
-      style={{ position: "relative", zIndex: 2, padding: "clamp(40px,6vw,60px) clamp(20px,5vw,36px)", background: "linear-gradient(180deg, #000005 0%, #00001e 100%)" }}
+      style={{
+        position: "relative", zIndex: 2, padding: "clamp(40px,6vw,60px) clamp(20px,5vw,36px)",
+        background:
+          "radial-gradient(60% 50% at 50% 0%, rgba(101,34,99,.22) 0%, transparent 60%), " +
+          "radial-gradient(70% 50% at 50% 100%, rgba(31,45,107,.22) 0%, transparent 65%), " +
+          "radial-gradient(130% 100% at 50% 30%, transparent 40%, rgba(0,0,5,.55) 95%), " +
+          "linear-gradient(180deg, #000005 0%, #00001e 100%)",
+      }}
     >
       {/* Header */}
       <div
