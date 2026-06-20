@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { VendrLanding } from "@/components/vendr/VendrLanding";
+import { VendrLanding } from "@/components/landing/VendrLanding";
 
 export const metadata: Metadata = {
   title: "VENDR.STUDIO — Where Moments Meet Creatives",

@@ -18,52 +18,10 @@ type DevRouteGroup = {
 
 const ROUTE_GROUPS: DevRouteGroup[] = [
   {
-    title: "Landing + Public",
+    title: "Prelaunch",
     routes: [
-      { label: "Prelaunch Landing", href: "/" },
-      { label: "Privacy", href: "/privacy" },
-      { label: "Public Home", href: "/home" },
-      { label: "Explore", href: "/explore" },
-      { label: "Creative Profile", href: "/creatives/ava-maseko" },
-      { label: "How It Works", href: "/how-it-works" },
-      { label: "Pricing", href: "/pricing" },
-      { label: "About", href: "/about" },
-      { label: "FAQ", href: "/faq" },
-      { label: "Contact", href: "/contact" },
-      { label: "Join", href: "/join" },
-    ],
-  },
-  {
-    title: "Auth",
-    routes: [
-      { label: "Login", href: "/login" },
-      { label: "Signup", href: "/signup" },
-      { label: "Forgot Password", href: "/forgot-password" },
-      { label: "Reset Password", href: "/reset-password" },
-      { label: "Verify Email", href: "/verify-email" },
-    ],
-  },
-  {
-    title: "App",
-    routes: [
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "Admin", href: "/admin" },
-      { label: "Admin Users", href: "/admin/users" },
-      { label: "Admin Creatives", href: "/admin/creatives" },
-      { label: "Admin Projects", href: "/admin/projects" },
-      { label: "Admin Payouts", href: "/admin/payouts" },
-      { label: "Admin Reports", href: "/admin/reports" },
-      { label: "Admin Settings", href: "/admin/settings" },
-      { label: "Projects", href: "/projects" },
-      { label: "Project Detail", href: "/projects/dev-project" },
-      { label: "New Project", href: "/projects/new" },
-      { label: "Calendar", href: "/calendar" },
-      { label: "Creatives", href: "/creatives" },
-      { label: "Messages", href: "/messages" },
-      { label: "Studio", href: "/studio" },
-      { label: "Reviews", href: "/reviews" },
-      { label: "Settings", href: "/settings" },
-      { label: "Support", href: "/support" },
+      { label: "Landing", href: "/" },
+      { label: "Confirmed", href: "/confirmed" },
     ],
   },
 ];
@@ -146,10 +104,6 @@ export function DevRouteDrawer() {
               </section>
             ))}
 
-            <p className={styles.note}>
-              Protected app pages may redirect to login until you are signed in.
-              Dynamic routes use development sample IDs.
-            </p>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, DM_Sans, DM_Serif_Display, Instrument_Serif, Manrope, Outfit, Space_Grotesk } from "next/font/google";
+import { Bebas_Neue, DM_Sans, DM_Serif_Display, Instrument_Serif, Manrope, Oswald, Outfit, Playfair_Display, Space_Grotesk } from "next/font/google";
 import { DevRouteDrawer } from "@/components/dev/DevRouteDrawer";
 import CursorEffects from "@/components/global/CursorEffects";
 import "material-symbols/outlined.css";
@@ -57,6 +57,21 @@ const dmSerifDisplay = DM_Serif_Display({
   variable: "--font-serif-display",
 });
 
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500"],
+  display: "swap",
+  variable: "--font-oswald",
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-playfair",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_WEB_URL ?? "https://vendr.studio"),
   title: {
@@ -89,7 +104,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${spaceGrotesk.variable} ${outfit.variable} ${dmSans.variable} ${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable}`}
+      className={`${instrumentSerif.variable} ${spaceGrotesk.variable} ${outfit.variable} ${dmSans.variable} ${manrope.variable} ${bebasNeue.variable} ${dmSerifDisplay.variable} ${oswald.variable} ${playfairDisplay.variable}`}
       suppressHydrationWarning
     >
       <body>
