@@ -30,7 +30,6 @@ export function VendrLanding() {
         <VendrLoader />
 
         {/* Background layers */}
-        <div className="v-grain" aria-hidden="true" />
         <div className="v-vig" aria-hidden="true" />
         <div className="v-spot" aria-hidden="true" />
 

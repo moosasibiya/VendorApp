@@ -210,7 +210,13 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   --v-mx: 50vw;
   --v-my: 38vh;
 
-  background-color: var(--v-void);
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(31,45,107,.2) 0%, rgba(31,45,107,.06) 38%, transparent 68%),
+    radial-gradient(95% 76% at 50% 116%, rgba(101,34,99,.16) 0%, rgba(101,34,99,.05) 42%, transparent 72%),
+    radial-gradient(95% 80% at 50% -12%, rgba(101,34,99,.2) 0%, rgba(101,34,99,.08) 34%, transparent 66%),
+    radial-gradient(90% 72% at 50% 112%, rgba(31,45,107,.18) 0%, rgba(31,45,107,.07) 36%, transparent 68%),
+    linear-gradient(180deg, #050612 0%, #02030a 44%, #050612 100%);
+  background-attachment: fixed;
   color: var(--v-mist);
   font-family: "Manrope", var(--font-manrope), system-ui, sans-serif;
   font-weight: 400;
@@ -234,16 +240,6 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
 .vendr-landing em {
   font-family: var(--font-playfair), var(--font-playfair), "Playfair Display", var(--font-serif-display), serif;
   font-style: italic;
-}
-
-/* ── Background (radial gradients, no SVG grain) ── */
-.v-grain {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 50% -10%, rgba(31,45,107,.22), transparent 55%),
-    radial-gradient(90% 70% at 50% 120%, rgba(101,34,99,.14), transparent 60%),
-    var(--v-void);
-  animation: v-grain-drift 14s ease-in-out infinite;
 }
 
 /* ── Cinema vignette ── */
@@ -289,7 +285,6 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
 .v-progress {
   position: fixed; top: 0; left: 0; height: 2px; z-index: 120;
   background: var(--v-grad);
-  box-shadow: 0 0 14px rgba(101,34,99,.7);
   transition: width .1s linear;
   pointer-events: none;
 }
@@ -310,6 +305,18 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
 .vendr-landing .vendr-reveal.d2 { transition-delay: .24s; }
 .vendr-landing .vendr-reveal.d3 { transition-delay: .36s; }
 
+/* Directional card reveal variants */
+.vendr-landing .vendr-reveal.from-left {
+  transform: translateX(-72px) scale(.96);
+}
+.vendr-landing .vendr-reveal.from-right {
+  transform: translateX(72px) scale(.96);
+}
+.vendr-landing .vendr-reveal.from-left.vendr-visible,
+.vendr-landing .vendr-reveal.from-right.vendr-visible {
+  transform: none;
+}
+
 /* ── Hero load animation ── */
 .v-anim {
   opacity: 0;
@@ -317,29 +324,8 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   filter: blur(10px);
   animation: v-rise 1s var(--v-ease) var(--d, 0s) forwards;
 }
-.v-anim.v-grad-text {
-  animation: v-darkness-flash 1.8s var(--v-ease) var(--d, 0s) forwards;
-}
 @keyframes v-rise {
   to { opacity: 1; transform: none; filter: blur(0); }
-}
-
-/* ── DARKNESS. flash-in ── */
-@keyframes v-darkness-flash {
-  0%   { opacity: 0; transform: translateY(40px); filter: blur(12px);
-         text-shadow: none; }
-  55%  { opacity: 1; transform: translateY(-6px); filter: blur(0);
-         text-shadow:
-           0 0 60px  rgba(207,233,255,1),
-           0 0 140px rgba(207,233,255,.75),
-           0 0 280px rgba(207,233,255,.4),
-           0 0 480px rgba(101,34,99,.5); }
-  78%  { transform: translateY(2px);
-         text-shadow:
-           0 0 40px rgba(207,233,255,.4),
-           0 0 80px rgba(207,233,255,.18); }
-  100% { opacity: 1; transform: none; filter: blur(0);
-         text-shadow: 0 0 80px rgba(207,233,255,.25); }
 }
 @keyframes v-glow-breathe {
   0%, 100% { transform: translateX(-50%) scale(1);    opacity: .65; }
@@ -360,13 +346,6 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   0%, 100% { box-shadow: 0 0 18px rgba(101,34,99,.65); }
   50%       { box-shadow: 0 0 36px rgba(101,34,99,.9), 0 0 60px rgba(207,233,255,.2); }
 }
-/* ── Background ambient drift ── */
-@keyframes v-grain-drift {
-  0%         { opacity: 1; }
-  50%        { opacity: .82; }
-  100%       { opacity: 1; }
-}
-
 /* ── Eyebrow ── */
 .v-eyebrow {
   font-family: "Manrope", sans-serif;
@@ -398,7 +377,6 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   background: var(--v-grad);
   -webkit-background-clip: text; background-clip: text;
   color: transparent; -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 80px rgba(207,233,255,.25);
 }
 .v-lead {
   font-size: 19px; color: var(--v-mist); font-weight: 300; max-width: 560px;
@@ -483,14 +461,10 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 26px 40px;
   display: flex; align-items: center; justify-content: space-between;
-  transition: background .4s ease, backdrop-filter .4s ease, padding .4s ease, border-color .4s ease;
-  border-bottom: 1px solid transparent;
+  transition: padding .4s ease;
+  background: transparent;
 }
 .v-header.scrolled {
-  background: rgba(6,7,18,.62);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom-color: var(--v-line-soft);
   padding-top: 16px;
   padding-bottom: 16px;
 }
@@ -648,8 +622,10 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   background:
     radial-gradient(70% 55% at 100% 0%, rgba(31,45,107,.28) 0%, transparent 60%),
     linear-gradient(160deg, rgba(6,8,20,.98) 0%, rgba(3,4,12,.99) 100%);
-  overflow: hidden; transition: border-color .5s var(--v-ease), transform .5s var(--v-ease);
   display: flex; flex-direction: column; min-height: 680px;
+  transform-style: preserve-3d;
+  transition: border-color .5s var(--v-ease), transform .6s var(--v-ease), box-shadow .6s var(--v-ease);
+  will-change: transform;
 }
 /* Bottom glow */
 .v-card::before {
@@ -679,8 +655,20 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   background: radial-gradient(circle, rgba(101,34,99,.22), transparent 70%);
 }
 
-.v-card:hover { border-color: rgba(207,233,255,.25); transform: translateY(-6px); }
-.v-card.rose:hover { border-color: rgba(138,50,133,.5); transform: translateY(-6px); }
+.v-card:hover { border-color: rgba(207,233,255,.25); }
+.v-card.rose:hover { border-color: rgba(138,50,133,.5); }
+
+/* Cursor-tilt active — snappy tracking */
+.v-card.v-tilting {
+  transition: border-color .5s var(--v-ease), transform .08s linear, box-shadow .08s linear;
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(8px);
+}
+/* Cursor left — spring back */
+.v-card.v-tilt-leave {
+  transition: border-color .5s var(--v-ease), transform .6s var(--v-ease), box-shadow .6s var(--v-ease);
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px);
+  box-shadow: none;
+}
 .v-idx {
   position: absolute; top: 34px; right: 40px;
   font-family: var(--font-oswald), "Oswald", sans-serif; font-weight: 200; font-size: 30px;
@@ -903,5 +891,4 @@ input::placeholder, textarea::placeholder { color: var(--text-dim); }
   .vendr-landing .v-clock { animation: none; }
   .vendr-landing .v-knob { animation: none; }
   .vendr-landing .v-fill { animation: none; }
-  .vendr-landing .v-grain { animation: none; }
 }
